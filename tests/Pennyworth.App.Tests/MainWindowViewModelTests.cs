@@ -100,10 +100,44 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Sidebar_switches_between_storage_and_folders()
+    {
+        var (viewModel, scanner) = Create();
+        scanner.Gate = new TaskCompletionSource();
+        viewModel.Initialize();
+
+        Assert.True(viewModel.IsStoragePage);
+        Assert.False(viewModel.ShowFoldersCommand.CanExecute(null));
+
+        scanner.Gate.SetResult();
+        await viewModel.CurrentScan;
+        viewModel.ShowFoldersCommand.Execute(null);
+
+        var browser = Assert.IsType<FolderBrowserViewModel>(viewModel.CurrentPage);
+        Assert.Equal(@"C:\", browser.Current.FullPath);
+        Assert.True(viewModel.IsFoldersPage);
+
+        viewModel.ShowStorageCommand.Execute(null);
+
+        Assert.IsType<StorageSummaryViewModel>(viewModel.CurrentPage);
+        Assert.False(viewModel.IsFoldersPage);
+    }
+
+    [Fact]
     public void Drive_names_use_label_or_local_disk()
     {
         Assert.Equal("Games (D:)", new DriveViewModel(DriveD).Name);
         Assert.EndsWith("(C:)", new DriveViewModel(DriveC).Name);
         Assert.Equal(0.5, new DriveViewModel(DriveC).UsedFraction, 3);
+    }
+
+    [Fact]
+    public void Drives_show_letter_label_and_percent_used()
+    {
+        var drive = new DriveViewModel(DriveD);
+
+        Assert.Equal("D:", drive.Letter);
+        Assert.Equal("Games", drive.Label);
+        Assert.Equal(new DriveViewModel(DriveC).UsedFraction.ToString("P0"), new DriveViewModel(DriveC).UsedPercentText);
     }
 }

@@ -39,7 +39,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>A <see cref="StorageSummaryViewModel"/> or a <see cref="FolderBrowserViewModel"/>.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsStoragePage), nameof(IsFoldersPage))]
+    [NotifyCanExecuteChangedFor(nameof(ShowFoldersCommand))]
     public partial object? CurrentPage { get; private set; }
+
+    public bool IsStoragePage => CurrentPage is StorageSummaryViewModel;
+
+    public bool IsFoldersPage => CurrentPage is FolderBrowserViewModel;
+
+    /// <summary>The summary of the selected drive, shown by the Storage page.</summary>
+    private StorageSummaryViewModel? CurrentSummary { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RescanCommand))]
@@ -83,12 +92,33 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private bool CanRescan() => !IsScanning;
 
+    [RelayCommand]
+    private void ShowStorage()
+    {
+        if (CurrentSummary is { } summary)
+        {
+            CurrentPage = summary;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanShowFolders))]
+    private void ShowFolders()
+    {
+        if (!IsFoldersPage)
+        {
+            CurrentSummary!.BrowseAllCommand.Execute(null);
+        }
+    }
+
+    private bool CanShowFolders() => CurrentSummary?.IsComplete == true;
+
     private async Task ShowDriveAsync(DriveViewModel drive, bool forceRescan)
     {
         _scanCancellation?.Cancel();
 
         if (!forceRescan && _summaries.TryGetValue(drive.Summary.RootPath, out var existing))
         {
+            CurrentSummary = existing;
             CurrentPage = existing;
             StatusText = string.Format(Strings.ScanComplete, existing.FileCount);
             return;
@@ -99,6 +129,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         StorageSummaryViewModel summary = null!;
         summary = new StorageSummaryViewModel(drive.Summary, _locations, node => OpenFolder(node, summary));
         _summaries[drive.Summary.RootPath] = summary;
+        CurrentSummary = summary;
         CurrentPage = summary;
         IsScanning = true;
         StatusText = string.Format(Strings.ScanningFiles, 0);
@@ -116,6 +147,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             StorageTree tree = await _scanner.ScanAsync(drive.Summary.RootPath, _classifier, progress, cancellation.Token);
             summary.ApplyResult(tree);
+            ShowFoldersCommand.NotifyCanExecuteChanged();
             if (_scanCancellation == cancellation)
             {
                 StatusText = string.Format(Strings.ScanComplete, tree.FileCount);
@@ -146,14 +178,15 @@ public sealed class DriveViewModel(DriveSummary summary)
 {
     public DriveSummary Summary { get; } = summary;
 
-    public string Name
-    {
-        get
-        {
-            string label = string.IsNullOrWhiteSpace(Summary.Label) ? Strings.LocalDisk : Summary.Label;
-            return $"{label} ({Summary.RootPath.TrimEnd('\\')})";
-        }
-    }
+    public string Name => $"{Label} ({Letter})";
+
+    /// <summary>"C:".</summary>
+    public string Letter => Summary.RootPath.TrimEnd('\\');
+
+    /// <summary>The volume label, or "Local Disk" when the drive has none.</summary>
+    public string Label => string.IsNullOrWhiteSpace(Summary.Label) ? Strings.LocalDisk : Summary.Label;
+
+    public string UsedPercentText => UsedFraction.ToString("P0");
 
     public string UsedText => string.Format(Strings.DriveUsed, ByteSize.Format(Summary.UsedBytes), ByteSize.Format(Summary.TotalBytes));
 
