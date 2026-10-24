@@ -2,38 +2,125 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Pennyworth.App.ViewModels"
         xmlns:res="using:Pennyworth.App.Resources"
+        xmlns:controls="using:Pennyworth.App.Controls"
         x:Class="Pennyworth.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{x:Static res:Strings.AppTitle}"
         Width="1100" Height="760" MinWidth="720" MinHeight="520"
-        WindowStartupLocation="CenterScreen">
-  <Grid RowDefinitions="Auto,*" Margin="{StaticResource Padding.Page}" RowSpacing="16">
-    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-      <ListBox ItemsSource="{Binding Drives}" SelectedItem="{Binding SelectedDrive}">
-        <ListBox.ItemsPanel>
-          <ItemsPanelTemplate>
-            <StackPanel Orientation="Horizontal" Spacing="8" />
-          </ItemsPanelTemplate>
-        </ListBox.ItemsPanel>
-        <ListBox.ItemTemplate>
-          <DataTemplate x:DataType="vm:DriveViewModel">
-            <StackPanel Width="200" Spacing="6">
-              <TextBlock Classes="heading" Text="{Binding Name}" />
-              <ProgressBar Minimum="0" Maximum="1" Value="{Binding UsedFraction}" />
-              <TextBlock Classes="caption" Text="{Binding UsedText}" />
-            </StackPanel>
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
-      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6" HorizontalAlignment="Right">
-        <Button Content="{x:Static res:Strings.Rescan}" Command="{Binding RescanCommand}" HorizontalAlignment="Right" />
-        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-          <ProgressBar IsIndeterminate="True" Width="60" IsVisible="{Binding IsScanning}" VerticalAlignment="Center" />
-          <TextBlock Classes="caption" Text="{Binding StatusText}" />
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True">
+  <Window.Styles>
+    <!-- Sidebar entries: index, label and a one-line hint. -->
+    <Style Selector="Button.nav">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="18,10" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="FontFamily" Value="{StaticResource FontFamily.Base}" />
+      <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+      <Setter Property="LetterSpacing" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
+    </Style>
+    <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="Button.nav.selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="Button.nav TextBlock.index">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextTertiary}" />
+    </Style>
+    <Style Selector="Button.nav.selected TextBlock.index">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}" />
+    </Style>
+    <Style Selector="Button.nav:disabled">
+      <Setter Property="Opacity" Value="0.5" />
+    </Style>
+
+    <!-- The status dot blinks while a scan runs. -->
+    <Style Selector="TextBlock.dot">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
+    </Style>
+    <Style Selector="TextBlock.dot.active">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}" />
+      <Style.Animations>
+        <Animation Duration="0:0:1" IterationCount="Infinite">
+          <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+          <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0" /></KeyFrame>
+          <KeyFrame Cue="100%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+
+    <!-- At narrow widths the content gets the whole window. -->
+    <Style Selector="Window.narrow Border#Sidebar">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="44,*,28">
+    <!-- Title bar: drag area; Windows draws the caption buttons on the right. -->
+    <Border Classes="rule" BorderThickness="0,0,0,1" Background="{DynamicResource Brush.Background}"
+            WindowDecorationProperties.ElementRole="TitleBar">
+      <Grid ColumnDefinitions="Auto,*,Auto" Margin="16,0,150,0">
+        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <TextBlock Classes="mono" Text="▸■◂" Foreground="{DynamicResource Brush.Accent}" FontSize="11" />
+          <TextBlock Text="{controls:Upper {x:Static res:Strings.AppTitle}}" FontWeight="SemiBold" FontSize="12" LetterSpacing="2.4" />
         </StackPanel>
-      </StackPanel>
+        <Button Grid.Column="2" Click="OnToggleTheme"
+                BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="28" Padding="12,0"
+                Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center"
+                ToolTip.Tip="Light / Dark">
+          <TextBlock Text="◐" />
+        </Button>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+      <Border Name="Sidebar" Width="{StaticResource Width.Sidebar}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0">
+        <Grid RowDefinitions="Auto,*,Auto" Margin="0,18,0,16">
+          <StackPanel>
+            <Button Classes="nav" Classes.selected="{Binding IsStoragePage}" Command="{Binding ShowStorageCommand}">
+              <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                <TextBlock Classes="label index" Text="01" Margin="0,3,0,0" />
+                <StackPanel Grid.Column="1" Spacing="2">
+                  <TextBlock Text="{x:Static res:Strings.NavStorage}" />
+                  <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{x:Static res:Strings.NavStorageHint}" />
+                </StackPanel>
+              </Grid>
+            </Button>
+            <Button Classes="nav" Classes.selected="{Binding IsFoldersPage}" Command="{Binding ShowFoldersCommand}">
+              <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                <TextBlock Classes="label index" Text="02" Margin="0,3,0,0" />
+                <StackPanel Grid.Column="1" Spacing="2">
+                  <TextBlock Text="{x:Static res:Strings.NavFolders}" />
+                  <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{x:Static res:Strings.NavFoldersHint}" />
+                </StackPanel>
+              </Grid>
+            </Button>
+          </StackPanel>
+          <TextBlock Grid.Row="2" Classes="label" LetterSpacing="0.8" Margin="18,0" Text="{x:Static res:Strings.Version}" />
+        </Grid>
+      </Border>
+
+      <ContentControl Grid.Column="1" Content="{Binding CurrentPage}" />
     </Grid>
 
-    <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" />
+    <!-- Status bar -->
+    <Border Grid.Row="2" Classes="rule">
+      <StackPanel Orientation="Horizontal" Spacing="18" Margin="16,0" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Classes="dot" Classes.active="{Binding IsScanning}" Text="●" FontSize="10" VerticalAlignment="Center" />
+          <TextBlock Classes="label" LetterSpacing="0.6" Text="{Binding StatusText}" VerticalAlignment="Center" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                    IsVisible="{Binding SelectedDrive, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <TextBlock Classes="label" LetterSpacing="0.6" Text="{Binding SelectedDrive.Letter}" />
+          <TextBlock Classes="label" LetterSpacing="0.6" Text="{Binding SelectedDrive.UsedPercentText}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
   </Grid>
 </Window>
