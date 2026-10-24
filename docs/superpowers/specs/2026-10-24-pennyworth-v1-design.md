@@ -1,4 +1,4 @@
-# BetterManager v1 — Design Spec
+# Pennyworth v1 — Design Spec
 
 **Date:** 2026-10-24
 **Status:** Approved in brainstorming, pending spec review
@@ -10,7 +10,7 @@ Explorer shows no folder sizes, Settings → Installed apps shows many programs
 with no size, and hidden system space (restore points, hibernation file, etc.)
 is never itemised, so the visible numbers never add up to the used space.
 
-BetterManager is a free, open-source Windows app that shows **where every byte
+Pennyworth is a free, open-source Windows app that shows **where every byte
 of storage goes, in plain language**, lets the user safely free space, and shows
 which apps are using RAM and CPU right now. It must be **very fast** and usable
 by someone with no technical knowledge.
@@ -63,7 +63,7 @@ instead of serialising millions of nodes over a bridge.
 Two processes:
 
 ```
-BetterManager.exe (normal user)          BetterManager.Helper.exe (admin, on demand)
+Pennyworth.exe (normal user)          Pennyworth.Helper.exe (admin, on demand)
   Avalonia UI + user-level work   <-->     MFT scan, system-space measurement,
   (normal scan, RAM/CPU, apps,   named      system-level cleanup.
    user cleanup)                  pipe      Started only on "Unlock full scan";
@@ -76,14 +76,14 @@ The UI process **never** runs elevated.
 
 | Project | Responsibility | Depends on |
 |---|---|---|
-| `BetterManager.Core` | Models (storage tree, categories, sizes, app identity), pipe protocol contracts. No Windows calls. | — |
-| `BetterManager.Scanning` | `IScanner` with two engines: `MftScanner` (admin, NTFS) and `DirectoryScanner` (no admin, any FS). Both produce the same `StorageTree`. Also system-space measurement and snapshot save/load. | Core |
-| `BetterManager.Insights` | Categorisation, knowledge-base lookup, installed-app discovery, true per-app size attribution, "cleanable" detection. | Core |
-| `BetterManager.KnowledgeBase` | Embedded data files (known paths, apps, games, cleanup rules, process explanations) in en + pt-BR, plus the loader. | Core |
-| `BetterManager.Monitoring` | Process snapshotting, CPU/RAM computation, grouping by app, process explanations. | Core, Insights |
-| `BetterManager.Cleanup` | Cleanup actions with preview, safety level, execution, history log. | Core, KnowledgeBase |
-| `BetterManager.Helper` | Admin executable hosting the admin-only parts of Scanning and Cleanup behind the pipe. | Scanning, Cleanup |
-| `BetterManager.App` | Avalonia UI, MVVM view models, theming tokens. No business logic. | all above (except Helper, launched as a process) |
+| `Pennyworth.Core` | Models (storage tree, categories, sizes, app identity), pipe protocol contracts. No Windows calls. | — |
+| `Pennyworth.Scanning` | `IScanner` with two engines: `MftScanner` (admin, NTFS) and `DirectoryScanner` (no admin, any FS). Both produce the same `StorageTree`. Also system-space measurement and snapshot save/load. | Core |
+| `Pennyworth.Insights` | Categorisation, knowledge-base lookup, installed-app discovery, true per-app size attribution, "cleanable" detection. | Core |
+| `Pennyworth.KnowledgeBase` | Embedded data files (known paths, apps, games, cleanup rules, process explanations) in en + pt-BR, plus the loader. | Core |
+| `Pennyworth.Monitoring` | Process snapshotting, CPU/RAM computation, grouping by app, process explanations. | Core, Insights |
+| `Pennyworth.Cleanup` | Cleanup actions with preview, safety level, execution, history log. | Core, KnowledgeBase |
+| `Pennyworth.Helper` | Admin executable hosting the admin-only parts of Scanning and Cleanup behind the pipe. | Scanning, Cleanup |
+| `Pennyworth.App` | Avalonia UI, MVVM view models, theming tokens. No business logic. | all above (except Helper, launched as a process) |
 | `*.Tests` | xUnit tests per module. | — |
 
 Every library is marked `IsAotCompatible`; reflection-based serialisation is
@@ -95,7 +95,7 @@ avoided (source-generated `System.Text.Json` contexts, compiled bindings with
 ### Launch sequence
 
 1. Show every drive's used/free bar immediately (`GetDiskFreeSpaceEx`).
-2. Load the last saved snapshot from `%LocalAppData%\BetterManager\` and show it,
+2. Load the last saved snapshot from `%LocalAppData%\Pennyworth\` and show it,
    labelled with its age ("from 2 hours ago").
 3. Start a `DirectoryScanner` scan of the system drive in the background; the
    tree and summary update live as results stream in.
@@ -238,7 +238,7 @@ Hard rules, enforced in code:
 - If the helper crashes, the normal-scan results stay on screen and the error is
   logged.
 - A corrupt snapshot is discarded and the drive rescanned.
-- Unexpected exceptions go to a local log file (`%LocalAppData%\BetterManager\logs`);
+- Unexpected exceptions go to a local log file (`%LocalAppData%\Pennyworth\logs`);
   nothing is sent over the network.
 
 ### Helper security

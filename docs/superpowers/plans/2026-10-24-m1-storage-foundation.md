@@ -1,4 +1,4 @@
-# BetterManager Milestone 1: Storage Foundation Implementation Plan
+# Pennyworth Milestone 1: Storage Foundation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,11 +8,11 @@
 
 **Tech Stack:** C# / .NET 10 (`net10.0-windows`), Avalonia 12.1.4 with `Avalonia.Themes.Simple` (custom look, no Windows theme), CommunityToolkit.Mvvm 8.4.2 (source generators), System.Text.Json source generation, xUnit v3 4.0.2 on Microsoft Testing Platform.
 
-**Spec:** `docs/superpowers/specs/2026-10-24-bettermanager-v1-design.md`
+**Spec:** `docs/superpowers/specs/2026-10-24-pennyworth-v1-design.md`
 
 ## Global Constraints
 
-- Repository root: `C:\Users\User\Documents\ws-code\BetterManager` (all paths below are relative to it).
+- Repository root: `C:\Users\User\Documents\ws-code\Pennyworth` (all paths below are relative to it).
 - .NET SDK `10.0.401` pinned in `global.json` with `rollForward: latestFeature`; every project targets `net10.0-windows`.
 - Package versions live only in `Directory.Packages.props` (central package management); `.csproj` files never carry versions.
 - `Nullable` enabled and `TreatWarningsAsErrors` true for every project.
@@ -51,9 +51,9 @@ global.json                          SDK pin + Microsoft Testing Platform runner
 Directory.Build.props                Shared compiler settings
 Directory.Packages.props             All package versions
 .gitignore
-BetterManager.slnx                   Solution (XML format, .NET 10 default)
+Pennyworth.slnx                   Solution (XML format, .NET 10 default)
 src/
-  BetterManager.Core/
+  Pennyworth.Core/
     Formatting/ByteSize.cs           "12.3 GB" formatting (1024-based, culture aware)
     Storage/StorageCategory.cs       Category enum + display order
     Storage/StorageTreeBuilder.cs    Compact index-based tree builder (+ NodeData, NodeFlags)
@@ -62,20 +62,20 @@ src/
     Storage/IPathClassifier.cs       Path → category contract
     Storage/IStorageScanner.cs       Scanner contract
     Storage/ScanProgress.cs          Live progress record
-  BetterManager.KnowledgeBase/
+  Pennyworth.KnowledgeBase/
     Data/locations.json              Known locations, EN + PT-BR (embedded resource)
     KnowledgeBaseModels.cs           LocalizedText, KnownLocation, KnowledgeBaseData, JSON context
     KnowledgeBaseLoader.cs           Loads the embedded or a given JSON
-  BetterManager.Insights/
+  Pennyworth.Insights/
     Classification/PathPattern.cs    ?: * ** path matching
     Classification/RuleClassifier.cs IPathClassifier over the knowledge base
-  BetterManager.Scanning/
+  Pennyworth.Scanning/
     Native/NativeMethods.cs          FindFirstFileExW, GetCompressedFileSizeW, GetDiskFreeSpaceW
     Native/NativeDirectory.cs        Lists one directory; stored size; cluster size
     SizeOnDisk.cs                    Allocation estimate + which folders to enter
     DirectoryScanner.cs              Parallel non-admin scanner
-  BetterManager.App/
-    BetterManager.App.csproj, app.manifest, Program.cs, App.axaml(.cs)
+  Pennyworth.App/
+    Pennyworth.App.csproj, app.manifest, Program.cs, App.axaml(.cs)
     Resources/Strings.resx, Strings.pt-BR.resx
     Theme/Tokens.axaml, Theme/Styles.axaml
     Services/DriveService.cs, ExplorerLauncher.cs, LocationInfo.cs
@@ -83,11 +83,11 @@ src/
     Controls/SegmentedBar.cs
     Views/MainWindow.axaml(.cs), StorageSummaryView.axaml(.cs), FolderBrowserView.axaml(.cs)
 tests/
-  BetterManager.Core.Tests/          ByteSizeTests, StorageTreeTests
-  BetterManager.KnowledgeBase.Tests/ KnowledgeBaseLoaderTests
-  BetterManager.Insights.Tests/      PathPatternTests, RuleClassifierTests
-  BetterManager.Scanning.Tests/      SizeOnDiskTests, DirectoryScannerTests
-  BetterManager.App.Tests/           Fakes, StringsTests, StorageSummaryViewModelTests, FolderBrowserViewModelTests, MainWindowViewModelTests
+  Pennyworth.Core.Tests/          ByteSizeTests, StorageTreeTests
+  Pennyworth.KnowledgeBase.Tests/ KnowledgeBaseLoaderTests
+  Pennyworth.Insights.Tests/      PathPatternTests, RuleClassifierTests
+  Pennyworth.Scanning.Tests/      SizeOnDiskTests, DirectoryScannerTests
+  Pennyworth.App.Tests/           Fakes, StringsTests, StorageSummaryViewModelTests, FolderBrowserViewModelTests, MainWindowViewModelTests
 ```
 
 ---
@@ -95,13 +95,13 @@ tests/
 ### Task 1: Solution scaffold and byte formatting
 
 **Files:**
-- Create: `global.json`, `Directory.Build.props`, `Directory.Packages.props`, `.gitignore`, `BetterManager.slnx`
-- Create: `src/BetterManager.Core/BetterManager.Core.csproj`, `src/BetterManager.Core/Formatting/ByteSize.cs`
-- Test: `tests/BetterManager.Core.Tests/BetterManager.Core.Tests.csproj`, `tests/BetterManager.Core.Tests/ByteSizeTests.cs`
+- Create: `global.json`, `Directory.Build.props`, `Directory.Packages.props`, `.gitignore`, `Pennyworth.slnx`
+- Create: `src/Pennyworth.Core/Pennyworth.Core.csproj`, `src/Pennyworth.Core/Formatting/ByteSize.cs`
+- Test: `tests/Pennyworth.Core.Tests/Pennyworth.Core.Tests.csproj`, `tests/Pennyworth.Core.Tests/ByteSizeTests.cs`
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `BetterManager.Core.Formatting.ByteSize.Format(long bytes, IFormatProvider? provider = null) : string` (1024-based units B, KB, MB, GB, TB, PB; negative values format as `0 B`).
+- Produces: `Pennyworth.Core.Formatting.ByteSize.Format(long bytes, IFormatProvider? provider = null) : string` (1024-based units B, KB, MB, GB, TB, PB; negative values format as `0 B`).
 
 - [ ] **Step 1: Create the root build files**
 
@@ -165,12 +165,12 @@ TestResults/
 Run:
 
 ```bash
-dotnet new sln -n BetterManager
+dotnet new sln -n Pennyworth
 ```
 
-Expected: `BetterManager.slnx` is created (the .NET 10 SDK creates the XML solution format).
+Expected: `Pennyworth.slnx` is created (the .NET 10 SDK creates the XML solution format).
 
-`src/BetterManager.Core/BetterManager.Core.csproj`:
+`src/Pennyworth.Core/Pennyworth.Core.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -180,7 +180,7 @@ Expected: `BetterManager.slnx` is created (the .NET 10 SDK creates the XML solut
 </Project>
 ```
 
-`tests/BetterManager.Core.Tests/BetterManager.Core.Tests.csproj`:
+`tests/Pennyworth.Core.Tests/Pennyworth.Core.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -193,7 +193,7 @@ Expected: `BetterManager.slnx` is created (the .NET 10 SDK creates the XML solut
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BetterManager.Core\BetterManager.Core.csproj" />
+    <ProjectReference Include="..\..\src\Pennyworth.Core\Pennyworth.Core.csproj" />
   </ItemGroup>
 </Project>
 ```
@@ -201,18 +201,18 @@ Expected: `BetterManager.slnx` is created (the .NET 10 SDK creates the XML solut
 Run:
 
 ```bash
-dotnet sln BetterManager.slnx add src/BetterManager.Core/BetterManager.Core.csproj tests/BetterManager.Core.Tests/BetterManager.Core.Tests.csproj
+dotnet sln Pennyworth.slnx add src/Pennyworth.Core/Pennyworth.Core.csproj tests/Pennyworth.Core.Tests/Pennyworth.Core.Tests.csproj
 ```
 
 - [ ] **Step 3: Write the failing test**
 
-`tests/BetterManager.Core.Tests/ByteSizeTests.cs`:
+`tests/Pennyworth.Core.Tests/ByteSizeTests.cs`:
 
 ```csharp
 using System.Globalization;
-using BetterManager.Core.Formatting;
+using Pennyworth.Core.Formatting;
 
-namespace BetterManager.Core.Tests;
+namespace Pennyworth.Core.Tests;
 
 public class ByteSizeTests
 {
@@ -240,17 +240,17 @@ public class ByteSizeTests
 
 - [ ] **Step 4: Run the test to verify it fails**
 
-Run: `dotnet test --project tests/BetterManager.Core.Tests`
-Expected: build FAILS with `CS0234`/`CS0103`: the namespace `BetterManager.Core.Formatting` / name `ByteSize` does not exist.
+Run: `dotnet test --project tests/Pennyworth.Core.Tests`
+Expected: build FAILS with `CS0234`/`CS0103`: the namespace `Pennyworth.Core.Formatting` / name `ByteSize` does not exist.
 
 - [ ] **Step 5: Implement**
 
-`src/BetterManager.Core/Formatting/ByteSize.cs`:
+`src/Pennyworth.Core/Formatting/ByteSize.cs`:
 
 ```csharp
 using System.Globalization;
 
-namespace BetterManager.Core.Formatting;
+namespace Pennyworth.Core.Formatting;
 
 /// <summary>Formats byte counts the way Windows does (1 KB = 1024 bytes).</summary>
 public static class ByteSize
@@ -276,13 +276,13 @@ public static class ByteSize
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `dotnet test --project tests/BetterManager.Core.Tests`
+Run: `dotnet test --project tests/Pennyworth.Core.Tests`
 Expected: PASS, 7 tests.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add global.json Directory.Build.props Directory.Packages.props .gitignore BetterManager.slnx src/BetterManager.Core tests/BetterManager.Core.Tests
+git add global.json Directory.Build.props Directory.Packages.props .gitignore Pennyworth.slnx src/Pennyworth.Core tests/Pennyworth.Core.Tests
 git commit -m "build: scaffold solution and add byte size formatting"
 ```
 
@@ -291,12 +291,12 @@ git commit -m "build: scaffold solution and add byte size formatting"
 ### Task 2: Storage tree model and scanner contracts
 
 **Files:**
-- Create: `src/BetterManager.Core/Storage/StorageCategory.cs`, `StorageTreeBuilder.cs`, `StorageTree.cs`, `StorageNode.cs`, `IPathClassifier.cs`, `IStorageScanner.cs`, `ScanProgress.cs`
-- Test: `tests/BetterManager.Core.Tests/StorageTreeTests.cs`
+- Create: `src/Pennyworth.Core/Storage/StorageCategory.cs`, `StorageTreeBuilder.cs`, `StorageTree.cs`, `StorageNode.cs`, `IPathClassifier.cs`, `IStorageScanner.cs`, `ScanProgress.cs`
+- Test: `tests/Pennyworth.Core.Tests/StorageTreeTests.cs`
 
 **Interfaces:**
 - Consumes: nothing beyond Task 1.
-- Produces (namespace `BetterManager.Core.Storage`):
+- Produces (namespace `Pennyworth.Core.Storage`):
   - `enum StorageCategory : byte { Other = 0, Games = 1, Apps = 2, YourFiles = 3, Windows = 4, HiddenSystem = 5 }`; `StorageCategories.All` (display order) and `StorageCategories.Count = 6`.
   - `StorageTreeBuilder(string rootPath, StorageCategory rootCategory)`; `const int RootIndex = 0`; `int AddDirectory(int parent, string name, StorageCategory category)`; `void AddFile(int parent, string name, long sizeOnDisk, long logicalSize, StorageCategory category)`; `void MarkLocked(int directory)`; `long FileCount`; `long TotalBytes`; `long[] SnapshotCategoryBytes()`; `StorageTree Build()` (once). Not thread-safe; parents before children.
   - `StorageTree`: `RootPath`, `FileCount`, `TotalBytes`, `Root : StorageNode`, `long GetCategoryBytes(StorageCategory)`, `IReadOnlyList<CategoryArea> GetCategoryAreas(StorageCategory)` (largest first).
@@ -308,12 +308,12 @@ git commit -m "build: scaffold solution and add byte size formatting"
 
 - [ ] **Step 1: Write the failing test**
 
-`tests/BetterManager.Core.Tests/StorageTreeTests.cs`:
+`tests/Pennyworth.Core.Tests/StorageTreeTests.cs`:
 
 ```csharp
-using BetterManager.Core.Storage;
+using Pennyworth.Core.Storage;
 
-namespace BetterManager.Core.Tests;
+namespace Pennyworth.Core.Tests;
 
 public class StorageTreeTests
 {
@@ -439,15 +439,15 @@ public class StorageTreeTests
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test --project tests/BetterManager.Core.Tests`
-Expected: build FAILS: `The type or namespace name 'Storage' does not exist in the namespace 'BetterManager.Core'`.
+Run: `dotnet test --project tests/Pennyworth.Core.Tests`
+Expected: build FAILS: `The type or namespace name 'Storage' does not exist in the namespace 'Pennyworth.Core'`.
 
 - [ ] **Step 3: Implement the categories and contracts**
 
-`src/BetterManager.Core/Storage/StorageCategory.cs`:
+`src/Pennyworth.Core/Storage/StorageCategory.cs`:
 
 ```csharp
-namespace BetterManager.Core.Storage;
+namespace Pennyworth.Core.Storage;
 
 /// <summary>Every scanned byte belongs to exactly one category.</summary>
 public enum StorageCategory : byte
@@ -477,10 +477,10 @@ public static class StorageCategories
 }
 ```
 
-`src/BetterManager.Core/Storage/IPathClassifier.cs`:
+`src/Pennyworth.Core/Storage/IPathClassifier.cs`:
 
 ```csharp
-namespace BetterManager.Core.Storage;
+namespace Pennyworth.Core.Storage;
 
 public interface IPathClassifier
 {
@@ -492,19 +492,19 @@ public interface IPathClassifier
 }
 ```
 
-`src/BetterManager.Core/Storage/ScanProgress.cs`:
+`src/Pennyworth.Core/Storage/ScanProgress.cs`:
 
 ```csharp
-namespace BetterManager.Core.Storage;
+namespace Pennyworth.Core.Storage;
 
 /// <param name="CategoryBytes">Bytes per category, indexed by <c>(int)StorageCategory</c>.</param>
 public sealed record ScanProgress(long FileCount, long TotalBytes, IReadOnlyList<long> CategoryBytes);
 ```
 
-`src/BetterManager.Core/Storage/IStorageScanner.cs`:
+`src/Pennyworth.Core/Storage/IStorageScanner.cs`:
 
 ```csharp
-namespace BetterManager.Core.Storage;
+namespace Pennyworth.Core.Storage;
 
 public interface IStorageScanner
 {
@@ -520,12 +520,12 @@ public interface IStorageScanner
 
 The tree stores nodes in flat arrays (parent / first child / next sibling indices) rather than one object per node, because a full drive holds millions of entries. Children always get a higher index than their parent, so `Build()` rolls sizes up in one reverse pass.
 
-`src/BetterManager.Core/Storage/StorageTreeBuilder.cs`:
+`src/Pennyworth.Core/Storage/StorageTreeBuilder.cs`:
 
 ```csharp
 using System.Runtime.InteropServices;
 
-namespace BetterManager.Core.Storage;
+namespace Pennyworth.Core.Storage;
 
 /// <summary>
 /// Collects scan results into a compact, index-based tree. Not thread-safe:
@@ -657,10 +657,10 @@ internal struct NodeData
 }
 ```
 
-`src/BetterManager.Core/Storage/StorageTree.cs`:
+`src/Pennyworth.Core/Storage/StorageTree.cs`:
 
 ```csharp
-namespace BetterManager.Core.Storage;
+namespace Pennyworth.Core.Storage;
 
 /// <summary>An immutable scan result. Directory sizes include everything below them.</summary>
 public sealed class StorageTree
@@ -734,10 +734,10 @@ public sealed class StorageTree
 public readonly record struct CategoryArea(StorageNode Node, long Bytes);
 ```
 
-`src/BetterManager.Core/Storage/StorageNode.cs`:
+`src/Pennyworth.Core/Storage/StorageNode.cs`:
 
 ```csharp
-namespace BetterManager.Core.Storage;
+namespace Pennyworth.Core.Storage;
 
 /// <summary>A lightweight handle to one file or folder in a <see cref="StorageTree"/>.</summary>
 public readonly record struct StorageNode(StorageTree Tree, int Index)
@@ -791,13 +791,13 @@ public readonly record struct StorageNode(StorageTree Tree, int Index)
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test --project tests/BetterManager.Core.Tests`
+Run: `dotnet test --project tests/Pennyworth.Core.Tests`
 Expected: PASS, 15 tests.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/BetterManager.Core tests/BetterManager.Core.Tests
+git add src/Pennyworth.Core tests/Pennyworth.Core.Tests
 git commit -m "feat(core): add compact storage tree with category areas"
 ```
 
@@ -806,12 +806,12 @@ git commit -m "feat(core): add compact storage tree with category areas"
 ### Task 3: Knowledge base of known locations
 
 **Files:**
-- Create: `src/BetterManager.KnowledgeBase/BetterManager.KnowledgeBase.csproj`, `KnowledgeBaseModels.cs`, `KnowledgeBaseLoader.cs`, `Data/locations.json`
-- Test: `tests/BetterManager.KnowledgeBase.Tests/BetterManager.KnowledgeBase.Tests.csproj`, `KnowledgeBaseLoaderTests.cs`
+- Create: `src/Pennyworth.KnowledgeBase/Pennyworth.KnowledgeBase.csproj`, `KnowledgeBaseModels.cs`, `KnowledgeBaseLoader.cs`, `Data/locations.json`
+- Test: `tests/Pennyworth.KnowledgeBase.Tests/Pennyworth.KnowledgeBase.Tests.csproj`, `KnowledgeBaseLoaderTests.cs`
 
 **Interfaces:**
 - Consumes: `StorageCategory` (Task 2).
-- Produces (namespace `BetterManager.KnowledgeBase`):
+- Produces (namespace `Pennyworth.KnowledgeBase`):
   - `sealed record LocalizedText(string En, string PtBr)` with `string Get(CultureInfo culture)` (any `pt*` culture → `PtBr`); JSON keys `en` and `pt-BR`.
   - `sealed record KnownLocation(string Id, string Path, StorageCategory Category, LocalizedText Title, LocalizedText Description)`.
   - `sealed record KnowledgeBaseData(int Version, IReadOnlyList<KnownLocation> Locations)`.
@@ -820,7 +820,7 @@ git commit -m "feat(core): add compact storage tree with category areas"
 
 - [ ] **Step 1: Create the projects**
 
-`src/BetterManager.KnowledgeBase/BetterManager.KnowledgeBase.csproj`:
+`src/Pennyworth.KnowledgeBase/Pennyworth.KnowledgeBase.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -828,15 +828,15 @@ git commit -m "feat(core): add compact storage tree with category areas"
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Data\locations.json" LogicalName="BetterManager.KnowledgeBase.locations.json" />
+    <EmbeddedResource Include="Data\locations.json" LogicalName="Pennyworth.KnowledgeBase.locations.json" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BetterManager.Core\BetterManager.Core.csproj" />
+    <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
   </ItemGroup>
 </Project>
 ```
 
-`tests/BetterManager.KnowledgeBase.Tests/BetterManager.KnowledgeBase.Tests.csproj`:
+`tests/Pennyworth.KnowledgeBase.Tests/Pennyworth.KnowledgeBase.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -849,7 +849,7 @@ git commit -m "feat(core): add compact storage tree with category areas"
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BetterManager.KnowledgeBase\BetterManager.KnowledgeBase.csproj" />
+    <ProjectReference Include="..\..\src\Pennyworth.KnowledgeBase\Pennyworth.KnowledgeBase.csproj" />
   </ItemGroup>
 </Project>
 ```
@@ -857,18 +857,18 @@ git commit -m "feat(core): add compact storage tree with category areas"
 Run:
 
 ```bash
-dotnet sln BetterManager.slnx add src/BetterManager.KnowledgeBase/BetterManager.KnowledgeBase.csproj tests/BetterManager.KnowledgeBase.Tests/BetterManager.KnowledgeBase.Tests.csproj
+dotnet sln Pennyworth.slnx add src/Pennyworth.KnowledgeBase/Pennyworth.KnowledgeBase.csproj tests/Pennyworth.KnowledgeBase.Tests/Pennyworth.KnowledgeBase.Tests.csproj
 ```
 
 - [ ] **Step 2: Write the failing test**
 
-`tests/BetterManager.KnowledgeBase.Tests/KnowledgeBaseLoaderTests.cs`:
+`tests/Pennyworth.KnowledgeBase.Tests/KnowledgeBaseLoaderTests.cs`:
 
 ```csharp
 using System.Globalization;
-using BetterManager.Core.Storage;
+using Pennyworth.Core.Storage;
 
-namespace BetterManager.KnowledgeBase.Tests;
+namespace Pennyworth.KnowledgeBase.Tests;
 
 public class KnowledgeBaseLoaderTests
 {
@@ -920,19 +920,19 @@ public class KnowledgeBaseLoaderTests
 
 - [ ] **Step 3: Run the test to verify it fails**
 
-Run: `dotnet test --project tests/BetterManager.KnowledgeBase.Tests`
+Run: `dotnet test --project tests/Pennyworth.KnowledgeBase.Tests`
 Expected: build FAILS: `KnowledgeBaseLoader` does not exist (and the `Data\locations.json` embedded resource is missing).
 
 - [ ] **Step 4: Implement the models and loader**
 
-`src/BetterManager.KnowledgeBase/KnowledgeBaseModels.cs`:
+`src/Pennyworth.KnowledgeBase/KnowledgeBaseModels.cs`:
 
 ```csharp
 using System.Globalization;
 using System.Text.Json.Serialization;
-using BetterManager.Core.Storage;
+using Pennyworth.Core.Storage;
 
-namespace BetterManager.KnowledgeBase;
+namespace Pennyworth.KnowledgeBase;
 
 public sealed record LocalizedText(
     string En,
@@ -964,16 +964,16 @@ public sealed record KnowledgeBaseData(int Version, IReadOnlyList<KnownLocation>
 internal sealed partial class KnowledgeBaseJsonContext : JsonSerializerContext;
 ```
 
-`src/BetterManager.KnowledgeBase/KnowledgeBaseLoader.cs`:
+`src/Pennyworth.KnowledgeBase/KnowledgeBaseLoader.cs`:
 
 ```csharp
 using System.Text.Json;
 
-namespace BetterManager.KnowledgeBase;
+namespace Pennyworth.KnowledgeBase;
 
 public static class KnowledgeBaseLoader
 {
-    private const string ResourceName = "BetterManager.KnowledgeBase.locations.json";
+    private const string ResourceName = "Pennyworth.KnowledgeBase.locations.json";
 
     public static KnowledgeBaseData LoadEmbedded()
     {
@@ -991,7 +991,7 @@ public static class KnowledgeBaseLoader
 
 - [ ] **Step 5: Add the knowledge base data**
 
-`src/BetterManager.KnowledgeBase/Data/locations.json`:
+`src/Pennyworth.KnowledgeBase/Data/locations.json`:
 
 ```json
 {
@@ -1183,13 +1183,13 @@ public static class KnowledgeBaseLoader
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `dotnet test --project tests/BetterManager.KnowledgeBase.Tests`
+Run: `dotnet test --project tests/Pennyworth.KnowledgeBase.Tests`
 Expected: PASS, 2 tests.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add BetterManager.slnx src/BetterManager.KnowledgeBase tests/BetterManager.KnowledgeBase.Tests
+git add Pennyworth.slnx src/Pennyworth.KnowledgeBase tests/Pennyworth.KnowledgeBase.Tests
 git commit -m "feat(kb): add bilingual knowledge base of known locations"
 ```
 
@@ -1198,18 +1198,18 @@ git commit -m "feat(kb): add bilingual knowledge base of known locations"
 ### Task 4: Path rules and the category classifier
 
 **Files:**
-- Create: `src/BetterManager.Insights/BetterManager.Insights.csproj`, `Classification/PathPattern.cs`, `Classification/RuleClassifier.cs`
-- Test: `tests/BetterManager.Insights.Tests/BetterManager.Insights.Tests.csproj`, `PathPatternTests.cs`, `RuleClassifierTests.cs`
+- Create: `src/Pennyworth.Insights/Pennyworth.Insights.csproj`, `Classification/PathPattern.cs`, `Classification/RuleClassifier.cs`
+- Test: `tests/Pennyworth.Insights.Tests/Pennyworth.Insights.Tests.csproj`, `PathPatternTests.cs`, `RuleClassifierTests.cs`
 
 **Interfaces:**
 - Consumes: `IPathClassifier`, `StorageCategory` (Task 2); `KnownLocation`, `KnowledgeBaseLoader` (Task 3).
-- Produces (namespace `BetterManager.Insights.Classification`):
+- Produces (namespace `Pennyworth.Insights.Classification`):
   - `PathPattern.Parse(string pattern) : PathPattern` (throws `FormatException` for empty patterns, a lone `**`, or `**` anywhere but first); `static string[] SplitPath(string path)`; `bool IsMatch(string[] pathSegments)`; `int Specificity`.
   - `RuleClassifier(IEnumerable<KnownLocation> locations, Func<string, string?>? getEnvironmentVariable = null) : IPathClassifier`; `KnownLocation? FindLocation(string fullPath)` (most specific exact match); rules whose `%VAR%` is undefined are skipped.
 
 - [ ] **Step 1: Create the projects**
 
-`src/BetterManager.Insights/BetterManager.Insights.csproj`:
+`src/Pennyworth.Insights/Pennyworth.Insights.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1217,16 +1217,16 @@ git commit -m "feat(kb): add bilingual knowledge base of known locations"
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
   <ItemGroup>
-    <InternalsVisibleTo Include="BetterManager.Insights.Tests" />
+    <InternalsVisibleTo Include="Pennyworth.Insights.Tests" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BetterManager.Core\BetterManager.Core.csproj" />
-    <ProjectReference Include="..\BetterManager.KnowledgeBase\BetterManager.KnowledgeBase.csproj" />
+    <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
+    <ProjectReference Include="..\Pennyworth.KnowledgeBase\Pennyworth.KnowledgeBase.csproj" />
   </ItemGroup>
 </Project>
 ```
 
-`tests/BetterManager.Insights.Tests/BetterManager.Insights.Tests.csproj`:
+`tests/Pennyworth.Insights.Tests/Pennyworth.Insights.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1239,7 +1239,7 @@ git commit -m "feat(kb): add bilingual knowledge base of known locations"
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BetterManager.Insights\BetterManager.Insights.csproj" />
+    <ProjectReference Include="..\..\src\Pennyworth.Insights\Pennyworth.Insights.csproj" />
   </ItemGroup>
 </Project>
 ```
@@ -1247,17 +1247,17 @@ git commit -m "feat(kb): add bilingual knowledge base of known locations"
 Run:
 
 ```bash
-dotnet sln BetterManager.slnx add src/BetterManager.Insights/BetterManager.Insights.csproj tests/BetterManager.Insights.Tests/BetterManager.Insights.Tests.csproj
+dotnet sln Pennyworth.slnx add src/Pennyworth.Insights/Pennyworth.Insights.csproj tests/Pennyworth.Insights.Tests/Pennyworth.Insights.Tests.csproj
 ```
 
 - [ ] **Step 2: Write the failing tests**
 
-`tests/BetterManager.Insights.Tests/PathPatternTests.cs`:
+`tests/Pennyworth.Insights.Tests/PathPatternTests.cs`:
 
 ```csharp
-using BetterManager.Insights.Classification;
+using Pennyworth.Insights.Classification;
 
-namespace BetterManager.Insights.Tests;
+namespace Pennyworth.Insights.Tests;
 
 public class PathPatternTests
 {
@@ -1295,14 +1295,14 @@ public class PathPatternTests
 }
 ```
 
-`tests/BetterManager.Insights.Tests/RuleClassifierTests.cs`:
+`tests/Pennyworth.Insights.Tests/RuleClassifierTests.cs`:
 
 ```csharp
-using BetterManager.Core.Storage;
-using BetterManager.Insights.Classification;
-using BetterManager.KnowledgeBase;
+using Pennyworth.Core.Storage;
+using Pennyworth.Insights.Classification;
+using Pennyworth.KnowledgeBase;
 
-namespace BetterManager.Insights.Tests;
+namespace Pennyworth.Insights.Tests;
 
 public class RuleClassifierTests
 {
@@ -1372,15 +1372,15 @@ public class RuleClassifierTests
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
-Run: `dotnet test --project tests/BetterManager.Insights.Tests`
-Expected: build FAILS: namespace `BetterManager.Insights.Classification` does not exist.
+Run: `dotnet test --project tests/Pennyworth.Insights.Tests`
+Expected: build FAILS: namespace `Pennyworth.Insights.Classification` does not exist.
 
 - [ ] **Step 4: Implement**
 
-`src/BetterManager.Insights/Classification/PathPattern.cs`:
+`src/Pennyworth.Insights/Classification/PathPattern.cs`:
 
 ```csharp
-namespace BetterManager.Insights.Classification;
+namespace Pennyworth.Insights.Classification;
 
 /// <summary>
 /// A path pattern split into folder names. Supports <c>?:</c> (any drive) as the first
@@ -1449,13 +1449,13 @@ public sealed class PathPattern
 }
 ```
 
-`src/BetterManager.Insights/Classification/RuleClassifier.cs`:
+`src/Pennyworth.Insights/Classification/RuleClassifier.cs`:
 
 ```csharp
-using BetterManager.Core.Storage;
-using BetterManager.KnowledgeBase;
+using Pennyworth.Core.Storage;
+using Pennyworth.KnowledgeBase;
 
-namespace BetterManager.Insights.Classification;
+namespace Pennyworth.Insights.Classification;
 
 /// <summary>Assigns categories from the knowledge base's known locations.</summary>
 public sealed class RuleClassifier : IPathClassifier
@@ -1529,13 +1529,13 @@ public sealed class RuleClassifier : IPathClassifier
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `dotnet test --project tests/BetterManager.Insights.Tests`
+Run: `dotnet test --project tests/Pennyworth.Insights.Tests`
 Expected: PASS, 31 tests.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add BetterManager.slnx src/BetterManager.Insights tests/BetterManager.Insights.Tests
+git add Pennyworth.slnx src/Pennyworth.Insights tests/Pennyworth.Insights.Tests
 git commit -m "feat(insights): classify folders into categories from known locations"
 ```
 
@@ -1544,12 +1544,12 @@ git commit -m "feat(insights): classify folders into categories from known locat
 ### Task 5: Native directory listing and size-on-disk rules
 
 **Files:**
-- Create: `src/BetterManager.Scanning/BetterManager.Scanning.csproj`, `Native/NativeMethods.cs`, `Native/NativeDirectory.cs`, `SizeOnDisk.cs`
-- Test: `tests/BetterManager.Scanning.Tests/BetterManager.Scanning.Tests.csproj`, `SizeOnDiskTests.cs`
+- Create: `src/Pennyworth.Scanning/Pennyworth.Scanning.csproj`, `Native/NativeMethods.cs`, `Native/NativeDirectory.cs`, `SizeOnDisk.cs`
+- Test: `tests/Pennyworth.Scanning.Tests/Pennyworth.Scanning.Tests.csproj`, `SizeOnDiskTests.cs`
 
 **Interfaces:**
 - Consumes: nothing beyond Core.
-- Produces (internal to `BetterManager.Scanning`, visible to its tests):
+- Produces (internal to `Pennyworth.Scanning`, visible to its tests):
   - `readonly record struct DirectoryEntry(string Name, FileAttributes Attributes, long Size, uint ReparseTag)` with `IsDirectory`.
   - `NativeDirectory.TryList(string directoryPath, List<DirectoryEntry> entries) : bool` (false = access denied / vanished → caller marks locked); `NativeDirectory.GetStoredSize(string filePath) : long?`; `NativeDirectory.GetClusterSize(string rootPath) : long` (falls back to 4096).
   - `SizeOnDisk.NeedsStoredSize(FileAttributes) : bool`; `SizeOnDisk.Estimate(FileAttributes attributes, long logicalSize, long clusterSize, long? storedSize = null) : long`; `SizeOnDisk.ShouldEnterDirectory(FileAttributes attributes, uint reparseTag) : bool`.
@@ -1558,7 +1558,7 @@ Why these rules: a directory listing only gives logical sizes. Rounding to clust
 
 - [ ] **Step 1: Create the projects**
 
-`src/BetterManager.Scanning/BetterManager.Scanning.csproj`:
+`src/Pennyworth.Scanning/Pennyworth.Scanning.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1567,15 +1567,15 @@ Why these rules: a directory listing only gives logical sizes. Rounding to clust
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <InternalsVisibleTo Include="BetterManager.Scanning.Tests" />
+    <InternalsVisibleTo Include="Pennyworth.Scanning.Tests" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BetterManager.Core\BetterManager.Core.csproj" />
+    <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
   </ItemGroup>
 </Project>
 ```
 
-`tests/BetterManager.Scanning.Tests/BetterManager.Scanning.Tests.csproj`:
+`tests/Pennyworth.Scanning.Tests/Pennyworth.Scanning.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1588,7 +1588,7 @@ Why these rules: a directory listing only gives logical sizes. Rounding to clust
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BetterManager.Scanning\BetterManager.Scanning.csproj" />
+    <ProjectReference Include="..\..\src\Pennyworth.Scanning\Pennyworth.Scanning.csproj" />
   </ItemGroup>
 </Project>
 ```
@@ -1596,15 +1596,15 @@ Why these rules: a directory listing only gives logical sizes. Rounding to clust
 Run:
 
 ```bash
-dotnet sln BetterManager.slnx add src/BetterManager.Scanning/BetterManager.Scanning.csproj tests/BetterManager.Scanning.Tests/BetterManager.Scanning.Tests.csproj
+dotnet sln Pennyworth.slnx add src/Pennyworth.Scanning/Pennyworth.Scanning.csproj tests/Pennyworth.Scanning.Tests/Pennyworth.Scanning.Tests.csproj
 ```
 
 - [ ] **Step 2: Write the failing test**
 
-`tests/BetterManager.Scanning.Tests/SizeOnDiskTests.cs`:
+`tests/Pennyworth.Scanning.Tests/SizeOnDiskTests.cs`:
 
 ```csharp
-namespace BetterManager.Scanning.Tests;
+namespace Pennyworth.Scanning.Tests;
 
 public class SizeOnDiskTests
 {
@@ -1651,15 +1651,15 @@ public class SizeOnDiskTests
 
 - [ ] **Step 3: Run the test to verify it fails**
 
-Run: `dotnet test --project tests/BetterManager.Scanning.Tests`
+Run: `dotnet test --project tests/Pennyworth.Scanning.Tests`
 Expected: build FAILS: `SizeOnDisk` does not exist.
 
 - [ ] **Step 4: Implement the size rules**
 
-`src/BetterManager.Scanning/SizeOnDisk.cs`:
+`src/Pennyworth.Scanning/SizeOnDisk.cs`:
 
 ```csharp
-namespace BetterManager.Scanning;
+namespace Pennyworth.Scanning;
 
 /// <summary>Estimates allocated size from what a directory listing provides.</summary>
 internal static class SizeOnDisk
@@ -1708,12 +1708,12 @@ internal static class SizeOnDisk
 
 `WIN32_FIND_DATAW` keeps each `FILETIME` as two `uint`s so the struct keeps Windows' 4-byte layout (592 bytes). `LibraryImport` generates AOT-safe marshalling. Paths get the `\\?\` prefix so long paths work.
 
-`src/BetterManager.Scanning/Native/NativeMethods.cs`:
+`src/Pennyworth.Scanning/Native/NativeMethods.cs`:
 
 ```csharp
 using System.Runtime.InteropServices;
 
-namespace BetterManager.Scanning.Native;
+namespace Pennyworth.Scanning.Native;
 
 internal static unsafe partial class NativeMethods
 {
@@ -1776,12 +1776,12 @@ internal unsafe struct Win32FindData
 }
 ```
 
-`src/BetterManager.Scanning/Native/NativeDirectory.cs`:
+`src/Pennyworth.Scanning/Native/NativeDirectory.cs`:
 
 ```csharp
 using System.Runtime.InteropServices;
 
-namespace BetterManager.Scanning.Native;
+namespace Pennyworth.Scanning.Native;
 
 internal readonly record struct DirectoryEntry(string Name, FileAttributes Attributes, long Size, uint ReparseTag)
 {
@@ -1867,13 +1867,13 @@ internal static unsafe class NativeDirectory
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `dotnet test --project tests/BetterManager.Scanning.Tests`
+Run: `dotnet test --project tests/Pennyworth.Scanning.Tests`
 Expected: PASS, 12 tests.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add BetterManager.slnx src/BetterManager.Scanning tests/BetterManager.Scanning.Tests
+git add Pennyworth.slnx src/Pennyworth.Scanning tests/Pennyworth.Scanning.Tests
 git commit -m "feat(scanning): add native directory listing and size-on-disk rules"
 ```
 
@@ -1882,8 +1882,8 @@ git commit -m "feat(scanning): add native directory listing and size-on-disk rul
 ### Task 6: Parallel directory scanner
 
 **Files:**
-- Create: `src/BetterManager.Scanning/DirectoryScanner.cs`
-- Test: `tests/BetterManager.Scanning.Tests/DirectoryScannerTests.cs`
+- Create: `src/Pennyworth.Scanning/DirectoryScanner.cs`
+- Test: `tests/Pennyworth.Scanning.Tests/DirectoryScannerTests.cs`
 
 **Interfaces:**
 - Consumes: `IStorageScanner`, `IPathClassifier`, `StorageTreeBuilder`, `ScanProgress` (Task 2); `NativeDirectory`, `SizeOnDisk`, `DirectoryEntry` (Task 5).
@@ -1895,15 +1895,15 @@ Design: workers pop folders from a shared stack (depth-first keeps memory low), 
 
 The tests create real folders in `%TEMP%`. Junctions (`mklink /J`) and sparse files (`fsutil sparse setflag`) don't need admin rights.
 
-`tests/BetterManager.Scanning.Tests/DirectoryScannerTests.cs`:
+`tests/Pennyworth.Scanning.Tests/DirectoryScannerTests.cs`:
 
 ```csharp
 using System.Diagnostics;
 using System.Security.AccessControl;
 using System.Security.Principal;
-using BetterManager.Core.Storage;
+using Pennyworth.Core.Storage;
 
-namespace BetterManager.Scanning.Tests;
+namespace Pennyworth.Scanning.Tests;
 
 public sealed class DirectoryScannerTests : IDisposable
 {
@@ -2109,19 +2109,19 @@ public sealed class DirectoryScannerTests : IDisposable
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test --project tests/BetterManager.Scanning.Tests`
+Run: `dotnet test --project tests/Pennyworth.Scanning.Tests`
 Expected: build FAILS: `DirectoryScanner` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/BetterManager.Scanning/DirectoryScanner.cs`:
+`src/Pennyworth.Scanning/DirectoryScanner.cs`:
 
 ```csharp
 using System.Collections.Concurrent;
-using BetterManager.Core.Storage;
-using BetterManager.Scanning.Native;
+using Pennyworth.Core.Storage;
+using Pennyworth.Scanning.Native;
 
-namespace BetterManager.Scanning;
+namespace Pennyworth.Scanning;
 
 /// <summary>
 /// Scans any drive or folder without admin rights by listing directories in parallel.
@@ -2306,13 +2306,13 @@ public sealed class DirectoryScanner : IStorageScanner
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `dotnet test --project tests/BetterManager.Scanning.Tests`
+Run: `dotnet test --project tests/Pennyworth.Scanning.Tests`
 Expected: PASS, 20 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/BetterManager.Scanning tests/BetterManager.Scanning.Tests
+git add src/Pennyworth.Scanning tests/Pennyworth.Scanning.Tests
 git commit -m "feat(scanning): add parallel non-admin directory scanner"
 ```
 
@@ -2321,41 +2321,41 @@ git commit -m "feat(scanning): add parallel non-admin directory scanner"
 ### Task 7: App shell, strings, theme tokens and services
 
 **Files:**
-- Create: `src/BetterManager.App/BetterManager.App.csproj`, `app.manifest`, `Program.cs`
-- Create: `src/BetterManager.App/Resources/Strings.resx`, `Resources/Strings.pt-BR.resx`
-- Create: `src/BetterManager.App/Theme/Tokens.axaml`, `Theme/Styles.axaml`
-- Create: `src/BetterManager.App/Services/DriveService.cs`, `Services/ExplorerLauncher.cs`, `Services/LocationInfo.cs`
-- Test: `tests/BetterManager.App.Tests/BetterManager.App.Tests.csproj`, `StringsTests.cs`
+- Create: `src/Pennyworth.App/Pennyworth.App.csproj`, `app.manifest`, `Program.cs`
+- Create: `src/Pennyworth.App/Resources/Strings.resx`, `Resources/Strings.pt-BR.resx`
+- Create: `src/Pennyworth.App/Theme/Tokens.axaml`, `Theme/Styles.axaml`
+- Create: `src/Pennyworth.App/Services/DriveService.cs`, `Services/ExplorerLauncher.cs`, `Services/LocationInfo.cs`
+- Test: `tests/Pennyworth.App.Tests/Pennyworth.App.Tests.csproj`, `StringsTests.cs`
 
 **Interfaces:**
 - Consumes: `RuleClassifier.FindLocation` (Task 4), `LocalizedText.Get` (Task 3).
-- Produces (namespace `BetterManager.App.Services` unless noted):
+- Produces (namespace `Pennyworth.App.Services` unless noted):
   - `sealed record DriveSummary(string RootPath, string Label, long TotalBytes, long FreeBytes)` with `UsedBytes`.
   - `interface IDriveService { IReadOnlyList<DriveSummary> GetDrives(); string SystemDriveRoot { get; } }`; `WindowsDriveService` (fixed and removable drives that are ready).
   - `interface IExplorerLauncher { void ShowInExplorer(string path); }`; `ExplorerLauncher` (`explorer.exe /select,"path"`, or opens a drive root).
   - `interface ILocationInfo { (string Title, string Description)? Describe(string fullPath); }`; `KnowledgeBaseLocationInfo(RuleClassifier)` (uses `CultureInfo.CurrentUICulture`).
-  - `BetterManager.App.Resources.Strings`: strongly typed resources generated at build time by MSBuild (`StronglyTyped*` metadata). Keys: `AppTitle, StorageTitle, LocalDisk, DriveUsed {0}{1}, ScanningFiles {0:N0}, ScanComplete {0:N0}, Rescan, Category_Games, Category_Apps, Category_YourFiles, Category_Windows, Category_HiddenSystem, Category_Other, Category_Unaccounted, UnaccountedHint, OvercountHint, BiggestPlaces, BiggestPlacesPending, BrowseAllFolders, Back, Up, ShowInExplorer, Locked, LockedHint, EmptyFolder`.
+  - `Pennyworth.App.Resources.Strings`: strongly typed resources generated at build time by MSBuild (`StronglyTyped*` metadata). Keys: `AppTitle, StorageTitle, LocalDisk, DriveUsed {0}{1}, ScanningFiles {0:N0}, ScanComplete {0:N0}, Rescan, Category_Games, Category_Apps, Category_YourFiles, Category_Windows, Category_HiddenSystem, Category_Other, Category_Unaccounted, UnaccountedHint, OvercountHint, BiggestPlaces, BiggestPlacesPending, BrowseAllFolders, Back, Up, ShowInExplorer, Locked, LockedHint, EmptyFolder`.
   - Theme resource keys: `Brush.Background, Brush.Surface, Brush.SurfaceHover, Brush.Border, Brush.Track, Brush.TextPrimary, Brush.TextSecondary, Brush.Accent, Brush.Warning` (light + dark), `Brush.Category.{Games|Apps|YourFiles|Windows|HiddenSystem|Other|Unaccounted}`, `FontSize.{Title|Heading|Body|Caption}`, `Radius.{Card|Control}`, `Padding.{Page|Card|Row}`; style classes `TextBlock.title|heading|secondary|caption|warning`, `Border.card`, `Button.link`.
 
 The real `Program.cs` starts Avalonia with the `App` class, which only arrives with the views in Task 11. A WinExe needs an entry point to build, so this task adds a **temporary `Program.cs`** that does nothing; Task 11 replaces it.
 
 - [ ] **Step 1: Create the project, manifest and temporary entry point**
 
-`src/BetterManager.App/BetterManager.App.csproj`:
+`src/Pennyworth.App/Pennyworth.App.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <AssemblyName>BetterManager</AssemblyName>
-    <RootNamespace>BetterManager.App</RootNamespace>
+    <AssemblyName>Pennyworth</AssemblyName>
+    <RootNamespace>Pennyworth.App</RootNamespace>
     <IsAotCompatible>true</IsAotCompatible>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <SatelliteResourceLanguages>en;pt-BR</SatelliteResourceLanguages>
   </PropertyGroup>
   <ItemGroup>
-    <InternalsVisibleTo Include="BetterManager.App.Tests" />
+    <InternalsVisibleTo Include="Pennyworth.App.Tests" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" />
@@ -2364,15 +2364,15 @@ The real `Program.cs` starts Avalonia with the `App` class, which only arrives w
     <PackageReference Include="CommunityToolkit.Mvvm" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BetterManager.Core\BetterManager.Core.csproj" />
-    <ProjectReference Include="..\BetterManager.Insights\BetterManager.Insights.csproj" />
-    <ProjectReference Include="..\BetterManager.Scanning\BetterManager.Scanning.csproj" />
+    <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
+    <ProjectReference Include="..\Pennyworth.Insights\Pennyworth.Insights.csproj" />
+    <ProjectReference Include="..\Pennyworth.Scanning\Pennyworth.Scanning.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="Resources\Strings.resx">
       <StronglyTypedFileName>$(IntermediateOutputPath)Strings.Designer.cs</StronglyTypedFileName>
       <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
-      <StronglyTypedNamespace>BetterManager.App.Resources</StronglyTypedNamespace>
+      <StronglyTypedNamespace>Pennyworth.App.Resources</StronglyTypedNamespace>
       <StronglyTypedClassName>Strings</StronglyTypedClassName>
       <PublicClass>true</PublicClass>
     </EmbeddedResource>
@@ -2380,12 +2380,12 @@ The real `Program.cs` starts Avalonia with the `App` class, which only arrives w
 </Project>
 ```
 
-`src/BetterManager.App/app.manifest`:
+`src/Pennyworth.App/app.manifest`:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
-  <assemblyIdentity version="1.0.0.0" name="BetterManager.App" />
+  <assemblyIdentity version="1.0.0.0" name="Pennyworth.App" />
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
@@ -2409,10 +2409,10 @@ The real `Program.cs` starts Avalonia with the `App` class, which only arrives w
 </assembly>
 ```
 
-`src/BetterManager.App/Program.cs` (temporary; replaced in Task 11):
+`src/Pennyworth.App/Program.cs` (temporary; replaced in Task 11):
 
 ```csharp
-namespace BetterManager.App;
+namespace Pennyworth.App;
 
 internal static class Program
 {
@@ -2421,7 +2421,7 @@ internal static class Program
 }
 ```
 
-`tests/BetterManager.App.Tests/BetterManager.App.Tests.csproj`:
+`tests/Pennyworth.App.Tests/Pennyworth.App.Tests.csproj`:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -2434,7 +2434,7 @@ internal static class Program
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BetterManager.App\BetterManager.App.csproj" />
+    <ProjectReference Include="..\..\src\Pennyworth.App\Pennyworth.App.csproj" />
   </ItemGroup>
 </Project>
 ```
@@ -2442,20 +2442,20 @@ internal static class Program
 Run:
 
 ```bash
-dotnet sln BetterManager.slnx add src/BetterManager.App/BetterManager.App.csproj tests/BetterManager.App.Tests/BetterManager.App.Tests.csproj
+dotnet sln Pennyworth.slnx add src/Pennyworth.App/Pennyworth.App.csproj tests/Pennyworth.App.Tests/Pennyworth.App.Tests.csproj
 ```
 
 - [ ] **Step 2: Write the failing test**
 
-`tests/BetterManager.App.Tests/StringsTests.cs`:
+`tests/Pennyworth.App.Tests/StringsTests.cs`:
 
 ```csharp
 using System.Collections;
 using System.Globalization;
 using System.Resources;
-using BetterManager.App.Resources;
+using Pennyworth.App.Resources;
 
-namespace BetterManager.App.Tests;
+namespace Pennyworth.App.Tests;
 
 public class StringsTests
 {
@@ -2489,12 +2489,12 @@ public class StringsTests
 
 - [ ] **Step 3: Run the test to verify it fails**
 
-Run: `dotnet test --project tests/BetterManager.App.Tests`
-Expected: build FAILS: `BetterManager.App.Resources` / `Strings` does not exist (no `.resx` yet).
+Run: `dotnet test --project tests/Pennyworth.App.Tests`
+Expected: build FAILS: `Pennyworth.App.Resources` / `Strings` does not exist (no `.resx` yet).
 
 - [ ] **Step 4: Add the strings**
 
-`src/BetterManager.App/Resources/Strings.resx`:
+`src/Pennyworth.App/Resources/Strings.resx`:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -2503,7 +2503,7 @@ Expected: build FAILS: `BetterManager.App.Resources` / `Strings` does not exist 
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="AppTitle" xml:space="preserve"><value>BetterManager</value></data>
+  <data name="AppTitle" xml:space="preserve"><value>Pennyworth</value></data>
   <data name="StorageTitle" xml:space="preserve"><value>Where is my space?</value></data>
   <data name="LocalDisk" xml:space="preserve"><value>Local Disk</value></data>
   <data name="DriveUsed" xml:space="preserve"><value>{0} used of {1}</value></data>
@@ -2531,7 +2531,7 @@ Expected: build FAILS: `BetterManager.App.Resources` / `Strings` does not exist 
 </root>
 ```
 
-`src/BetterManager.App/Resources/Strings.pt-BR.resx`:
+`src/Pennyworth.App/Resources/Strings.pt-BR.resx`:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -2540,7 +2540,7 @@ Expected: build FAILS: `BetterManager.App.Resources` / `Strings` does not exist 
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="AppTitle" xml:space="preserve"><value>BetterManager</value></data>
+  <data name="AppTitle" xml:space="preserve"><value>Pennyworth</value></data>
   <data name="StorageTitle" xml:space="preserve"><value>Para onde foi meu espaço?</value></data>
   <data name="LocalDisk" xml:space="preserve"><value>Disco Local</value></data>
   <data name="DriveUsed" xml:space="preserve"><value>{0} usados de {1}</value></data>
@@ -2570,7 +2570,7 @@ Expected: build FAILS: `BetterManager.App.Resources` / `Strings` does not exist 
 
 - [ ] **Step 5: Add the theme tokens and styles**
 
-`src/BetterManager.App/Theme/Tokens.axaml`:
+`src/Pennyworth.App/Theme/Tokens.axaml`:
 
 ```xml
 <!--
@@ -2626,7 +2626,7 @@ Expected: build FAILS: `BetterManager.App.Resources` / `Strings` does not exist 
 </ResourceDictionary>
 ```
 
-`src/BetterManager.App/Theme/Styles.axaml`:
+`src/Pennyworth.App/Theme/Styles.axaml`:
 
 ```xml
 <!-- Control styles built only from Tokens.axaml keys. Replaced wholesale by the final design. -->
@@ -2710,10 +2710,10 @@ Expected: build FAILS: `BetterManager.App.Resources` / `Strings` does not exist 
 
 - [ ] **Step 6: Add the services**
 
-`src/BetterManager.App/Services/DriveService.cs`:
+`src/Pennyworth.App/Services/DriveService.cs`:
 
 ```csharp
-namespace BetterManager.App.Services;
+namespace Pennyworth.App.Services;
 
 public sealed record DriveSummary(string RootPath, string Label, long TotalBytes, long FreeBytes)
 {
@@ -2762,12 +2762,12 @@ public sealed class WindowsDriveService : IDriveService
 }
 ```
 
-`src/BetterManager.App/Services/ExplorerLauncher.cs`:
+`src/Pennyworth.App/Services/ExplorerLauncher.cs`:
 
 ```csharp
 using System.Diagnostics;
 
-namespace BetterManager.App.Services;
+namespace Pennyworth.App.Services;
 
 public interface IExplorerLauncher
 {
@@ -2785,13 +2785,13 @@ public sealed class ExplorerLauncher : IExplorerLauncher
 }
 ```
 
-`src/BetterManager.App/Services/LocationInfo.cs`:
+`src/Pennyworth.App/Services/LocationInfo.cs`:
 
 ```csharp
 using System.Globalization;
-using BetterManager.Insights.Classification;
+using Pennyworth.Insights.Classification;
 
-namespace BetterManager.App.Services;
+namespace Pennyworth.App.Services;
 
 /// <summary>Plain-language titles and descriptions for known folders.</summary>
 public interface ILocationInfo
@@ -2817,13 +2817,13 @@ public sealed class KnowledgeBaseLocationInfo(RuleClassifier classifier) : ILoca
 
 - [ ] **Step 7: Run the tests to verify they pass**
 
-Run: `dotnet test --project tests/BetterManager.App.Tests`
+Run: `dotnet test --project tests/Pennyworth.App.Tests`
 Expected: PASS, 2 tests.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add BetterManager.slnx src/BetterManager.App tests/BetterManager.App.Tests
+git add Pennyworth.slnx src/Pennyworth.App tests/Pennyworth.App.Tests
 git commit -m "feat(app): add app project, EN/PT-BR strings, design tokens and services"
 ```
 
@@ -2832,12 +2832,12 @@ git commit -m "feat(app): add app project, EN/PT-BR strings, design tokens and s
 ### Task 8: Storage summary view model
 
 **Files:**
-- Create: `src/BetterManager.App/ViewModels/CategoryText.cs`, `ViewModels/StorageSummaryViewModel.cs`
-- Test: `tests/BetterManager.App.Tests/Fakes.cs`, `StorageSummaryViewModelTests.cs`
+- Create: `src/Pennyworth.App/ViewModels/CategoryText.cs`, `ViewModels/StorageSummaryViewModel.cs`
+- Test: `tests/Pennyworth.App.Tests/Fakes.cs`, `StorageSummaryViewModelTests.cs`
 
 **Interfaces:**
 - Consumes: `StorageTree`, `StorageNode`, `CategoryArea`, `ScanProgress`, `StorageCategories` (Task 2); `ByteSize` (Task 1); `DriveSummary`, `ILocationInfo`, `Strings` (Task 7).
-- Produces (namespace `BetterManager.App.ViewModels`):
+- Produces (namespace `Pennyworth.App.ViewModels`):
   - `sealed record BarSegment(string ColorKey, double Fraction)` (colour = resource `Brush.Category.{ColorKey}`).
   - `StorageSummaryViewModel(DriveSummary drive, ILocationInfo locations, Action<StorageNode> openFolder)`: `Drive`, `Categories` (one `CategoryRowViewModel` per `StorageCategories.All`), `Unaccounted` (row with `Category == null`, `ColorKey == "Unaccounted"`), `UsedText`, `Segments`, `FileCount`, `HasOvercount`, `IsComplete`, `SelectedCategory`, `ApplyProgress(ScanProgress)` (ignored once complete), `ApplyResult(StorageTree)` (fills up to 10 areas per category, selects the largest category), `OpenAreaCommand(CategoryAreaViewModel)`, `BrowseAllCommand` (enabled when complete).
   - `CategoryRowViewModel(StorageCategory? category)`: `Category`, `Name`, `ColorKey`, `Swatch`, `Bytes`, `Fraction`, `SizeText`, `PercentText`, `Areas`.
@@ -2848,13 +2848,13 @@ Rule enforced here: the bar always adds up to 100%. The whole is the larger of "
 
 - [ ] **Step 1: Write the fakes and the failing test**
 
-`tests/BetterManager.App.Tests/Fakes.cs`:
+`tests/Pennyworth.App.Tests/Fakes.cs`:
 
 ```csharp
-using BetterManager.App.Services;
-using BetterManager.Core.Storage;
+using Pennyworth.App.Services;
+using Pennyworth.Core.Storage;
 
-namespace BetterManager.App.Tests;
+namespace Pennyworth.App.Tests;
 
 internal static class SampleTrees
 {
@@ -2920,15 +2920,15 @@ internal sealed class FakeExplorer : IExplorerLauncher
 }
 ```
 
-`tests/BetterManager.App.Tests/StorageSummaryViewModelTests.cs`:
+`tests/Pennyworth.App.Tests/StorageSummaryViewModelTests.cs`:
 
 ```csharp
-using BetterManager.App.Services;
-using BetterManager.App.ViewModels;
-using BetterManager.Core.Storage;
-using static BetterManager.App.Tests.SampleTrees;
+using Pennyworth.App.Services;
+using Pennyworth.App.ViewModels;
+using Pennyworth.Core.Storage;
+using static Pennyworth.App.Tests.SampleTrees;
 
-namespace BetterManager.App.Tests;
+namespace Pennyworth.App.Tests;
 
 public class StorageSummaryViewModelTests
 {
@@ -3039,18 +3039,18 @@ public class StorageSummaryViewModelTests
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test --project tests/BetterManager.App.Tests`
-Expected: build FAILS: namespace `BetterManager.App.ViewModels` does not exist.
+Run: `dotnet test --project tests/Pennyworth.App.Tests`
+Expected: build FAILS: namespace `Pennyworth.App.ViewModels` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/BetterManager.App/ViewModels/CategoryText.cs`:
+`src/Pennyworth.App/ViewModels/CategoryText.cs`:
 
 ```csharp
-using BetterManager.App.Resources;
-using BetterManager.Core.Storage;
+using Pennyworth.App.Resources;
+using Pennyworth.Core.Storage;
 
-namespace BetterManager.App.ViewModels;
+namespace Pennyworth.App.ViewModels;
 
 internal static class CategoryText
 {
@@ -3071,17 +3071,17 @@ internal static class CategoryText
 }
 ```
 
-`src/BetterManager.App/ViewModels/StorageSummaryViewModel.cs`:
+`src/Pennyworth.App/ViewModels/StorageSummaryViewModel.cs`:
 
 ```csharp
-using BetterManager.App.Resources;
-using BetterManager.App.Services;
-using BetterManager.Core.Formatting;
-using BetterManager.Core.Storage;
+using Pennyworth.App.Resources;
+using Pennyworth.App.Services;
+using Pennyworth.Core.Formatting;
+using Pennyworth.Core.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace BetterManager.App.ViewModels;
+namespace Pennyworth.App.ViewModels;
 
 /// <param name="ColorKey">Looked up as the resource <c>Brush.Category.{ColorKey}</c>.</param>
 public sealed record BarSegment(string ColorKey, double Fraction);
@@ -3244,13 +3244,13 @@ public sealed record CategoryAreaViewModel(StorageNode Node, long Bytes, string 
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `dotnet test --project tests/BetterManager.App.Tests`
+Run: `dotnet test --project tests/Pennyworth.App.Tests`
 Expected: PASS, 9 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/BetterManager.App tests/BetterManager.App.Tests
+git add src/Pennyworth.App tests/Pennyworth.App.Tests
 git commit -m "feat(app): add storage summary view model"
 ```
 
@@ -3259,8 +3259,8 @@ git commit -m "feat(app): add storage summary view model"
 ### Task 9: Folder browser view model
 
 **Files:**
-- Create: `src/BetterManager.App/ViewModels/FolderBrowserViewModel.cs`
-- Test: `tests/BetterManager.App.Tests/FolderBrowserViewModelTests.cs`
+- Create: `src/Pennyworth.App/ViewModels/FolderBrowserViewModel.cs`
+- Test: `tests/Pennyworth.App.Tests/FolderBrowserViewModelTests.cs`
 
 **Interfaces:**
 - Consumes: `StorageNode` (Task 2), `ByteSize` (Task 1), `IExplorerLauncher` (Task 7), fakes (Task 8).
@@ -3268,13 +3268,13 @@ git commit -m "feat(app): add storage summary view model"
 
 - [ ] **Step 1: Write the failing test**
 
-`tests/BetterManager.App.Tests/FolderBrowserViewModelTests.cs`:
+`tests/Pennyworth.App.Tests/FolderBrowserViewModelTests.cs`:
 
 ```csharp
-using BetterManager.App.ViewModels;
-using static BetterManager.App.Tests.SampleTrees;
+using Pennyworth.App.ViewModels;
+using static Pennyworth.App.Tests.SampleTrees;
 
-namespace BetterManager.App.Tests;
+namespace Pennyworth.App.Tests;
 
 public class FolderBrowserViewModelTests
 {
@@ -3333,21 +3333,21 @@ public class FolderBrowserViewModelTests
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test --project tests/BetterManager.App.Tests`
+Run: `dotnet test --project tests/Pennyworth.App.Tests`
 Expected: build FAILS: `FolderBrowserViewModel` does not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/BetterManager.App/ViewModels/FolderBrowserViewModel.cs`:
+`src/Pennyworth.App/ViewModels/FolderBrowserViewModel.cs`:
 
 ```csharp
-using BetterManager.App.Services;
-using BetterManager.Core.Formatting;
-using BetterManager.Core.Storage;
+using Pennyworth.App.Services;
+using Pennyworth.Core.Formatting;
+using Pennyworth.Core.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace BetterManager.App.ViewModels;
+namespace Pennyworth.App.ViewModels;
 
 /// <summary>Drill-down through folders, largest first.</summary>
 public sealed partial class FolderBrowserViewModel : ObservableObject
@@ -3434,13 +3434,13 @@ public sealed record BreadcrumbViewModel(StorageNode Node)
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `dotnet test --project tests/BetterManager.App.Tests`
+Run: `dotnet test --project tests/Pennyworth.App.Tests`
 Expected: PASS, 13 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/BetterManager.App tests/BetterManager.App.Tests
+git add src/Pennyworth.App tests/Pennyworth.App.Tests
 git commit -m "feat(app): add folder browser view model"
 ```
 
@@ -3449,8 +3449,8 @@ git commit -m "feat(app): add folder browser view model"
 ### Task 10: Main window view model
 
 **Files:**
-- Create: `src/BetterManager.App/ViewModels/MainWindowViewModel.cs`
-- Test: `tests/BetterManager.App.Tests/MainWindowViewModelTests.cs`
+- Create: `src/Pennyworth.App/ViewModels/MainWindowViewModel.cs`
+- Test: `tests/Pennyworth.App.Tests/MainWindowViewModelTests.cs`
 
 **Interfaces:**
 - Consumes: `IStorageScanner`, `IPathClassifier`, `ScanProgress`, `StorageTree` (Task 2); `IDriveService`, `ILocationInfo`, `IExplorerLauncher`, `Strings` (Task 7); `StorageSummaryViewModel` (Task 8); `FolderBrowserViewModel` (Task 9).
@@ -3460,14 +3460,14 @@ git commit -m "feat(app): add folder browser view model"
 
 - [ ] **Step 1: Write the failing test**
 
-`tests/BetterManager.App.Tests/MainWindowViewModelTests.cs`:
+`tests/Pennyworth.App.Tests/MainWindowViewModelTests.cs`:
 
 ```csharp
-using BetterManager.App.Services;
-using BetterManager.App.ViewModels;
-using static BetterManager.App.Tests.SampleTrees;
+using Pennyworth.App.Services;
+using Pennyworth.App.ViewModels;
+using static Pennyworth.App.Tests.SampleTrees;
 
-namespace BetterManager.App.Tests;
+namespace Pennyworth.App.Tests;
 
 public class MainWindowViewModelTests
 {
@@ -3576,23 +3576,23 @@ public class MainWindowViewModelTests
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `dotnet test --project tests/BetterManager.App.Tests`
+Run: `dotnet test --project tests/Pennyworth.App.Tests`
 Expected: build FAILS: `MainWindowViewModel` / `DriveViewModel` do not exist.
 
 - [ ] **Step 3: Implement**
 
-`src/BetterManager.App/ViewModels/MainWindowViewModel.cs`:
+`src/Pennyworth.App/ViewModels/MainWindowViewModel.cs`:
 
 ```csharp
 using System.Collections.ObjectModel;
-using BetterManager.App.Resources;
-using BetterManager.App.Services;
-using BetterManager.Core.Formatting;
-using BetterManager.Core.Storage;
+using Pennyworth.App.Resources;
+using Pennyworth.App.Services;
+using Pennyworth.Core.Formatting;
+using Pennyworth.Core.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace BetterManager.App.ViewModels;
+namespace Pennyworth.App.ViewModels;
 
 public sealed partial class MainWindowViewModel : ObservableObject
 {
@@ -3749,13 +3749,13 @@ public sealed class DriveViewModel(DriveSummary summary)
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `dotnet test --project tests/BetterManager.App.Tests`
+Run: `dotnet test --project tests/Pennyworth.App.Tests`
 Expected: PASS, 19 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/BetterManager.App tests/BetterManager.App.Tests
+git add src/Pennyworth.App tests/Pennyworth.App.Tests
 git commit -m "feat(app): add main window view model with drive switching and rescans"
 ```
 
@@ -3764,10 +3764,10 @@ git commit -m "feat(app): add main window view model with drive switching and re
 ### Task 11: Views, segmented bar and composition root
 
 **Files:**
-- Create: `src/BetterManager.App/Controls/SegmentedBar.cs`
-- Create: `src/BetterManager.App/App.axaml`, `App.axaml.cs`
-- Create: `src/BetterManager.App/Views/MainWindow.axaml(.cs)`, `Views/StorageSummaryView.axaml(.cs)`, `Views/FolderBrowserView.axaml(.cs)`
-- Modify: `src/BetterManager.App/Program.cs` (replace the temporary entry point)
+- Create: `src/Pennyworth.App/Controls/SegmentedBar.cs`
+- Create: `src/Pennyworth.App/App.axaml`, `App.axaml.cs`
+- Create: `src/Pennyworth.App/Views/MainWindow.axaml(.cs)`, `Views/StorageSummaryView.axaml(.cs)`, `Views/FolderBrowserView.axaml(.cs)`
+- Modify: `src/Pennyworth.App/Program.cs` (replace the temporary entry point)
 
 **Interfaces:**
 - Consumes: every view model (Tasks 8–10), services (Task 7), `RuleClassifier` (Task 4), `KnowledgeBaseLoader` (Task 3), `DirectoryScanner` (Task 6), theme keys (Task 7).
@@ -3777,15 +3777,15 @@ Views have no automated tests in M1 (Avalonia headless UI tests come with the fi
 
 - [ ] **Step 1: Add the segmented bar control**
 
-`src/BetterManager.App/Controls/SegmentedBar.cs`:
+`src/Pennyworth.App/Controls/SegmentedBar.cs`:
 
 ```csharp
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using BetterManager.App.ViewModels;
+using Pennyworth.App.ViewModels;
 
-namespace BetterManager.App.Controls;
+namespace Pennyworth.App.Controls;
 
 /// <summary>
 /// A horizontal bar split into coloured segments. Colours come from the theme resources
@@ -3859,26 +3859,26 @@ public sealed class SegmentedBar : Control
 
 - [ ] **Step 2: Add the application and the composition root**
 
-`src/BetterManager.App/App.axaml`:
+`src/Pennyworth.App/App.axaml`:
 
 ```xml
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:BetterManager.App.ViewModels"
-             xmlns:views="using:BetterManager.App.Views"
-             x:Class="BetterManager.App.App"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:views="using:Pennyworth.App.Views"
+             x:Class="Pennyworth.App.App"
              RequestedThemeVariant="Default">
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
-        <ResourceInclude Source="avares://BetterManager/Theme/Tokens.axaml" />
+        <ResourceInclude Source="avares://Pennyworth/Theme/Tokens.axaml" />
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </Application.Resources>
 
   <Application.Styles>
     <SimpleTheme />
-    <StyleInclude Source="avares://BetterManager/Theme/Styles.axaml" />
+    <StyleInclude Source="avares://Pennyworth/Theme/Styles.axaml" />
   </Application.Styles>
 
   <Application.DataTemplates>
@@ -3892,20 +3892,20 @@ public sealed class SegmentedBar : Control
 </Application>
 ```
 
-`src/BetterManager.App/App.axaml.cs`:
+`src/Pennyworth.App/App.axaml.cs`:
 
 ```csharp
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using BetterManager.App.Services;
-using BetterManager.App.ViewModels;
-using BetterManager.App.Views;
-using BetterManager.Insights.Classification;
-using BetterManager.KnowledgeBase;
-using BetterManager.Scanning;
+using Pennyworth.App.Services;
+using Pennyworth.App.ViewModels;
+using Pennyworth.App.Views;
+using Pennyworth.Insights.Classification;
+using Pennyworth.KnowledgeBase;
+using Pennyworth.Scanning;
 
-namespace BetterManager.App;
+namespace Pennyworth.App;
 
 public sealed partial class App : Application
 {
@@ -3933,12 +3933,12 @@ public sealed partial class App : Application
 }
 ```
 
-Replace `src/BetterManager.App/Program.cs`:
+Replace `src/Pennyworth.App/Program.cs`:
 
 ```csharp
 using Avalonia;
 
-namespace BetterManager.App;
+namespace Pennyworth.App;
 
 internal static class Program
 {
@@ -3953,14 +3953,14 @@ internal static class Program
 
 - [ ] **Step 3: Add the views**
 
-`src/BetterManager.App/Views/MainWindow.axaml`:
+`src/Pennyworth.App/Views/MainWindow.axaml`:
 
 ```xml
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:BetterManager.App.ViewModels"
-        xmlns:res="using:BetterManager.App.Resources"
-        x:Class="BetterManager.App.Views.MainWindow"
+        xmlns:vm="using:Pennyworth.App.ViewModels"
+        xmlns:res="using:Pennyworth.App.Resources"
+        x:Class="Pennyworth.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{x:Static res:Strings.AppTitle}"
         Width="1100" Height="760" MinWidth="720" MinHeight="520"
@@ -3997,12 +3997,12 @@ internal static class Program
 </Window>
 ```
 
-`src/BetterManager.App/Views/MainWindow.axaml.cs`:
+`src/Pennyworth.App/Views/MainWindow.axaml.cs`:
 
 ```csharp
 using Avalonia.Controls;
 
-namespace BetterManager.App.Views;
+namespace Pennyworth.App.Views;
 
 public sealed partial class MainWindow : Window
 {
@@ -4010,15 +4010,15 @@ public sealed partial class MainWindow : Window
 }
 ```
 
-`src/BetterManager.App/Views/StorageSummaryView.axaml`:
+`src/Pennyworth.App/Views/StorageSummaryView.axaml`:
 
 ```xml
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:BetterManager.App.ViewModels"
-             xmlns:res="using:BetterManager.App.Resources"
-             xmlns:controls="using:BetterManager.App.Controls"
-             x:Class="BetterManager.App.Views.StorageSummaryView"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:res="using:Pennyworth.App.Resources"
+             xmlns:controls="using:Pennyworth.App.Controls"
+             x:Class="Pennyworth.App.Views.StorageSummaryView"
              x:DataType="vm:StorageSummaryViewModel">
   <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="16">
     <StackPanel Spacing="4">
@@ -4099,12 +4099,12 @@ public sealed partial class MainWindow : Window
 </UserControl>
 ```
 
-`src/BetterManager.App/Views/StorageSummaryView.axaml.cs`:
+`src/Pennyworth.App/Views/StorageSummaryView.axaml.cs`:
 
 ```csharp
 using Avalonia.Controls;
 
-namespace BetterManager.App.Views;
+namespace Pennyworth.App.Views;
 
 public sealed partial class StorageSummaryView : UserControl
 {
@@ -4112,14 +4112,14 @@ public sealed partial class StorageSummaryView : UserControl
 }
 ```
 
-`src/BetterManager.App/Views/FolderBrowserView.axaml`:
+`src/Pennyworth.App/Views/FolderBrowserView.axaml`:
 
 ```xml
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:BetterManager.App.ViewModels"
-             xmlns:res="using:BetterManager.App.Resources"
-             x:Class="BetterManager.App.Views.FolderBrowserView"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:res="using:Pennyworth.App.Resources"
+             x:Class="Pennyworth.App.Views.FolderBrowserView"
              x:DataType="vm:FolderBrowserViewModel">
   <Grid RowDefinitions="Auto,Auto,*" RowSpacing="12">
     <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
@@ -4176,12 +4176,12 @@ public sealed partial class StorageSummaryView : UserControl
 </UserControl>
 ```
 
-`src/BetterManager.App/Views/FolderBrowserView.axaml.cs`:
+`src/Pennyworth.App/Views/FolderBrowserView.axaml.cs`:
 
 ```csharp
 using Avalonia.Controls;
 
-namespace BetterManager.App.Views;
+namespace Pennyworth.App.Views;
 
 public sealed partial class FolderBrowserView : UserControl
 {
@@ -4196,7 +4196,7 @@ Expected: build succeeds with 0 warnings; all 87 tests pass (Core 15, KnowledgeB
 
 - [ ] **Step 5: Run the app and check it by hand**
 
-Run: `dotnet run --project src/BetterManager.App`
+Run: `dotnet run --project src/Pennyworth.App`
 
 Check each item:
 1. The window opens with every fixed/removable drive as a card (name, usage bar, "X used of Y"), and the Windows drive is selected.
@@ -4211,6 +4211,6 @@ Check each item:
 - [ ] **Step 6: Commit**
 
 ```bash
-git add src/BetterManager.App
+git add src/Pennyworth.App
 git commit -m "feat(app): add storage summary and folder browser screens"
 ```
