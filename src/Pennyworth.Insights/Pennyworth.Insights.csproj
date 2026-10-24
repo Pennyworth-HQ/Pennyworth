@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pennyworth.Insights.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
+    <ProjectReference Include="..\Pennyworth.KnowledgeBase\Pennyworth.KnowledgeBase.csproj" />
+  </ItemGroup>
+</Project>
