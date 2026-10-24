@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>Pennyworth</value></data>
+  <data name="StorageTitle" xml:space="preserve"><value>Where is my space?</value></data>
+  <data name="StorageHelp" xml:space="preserve"><value>Each block of the bar is one kind of content. Click a category to see where its space is.</value></data>
+  <data name="LocalDisk" xml:space="preserve"><value>Local Disk</value></data>
+  <data name="DriveUsed" xml:space="preserve"><value>{0} used of {1}</value></data>
+  <data name="DriveFree" xml:space="preserve"><value>{0} free</value></data>
+  <data name="ScanningFiles" xml:space="preserve"><value>Scanning… {0:N0} files found</value></data>
+  <data name="ScanComplete" xml:space="preserve"><value>Scanned {0:N0} files</value></data>
+  <data name="Rescan" xml:space="preserve"><value>Scan again</value></data>
+  <data name="Categories" xml:space="preserve"><value>Categories</value></data>
+  <data name="Category_Games" xml:space="preserve"><value>Games</value></data>
+  <data name="Category_Apps" xml:space="preserve"><value>Apps</value></data>
+  <data name="Category_YourFiles" xml:space="preserve"><value>Your files</value></data>
+  <data name="Category_Windows" xml:space="preserve"><value>Windows</value></data>
+  <data name="Category_HiddenSystem" xml:space="preserve"><value>Hidden system</value></data>
+  <data name="Category_Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Category_Unaccounted" xml:space="preserve"><value>Not measured yet</value></data>
+  <data name="CategoryHint_Games" xml:space="preserve"><value>Games and their data</value></data>
+  <data name="CategoryHint_Apps" xml:space="preserve"><value>Installed programs and their data</value></data>
+  <data name="CategoryHint_YourFiles" xml:space="preserve"><value>Your personal files</value></data>
+  <data name="CategoryHint_Windows" xml:space="preserve"><value>Windows itself</value></data>
+  <data name="CategoryHint_HiddenSystem" xml:space="preserve"><value>Space Windows uses behind the scenes</value></data>
+  <data name="CategoryHint_Other" xml:space="preserve"><value>Everything else</value></data>
+  <data name="CategoryHint_Unaccounted" xml:space="preserve"><value>Used space the scan can't see yet</value></data>
+  <data name="UnaccountedHint" xml:space="preserve"><value>Windows protects some areas, like restore points, so a normal scan can’t read them. The full scan measures them exactly.</value></data>
+  <data name="OvercountHint" xml:space="preserve"><value>Some files were counted more than once (hard links), so totals are a little high. The full scan will show exact numbers.</value></data>
+  <data name="BiggestPlaces" xml:space="preserve"><value>Biggest places</value></data>
+  <data name="PlacesIn" xml:space="preserve"><value>Where the space in {0} is</value></data>
+  <data name="BiggestPlacesPending" xml:space="preserve"><value>Appear when the scan finishes.</value></data>
+  <data name="BrowseAllFolders" xml:space="preserve"><value>Browse all folders</value></data>
+  <data name="FoldersHelp" xml:space="preserve"><value>Click a folder to open it. Biggest items are at the top.</value></data>
+  <data name="ColumnName" xml:space="preserve"><value>Name</value></data>
+  <data name="ColumnShare" xml:space="preserve"><value>Share of this folder</value></data>
+  <data name="ColumnSize" xml:space="preserve"><value>Size</value></data>
+  <data name="Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Up" xml:space="preserve"><value>Up</value></data>
+  <data name="ShowInExplorer" xml:space="preserve"><value>Show in Explorer</value></data>
+  <data name="Locked" xml:space="preserve"><value>Locked</value></data>
+  <data name="LockedHint" xml:space="preserve"><value>Windows didn't let Pennyworth read this folder. This is normal for system folders.</value></data>
+  <data name="LockedTitle" xml:space="preserve"><value>Windows didn't allow reading this folder.</value></data>
+  <data name="LockedBody" xml:space="preserve"><value>This is normal for system folders, and nothing is wrong. The full scan can measure it.</value></data>
+  <data name="EmptyFolder" xml:space="preserve"><value>This folder is empty.</value></data>
+  <data name="EmptyFolderHint" xml:space="preserve"><value>Nothing here is using space.</value></data>
+  <data name="NavStorage" xml:space="preserve"><value>Storage</value></data>
+  <data name="NavStorageHint" xml:space="preserve"><value>What fills your drive</value></data>
+  <data name="NavFolders" xml:space="preserve"><value>Folders</value></data>
+  <data name="NavFoldersHint" xml:space="preserve"><value>Browse like in Explorer</value></data>
+  <data name="Version" xml:space="preserve"><value>v0.1 · open source</value></data>
+</root>

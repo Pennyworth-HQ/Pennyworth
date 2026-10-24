@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>Pennyworth</value></data>
+  <data name="StorageTitle" xml:space="preserve"><value>Para onde foi meu espaço?</value></data>
+  <data name="StorageHelp" xml:space="preserve"><value>Cada bloco da barra é um tipo de conteúdo. Clique numa categoria para ver onde está o espaço.</value></data>
+  <data name="LocalDisk" xml:space="preserve"><value>Disco Local</value></data>
+  <data name="DriveUsed" xml:space="preserve"><value>{0} usados de {1}</value></data>
+  <data name="DriveFree" xml:space="preserve"><value>{0} livres</value></data>
+  <data name="ScanningFiles" xml:space="preserve"><value>Verificando… {0:N0} arquivos encontrados</value></data>
+  <data name="ScanComplete" xml:space="preserve"><value>{0:N0} arquivos verificados</value></data>
+  <data name="Rescan" xml:space="preserve"><value>Verificar de novo</value></data>
+  <data name="Categories" xml:space="preserve"><value>Categorias</value></data>
+  <data name="Category_Games" xml:space="preserve"><value>Jogos</value></data>
+  <data name="Category_Apps" xml:space="preserve"><value>Apps</value></data>
+  <data name="Category_YourFiles" xml:space="preserve"><value>Seus arquivos</value></data>
+  <data name="Category_Windows" xml:space="preserve"><value>Windows</value></data>
+  <data name="Category_HiddenSystem" xml:space="preserve"><value>Sistema oculto</value></data>
+  <data name="Category_Other" xml:space="preserve"><value>Outros</value></data>
+  <data name="Category_Unaccounted" xml:space="preserve"><value>Ainda não medido</value></data>
+  <data name="CategoryHint_Games" xml:space="preserve"><value>Jogos e seus dados</value></data>
+  <data name="CategoryHint_Apps" xml:space="preserve"><value>Programas instalados e seus dados</value></data>
+  <data name="CategoryHint_YourFiles" xml:space="preserve"><value>Seus arquivos pessoais</value></data>
+  <data name="CategoryHint_Windows" xml:space="preserve"><value>O próprio Windows</value></data>
+  <data name="CategoryHint_HiddenSystem" xml:space="preserve"><value>Espaço que o Windows usa nos bastidores</value></data>
+  <data name="CategoryHint_Other" xml:space="preserve"><value>Todo o resto</value></data>
+  <data name="CategoryHint_Unaccounted" xml:space="preserve"><value>Espaço usado que a verificação ainda não vê</value></data>
+  <data name="UnaccountedHint" xml:space="preserve"><value>O Windows protege algumas áreas, como pontos de restauração, e a verificação normal não consegue lê-las. A verificação completa mede tudo com exatidão.</value></data>
+  <data name="OvercountHint" xml:space="preserve"><value>Alguns arquivos foram contados mais de uma vez (links físicos), então os totais estão um pouco altos. A verificação completa mostra os números exatos.</value></data>
+  <data name="BiggestPlaces" xml:space="preserve"><value>Maiores locais</value></data>
+  <data name="PlacesIn" xml:space="preserve"><value>Onde está o espaço de {0}</value></data>
+  <data name="BiggestPlacesPending" xml:space="preserve"><value>Aparecem quando a verificação terminar.</value></data>
+  <data name="BrowseAllFolders" xml:space="preserve"><value>Ver todas as pastas</value></data>
+  <data name="FoldersHelp" xml:space="preserve"><value>Clique numa pasta para abrir. Os itens maiores ficam no topo.</value></data>
+  <data name="ColumnName" xml:space="preserve"><value>Nome</value></data>
+  <data name="ColumnShare" xml:space="preserve"><value>Parte desta pasta</value></data>
+  <data name="ColumnSize" xml:space="preserve"><value>Tamanho</value></data>
+  <data name="Back" xml:space="preserve"><value>Voltar</value></data>
+  <data name="Up" xml:space="preserve"><value>Subir</value></data>
+  <data name="ShowInExplorer" xml:space="preserve"><value>Mostrar no Explorador</value></data>
+  <data name="Locked" xml:space="preserve"><value>Bloqueada</value></data>
+  <data name="LockedHint" xml:space="preserve"><value>O Windows não deixou o Pennyworth ler esta pasta. Isso é normal em pastas do sistema.</value></data>
+  <data name="LockedTitle" xml:space="preserve"><value>O Windows não deixou ler esta pasta.</value></data>
+  <data name="LockedBody" xml:space="preserve"><value>Isso é normal em pastas do sistema, e não há nada de errado. A verificação completa consegue medir.</value></data>
+  <data name="EmptyFolder" xml:space="preserve"><value>Esta pasta está vazia.</value></data>
+  <data name="EmptyFolderHint" xml:space="preserve"><value>Nada aqui está ocupando espaço.</value></data>
+  <data name="NavStorage" xml:space="preserve"><value>Armazenamento</value></data>
+  <data name="NavStorageHint" xml:space="preserve"><value>O que ocupa seu disco</value></data>
+  <data name="NavFolders" xml:space="preserve"><value>Pastas</value></data>
+  <data name="NavFoldersHint" xml:space="preserve"><value>Navegue como no Explorador</value></data>
+  <data name="Version" xml:space="preserve"><value>v0.1 · código aberto</value></data>
+</root>
