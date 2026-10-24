@@ -17,13 +17,13 @@ public sealed class LocalizationTests : IDisposable
     {
         Localizer.Instance.SetLanguage(LanguagePreference.Portuguese);
 
-        Assert.Equal("Para onde foi meu espaço?", Localizer.Instance["StorageTitle"]);
+        Assert.Equal("Para onde foi seu espaço", Localizer.Instance["StorageTitle"]);
         Assert.Equal("1,50 KB", Pennyworth.Core.Formatting.ByteSize.Format(1536));
         Assert.True(Localizer.Instance.IsPortuguese);
 
         Localizer.Instance.SetLanguage(LanguagePreference.English);
 
-        Assert.Equal("Where is my space?", Localizer.Instance["StorageTitle"]);
+        Assert.Equal("Where your space has gone", Localizer.Instance["StorageTitle"]);
         Assert.Equal("1.50 KB", Pennyworth.Core.Formatting.ByteSize.Format(1536));
     }
 
