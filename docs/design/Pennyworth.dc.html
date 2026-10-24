@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="dark"]{--page:#070706;--bg:#0e0e0d;--surface:#151513;--hover:#1c1c1a;--line:#262522;--line2:#3a3935;--track:#1d1c1a;--ink:#ebe8e1;--ink2:#a39f96;--ink3:#5f5c56;--accent:oklch(0.72 0.16 42);--accent2:oklch(0.78 0.15 45);--onaccent:#0e0e0d;--scrim:rgba(5,5,4,.74);}
+[data-theme="light"]{--page:#d9d6cf;--bg:#f1efea;--surface:#f8f7f3;--hover:#e7e4de;--line:#d6d2ca;--line2:#b7b2a8;--track:#e2dfd8;--ink:#161614;--ink2:#57544e;--ink3:#9a968e;--accent:oklch(0.52 0.17 38);--accent2:oklch(0.46 0.16 38);--onaccent:#ffffff;--scrim:rgba(220,217,210,.72);}
+html,body{margin:0;padding:0;background:var(--page);}
+*{box-sizing:border-box;}
+button{font:inherit;color:inherit;}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:3px;}
+a:hover{color:var(--accent2);}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+::selection{background:var(--accent);color:var(--onaccent);}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:var(--line2);}
+::-webkit-scrollbar-track{background:transparent;}
+@keyframes pwIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+@keyframes pwFade{from{opacity:0;}to{opacity:1;}}
+@keyframes pwBlink{50%{opacity:0;}}
+@keyframes pwSweep{from{transform:translateX(-100%);}to{transform:translateX(320%);}}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--page);display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Golos Text',system-ui,sans-serif;color:var(--ink);transition:background-color .4s;">
+<div style="width:{{ boxW }};height:{{ boxH }};position:relative;flex:none;">
+<div style="position:absolute;left:0;top:0;width:1100px;height:760px;transform:scale({{ scale }});transform-origin:0 0;background:var(--bg);border:1px solid var(--line2);display:grid;grid-template-rows:44px minmax(0,1fr) 28px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(0,0,0,.55);transition:background-color .4s;">
+
+<div style="display:flex;align-items:center;gap:16px;padding-left:16px;border-bottom:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;user-select:none;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span style="color:var(--accent);letter-spacing:0;">▸■◂</span>
+    <svg role="img" aria-label="Pennyworth" viewBox="234 525 416 45" style="display:block;height:11px;width:101.7px;fill:var(--ink);"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTpkMDQ1YjMwYi1jY2M3LTQzZGUtOGY1Mi03MTFmYjg3NjlmMzEAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaHfY9YfPmwuYcF2BB860sWIAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDpjYWRiOWIyYi00MmQ5LTRhYmItODg4Mi1mNTdiOGQyNTIxYzVscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoz5+8K/yq3TrloWTHxXsyBAAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggySL1mNq0CkEdY1j8qxdSkIDH8BcizJppBMSDUmygTY+kZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaHpAasVE844VZzFuwaRLTYwAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCA8DD5TAKLTqdwDJsKZhvJBcuv/gThx8T1clGg7azzF/mRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBiUZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOmQwNDViMzBiLWNjYzctNDNkZS04ZjUyLTcxMWZiODc2OWYzMS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjMzMjEwNDI0LTJlYTAtNGEzMS1iYzQxLTE2MzRkNmFlYWM1ZXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCDJIvWY2rQKQR1jWPyrF1KQgMfwFyLMmmkExINSbKBNj6JjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFgghQMGDd8DC64efnJMjyV4QIDwF7SoQOnzd060lM24Gk2iY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFgg2satQZLfdvVob7/E8SceSu8s5NT2AdRQspFk1C3t02t0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQKtnJo9i2XplyGtHNPUP58ZVR0BTKME+C6sXpkkKkC4YxV29fb3vCI2ysFbWC6rTA7P7hNx5i/gkUw/KEdkYUcw=</c2pa:manifest></metadata><g><g transform="translate(231.747181, 567.744134)"><g><path d="M 9.804688 0 L 9.804688 -16.140625 L 21.074219 -16.140625 C 29.113281 -16.140625 33.804688 -21.742188 33.804688 -28.382812 C 33.804688 -35.023438 29.234375 -40.625 21.074219 -40.625 L 4.75 -40.625 L 4.75 0 Z M 28.566406 -28.382812 C 28.566406 -23.816406 25.277344 -20.648438 20.464844 -20.648438 L 9.804688 -20.648438 L 9.804688 -36.117188 L 20.464844 -36.117188 C 25.277344 -36.117188 28.566406 -32.949219 28.566406 -28.382812 Z M 28.566406 -28.382812 "></path></g></g></g><g><g transform="translate(268.716242, 567.744134)"><g><path d="M 31.367188 0 L 31.367188 -4.507812 L 9.804688 -4.507812 L 9.804688 -18.515625 L 30.941406 -18.515625 L 30.941406 -23.023438 L 9.804688 -23.023438 L 9.804688 -36.117188 L 31.367188 -36.117188 L 31.367188 -40.625 L 4.75 -40.625 L 4.75 0 Z M 31.367188 0 "></path></g></g></g><g><g transform="translate(304.589062, 567.744134)"><g><path d="M 38.371094 0 L 38.371094 -40.625 L 33.316406 -40.625 L 33.316406 -8.527344 L 9.929688 -40.625 L 4.75 -40.625 L 4.75 0 L 9.804688 0 L 9.804688 -32.769531 L 33.5 0 Z M 38.371094 0 "></path></g></g></g><g><g transform="translate(348.927317, 567.744134)"><g><path d="M 38.371094 0 L 38.371094 -40.625 L 33.316406 -40.625 L 33.316406 -8.527344 L 9.929688 -40.625 L 4.75 -40.625 L 4.75 0 L 9.804688 0 L 9.804688 -32.769531 L 33.5 0 Z M 38.371094 0 "></path></g></g></g><g><g transform="translate(393.265571, 567.744134)"><g><path d="M 21.621094 0 L 21.621094 -17.175781 L 37.578125 -40.625 L 31.671875 -40.625 L 19.0625 -21.742188 L 6.457031 -40.625 L 0.546875 -40.625 L 16.566406 -17.175781 L 16.566406 0 Z M 21.621094 0 "></path></g></g></g><g><g transform="translate(432.609842, 567.744134)"><g><path d="M 41.296875 0 L 52.867188 -40.625 L 47.265625 -40.625 L 38.3125 -6.761719 L 28.992188 -40.625 L 24.789062 -40.625 L 15.46875 -6.761719 L 6.457031 -40.625 L 0.851562 -40.625 L 12.425781 0 L 17.90625 0 L 26.859375 -32.769531 L 35.8125 0 Z M 41.296875 0 "></path></g></g></g><g><g transform="translate(487.606002, 567.744134)"><g><path d="M 3.105469 -20.28125 C 3.105469 -8.285156 11.207031 0.730469 23.265625 0.730469 C 35.265625 0.730469 43.425781 -8.285156 43.425781 -20.28125 C 43.425781 -32.28125 35.265625 -41.296875 23.265625 -41.296875 C 11.207031 -41.296875 3.105469 -32.28125 3.105469 -20.28125 Z M 38.1875 -20.28125 C 38.1875 -10.839844 32.34375 -3.777344 23.265625 -3.777344 C 14.128906 -3.777344 8.34375 -10.839844 8.34375 -20.28125 C 8.34375 -29.785156 14.128906 -36.789062 23.265625 -36.789062 C 32.34375 -36.789062 38.1875 -29.785156 38.1875 -20.28125 Z M 38.1875 -20.28125 "></path></g></g></g><g><g transform="translate(535.415684, 567.744134)"><g><path d="M 34.230469 0 L 23.265625 -16.566406 C 28.808594 -17.054688 33.804688 -21.074219 33.804688 -28.382812 C 33.804688 -35.875 28.503906 -40.625 21.074219 -40.625 L 4.75 -40.625 L 4.75 0 L 9.804688 0 L 9.804688 -16.140625 L 17.90625 -16.140625 L 28.261719 0 Z M 28.566406 -28.382812 C 28.566406 -23.816406 25.277344 -20.585938 20.464844 -20.585938 L 9.804688 -20.585938 L 9.804688 -36.117188 L 20.464844 -36.117188 C 25.277344 -36.117188 28.566406 -32.949219 28.566406 -28.382812 Z M 28.566406 -28.382812 "></path></g></g></g><g><g transform="translate(573.663713, 567.744134)"><g><path d="M 19.855469 0 L 19.855469 -36.117188 L 32.769531 -36.117188 L 32.769531 -40.625 L 1.949219 -40.625 L 1.949219 -36.117188 L 14.800781 -36.117188 L 14.800781 0 Z M 19.855469 0 "></path></g></g></g><g><g transform="translate(609.597427, 567.744134)"><g><path d="M 38.617188 0 L 38.617188 -40.625 L 33.558594 -40.625 L 33.558594 -23.144531 L 9.804688 -23.144531 L 9.804688 -40.625 L 4.75 -40.625 L 4.75 0 L 9.804688 0 L 9.804688 -18.636719 L 33.558594 -18.636719 L 33.558594 0 Z M 38.617188 0 "></path></g></g></g></svg>
+  </div>
+  <div style="flex:1;"></div>
+  <div role="group" aria-label="Navigation mode" title="{{ t.modeTip }}" style="display:flex;border:1px solid var(--line2);">
+    <button onClick="{{ setMin }}" style="height:26px;padding:0 12px;border:0;cursor:pointer;font:inherit;letter-spacing:inherit;text-transform:inherit;background:{{ modeMin.bg }};color:{{ modeMin.fg }};transition:background .25s,color .25s;">{{ t.modeMin }}</button>
+    <button onClick="{{ set3d }}" style="height:26px;padding:0 12px;border:0;border-left:1px solid var(--line2);cursor:pointer;font:inherit;letter-spacing:inherit;text-transform:inherit;background:{{ mode3d.bg }};color:{{ mode3d.fg }};transition:background .25s,color .25s;">{{ t.mode3d }}</button>
+  </div>
+  <div role="group" aria-label="Language" style="display:flex;border:1px solid var(--line2);">
+    <button onClick="{{ setPt }}" style="height:26px;padding:0 10px;border:0;cursor:pointer;font:inherit;letter-spacing:inherit;background:{{ langPt.bg }};color:{{ langPt.fg }};transition:background .25s,color .25s;">PT</button>
+    <button onClick="{{ setEn }}" style="height:26px;padding:0 10px;border:0;border-left:1px solid var(--line2);cursor:pointer;font:inherit;letter-spacing:inherit;background:{{ langEn.bg }};color:{{ langEn.fg }};transition:background .25s,color .25s;">EN</button>
+  </div>
+  <button onClick="{{ toggleTheme }}" style="height:28px;padding:0 12px;border:1px solid var(--line2);background:transparent;cursor:pointer;font:inherit;letter-spacing:inherit;text-transform:inherit;color:var(--ink2);display:flex;align-items:center;gap:8px;" style-hover="color:var(--ink);background:var(--hover)">
+    <span style="letter-spacing:0;">◐</span><span>{{ themeLabel }}</span>
+  </button>
+  <div style="display:flex;height:100%;color:var(--ink2);border-left:1px solid var(--line);">
+    <span style="width:44px;display:flex;align-items:center;justify-content:center;">–</span>
+    <span style="width:44px;display:flex;align-items:center;justify-content:center;">□</span>
+    <span style="width:44px;display:flex;align-items:center;justify-content:center;">✕</span>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:{{ bodyCols }};min-height:0;">
+<sc-if value="{{ showSidebar }}" hint-placeholder-val="{{ false }}">
+<nav style="border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 0 16px;min-height:0;">
+  <sc-for list="{{ nav }}" as="n" hint-placeholder-count="4">
+    <button onClick="{{ n.onClick }}" style="display:grid;grid-template-columns:26px minmax(0,1fr);align-items:start;gap:6px;padding:10px 18px;border:0;text-align:left;cursor:pointer;background:{{ n.bg }};color:{{ n.fg }};font-size:14px;transition:background .25s,color .25s;" style-hover="color:var(--ink)">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:{{ n.ic }};transition:color .25s;padding-top:3px;">{{ n.idx }}</span>
+      <span style="display:flex;flex-direction:column;gap:2px;min-width:0;"><span>{{ n.label }}</span><span style="font-size:11.5px;color:var(--ink2);line-height:1.3;">{{ n.hint }}</span></span>
+    </button>
+  </sc-for>
+  <div style="flex:1;"></div>
+  <pre aria-hidden="true" style="margin:0 18px 12px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:12px;color:var(--ink3);">{{ chipArt }}</pre>
+  <div style="padding:0 18px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;color:var(--ink2);">{{ t.version }}</div>
+</nav>
+</sc-if>
+
+<main style="min-width:0;min-height:0;position:relative;overflow:hidden;">
+
+<sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ true }}">
+<div style="height:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);animation:pwFade .6s;">
+  <div style="padding:40px 48px 32px 56px;display:flex;flex-direction:column;gap:18px;border-right:1px solid var(--line);overflow:auto;">
+    <div style="display:flex;flex-direction:column;gap:14px;"><svg role="img" aria-label="Pennyworth" viewBox="234 525 416 45" style="display:block;height:22px;width:203.4px;fill:var(--ink);"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTpkMDQ1YjMwYi1jY2M3LTQzZGUtOGY1Mi03MTFmYjg3NjlmMzEAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaHfY9YfPmwuYcF2BB860sWIAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDpjYWRiOWIyYi00MmQ5LTRhYmItODg4Mi1mNTdiOGQyNTIxYzVscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoz5+8K/yq3TrloWTHxXsyBAAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggySL1mNq0CkEdY1j8qxdSkIDH8BcizJppBMSDUmygTY+kZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaHpAasVE844VZzFuwaRLTYwAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCA8DD5TAKLTqdwDJsKZhvJBcuv/gThx8T1clGg7azzF/mRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBiUZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOmQwNDViMzBiLWNjYzctNDNkZS04ZjUyLTcxMWZiODc2OWYzMS9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjMzMjEwNDI0LTJlYTAtNGEzMS1iYzQxLTE2MzRkNmFlYWM1ZXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCDJIvWY2rQKQR1jWPyrF1KQgMfwFyLMmmkExINSbKBNj6JjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFgghQMGDd8DC64efnJMjyV4QIDwF7SoQOnzd060lM24Gk2iY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFgg2satQZLfdvVob7/E8SceSu8s5NT2AdRQspFk1C3t02t0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQKtnJo9i2XplyGtHNPUP58ZVR0BTKME+C6sXpkkKkC4YxV29fb3vCI2ysFbWC6rTA7P7hNx5i/gkUw/KEdkYUcw=</c2pa:manifest></metadata><g><g transform="translate(231.747181, 567.744134)"><g><path d="M 9.804688 0 L 9.804688 -16.140625 L 21.074219 -16.140625 C 29.113281 -16.140625 33.804688 -21.742188 33.804688 -28.382812 C 33.804688 -35.023438 29.234375 -40.625 21.074219 -40.625 L 4.75 -40.625 L 4.75 0 Z M 28.566406 -28.382812 C 28.566406 -23.816406 25.277344 -20.648438 20.464844 -20.648438 L 9.804688 -20.648438 L 9.804688 -36.117188 L 20.464844 -36.117188 C 25.277344 -36.117188 28.566406 -32.949219 28.566406 -28.382812 Z M 28.566406 -28.382812 "></path></g></g></g><g><g transform="translate(268.716242, 567.744134)"><g><path d="M 31.367188 0 L 31.367188 -4.507812 L 9.804688 -4.507812 L 9.804688 -18.515625 L 30.941406 -18.515625 L 30.941406 -23.023438 L 9.804688 -23.023438 L 9.804688 -36.117188 L 31.367188 -36.117188 L 31.367188 -40.625 L 4.75 -40.625 L 4.75 0 Z M 31.367188 0 "></path></g></g></g><g><g transform="translate(304.589062, 567.744134)"><g><path d="M 38.371094 0 L 38.371094 -40.625 L 33.316406 -40.625 L 33.316406 -8.527344 L 9.929688 -40.625 L 4.75 -40.625 L 4.75 0 L 9.804688 0 L 9.804688 -32.769531 L 33.5 0 Z M 38.371094 0 "></path></g></g></g><g><g transform="translate(348.927317, 567.744134)"><g><path d="M 38.371094 0 L 38.371094 -40.625 L 33.316406 -40.625 L 33.316406 -8.527344 L 9.929688 -40.625 L 4.75 -40.625 L 4.75 0 L 9.804688 0 L 9.804688 -32.769531 L 33.5 0 Z M 38.371094 0 "></path></g></g></g><g><g transform="translate(393.265571, 567.744134)"><g><path d="M 21.621094 0 L 21.621094 -17.175781 L 37.578125 -40.625 L 31.671875 -40.625 L 19.0625 -21.742188 L 6.457031 -40.625 L 0.546875 -40.625 L 16.566406 -17.175781 L 16.566406 0 Z M 21.621094 0 "></path></g></g></g><g><g transform="translate(432.609842, 567.744134)"><g><path d="M 41.296875 0 L 52.867188 -40.625 L 47.265625 -40.625 L 38.3125 -6.761719 L 28.992188 -40.625 L 24.789062 -40.625 L 15.46875 -6.761719 L 6.457031 -40.625 L 0.851562 -40.625 L 12.425781 0 L 17.90625 0 L 26.859375 -32.769531 L 35.8125 0 Z M 41.296875 0 "></path></g></g></g><g><g transform="translate(487.606002, 567.744134)"><g><path d="M 3.105469 -20.28125 C 3.105469 -8.285156 11.207031 0.730469 23.265625 0.730469 C 35.265625 0.730469 43.425781 -8.285156 43.425781 -20.28125 C 43.425781 -32.28125 35.265625 -41.296875 23.265625 -41.296875 C 11.207031 -41.296875 3.105469 -32.28125 3.105469 -20.28125 Z M 38.1875 -20.28125 C 38.1875 -10.839844 32.34375 -3.777344 23.265625 -3.777344 C 14.128906 -3.777344 8.34375 -10.839844 8.34375 -20.28125 C 8.34375 -29.785156 14.128906 -36.789062 23.265625 -36.789062 C 32.34375 -36.789062 38.1875 -29.785156 38.1875 -20.28125 Z M 38.1875 -20.28125 "></path></g></g></g><g><g transform="translate(535.415684, 567.744134)"><g><path d="M 34.230469 0 L 23.265625 -16.566406 C 28.808594 -17.054688 33.804688 -21.074219 33.804688 -28.382812 C 33.804688 -35.875 28.503906 -40.625 21.074219 -40.625 L 4.75 -40.625 L 4.75 0 L 9.804688 0 L 9.804688 -16.140625 L 17.90625 -16.140625 L 28.261719 0 Z M 28.566406 -28.382812 C 28.566406 -23.816406 25.277344 -20.585938 20.464844 -20.585938 L 9.804688 -20.585938 L 9.804688 -36.117188 L 20.464844 -36.117188 C 25.277344 -36.117188 28.566406 -32.949219 28.566406 -28.382812 Z M 28.566406 -28.382812 "></path></g></g></g><g><g transform="translate(573.663713, 567.744134)"><g><path d="M 19.855469 0 L 19.855469 -36.117188 L 32.769531 -36.117188 L 32.769531 -40.625 L 1.949219 -40.625 L 1.949219 -36.117188 L 14.800781 -36.117188 L 14.800781 0 Z M 19.855469 0 "></path></g></g></g><g><g transform="translate(609.597427, 567.744134)"><g><path d="M 38.617188 0 L 38.617188 -40.625 L 33.558594 -40.625 L 33.558594 -23.144531 L 9.804688 -23.144531 L 9.804688 -40.625 L 4.75 -40.625 L 4.75 0 L 9.804688 0 L 9.804688 -18.636719 L 33.558594 -18.636719 L 33.558594 0 Z M 38.617188 0 "></path></g></g></g></svg><div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);">▸■◂ {{ t.welcomeKicker }}</div></div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <h1 style="margin:0;font-size:36px;line-height:1.06;font-weight:500;letter-spacing:-.025em;text-wrap:balance;">{{ t.welcomeTitle }}</h1>
+      <p style="margin:0;font-size:16px;line-height:1.5;color:var(--ink2);max-width:420px;text-wrap:pretty;">{{ t.welcomeSub }}</p>
+    </div>
+    <div style="display:flex;flex-direction:column;border-top:1px solid var(--line);">
+      <sc-for list="{{ points }}" as="p" hint-placeholder-count="3">
+        <div style="display:grid;grid-template-columns:36px minmax(0,1fr);align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px;animation:pwIn .5s both;animation-delay:{{ p.delay }};">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);">{{ p.idx }}</span>
+          <span>{{ p.text }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink2);line-height:1.45;">
+      <span style="font-family:'JetBrains Mono',monospace;color:var(--ink);">■</span><span>{{ t.privacy }}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">{{ t.language }}</span>
+      <div role="radiogroup" style="display:flex;flex-wrap:wrap;border:1px solid var(--line2);width:fit-content;">
+        <sc-for list="{{ langOpts }}" as="o" hint-placeholder-count="3">
+          <button role="radio" aria-checked="{{ o.aria }}" onClick="{{ o.onClick }}" style="height:34px;padding:0 14px;border:0;border-right:1px solid var(--line2);cursor:pointer;font-size:13px;background:{{ o.bg }};color:{{ o.fg }};transition:background .25s,color .25s;">{{ o.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+    <div>
+      <button onClick="{{ analyze }}" style="height:48px;padding:0 22px;border:0;background:var(--accent);color:var(--onaccent);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;display:inline-flex;align-items:center;gap:14px;transition:background .2s,transform .2s;" style-hover="background:var(--accent2)" style-active="transform:translateY(1px)">{{ t.analyze }}<span>→</span></button>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:40px;position:relative;overflow:hidden;">
+    <pre aria-hidden="true" style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:15px;color:var(--ink);">{{ bootArt }}</pre>
+    <pre aria-hidden="true" style="margin:0;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:14px;color:var(--ink3);letter-spacing:.1em;">{{ bitsBlock }}</pre>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+<div style="height:100%;overflow-y:auto;overflow-x:hidden;padding:30px 36px 28px;display:flex;flex-direction:column;gap:22px;animation:pwIn .5s cubic-bezier(.2,.7,.2,1);">
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">01 / {{ t.navHome }}</div>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <h1 style="margin:0;font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:1.1;">{{ t.homeTitle }}</h1>
+      <span style="color:var(--ink2);font-size:14px;">{{ t.greet }}</span>
+    </div>
+    <div style="font-size:15px;line-height:1.5;color:var(--ink2);max-width:640px;text-wrap:pretty;">{{ homeStatus }}</div>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:1px;background:var(--line);border:1px solid var(--line);">
+    <div style="grid-row:span 2;background:var(--bg);padding:20px 22px;display:flex;flex-direction:column;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);padding-bottom:12px;">{{ t.drives }}</div>
+      <sc-for list="{{ driveCards }}" as="d" hint-placeholder-count="2">
+        <button onClick="{{ d.onClick }}" style="text-align:left;border:0;border-top:1px solid var(--line);background:transparent;padding:18px 12px;margin:0 -12px;cursor:pointer;display:flex;flex-direction:column;gap:12px;transition:background .2s;" style-hover="background:var(--hover)">
+          <div style="display:flex;align-items:baseline;gap:12px;width:100%;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:300;line-height:1;">{{ d.letter }}</span>
+            <span style="font-size:14px;">{{ d.label }}</span>
+            <span style="flex:1;"></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);">{{ d.warnTxt }}</span>
+          </div>
+          <div style="height:10px;width:100%;background:var(--track);position:relative;overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:{{ d.w }};background:{{ d.barBg }};transition:width 1.1s cubic-bezier(.2,.7,.2,1);"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;width:100%;font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;">
+            <span>{{ d.usedLine }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;">{{ d.pctTxt }}</span>
+          </div>
+        </button>
+      </sc-for>
+    </div>
+    <button onClick="{{ goStorage }}" style="background:var(--bg);border:0;padding:20px 22px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:14px;transition:background .2s;" style-hover="background:var(--hover)">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">{{ t.navStorage }} · C:</span>
+      <span style="font-size:22px;letter-spacing:-.01em;">{{ teaserLine }}</span>
+      <span style="display:flex;gap:2px;height:14px;width:100%;">
+        <sc-for list="{{ miniSegs }}" as="g" hint-placeholder-count="7">
+          <span style="flex:none;width:{{ g.w }};background:{{ g.bg }};transition:width 1.1s cubic-bezier(.2,.7,.2,1);"></span>
+        </sc-for>
+        <span style="flex:1;background:var(--track);"></span>
+      </span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);">{{ t.seeStorage }} →</span>
+    </button>
+    <div style="background:var(--surface);padding:20px 22px;display:flex;flex-direction:column;gap:12px;outline:1px solid var(--accent);outline-offset:-1px;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);">● {{ t.navCleanup }}</span>
+      <span style="font-size:22px;line-height:1.25;letter-spacing:-.01em;text-wrap:balance;">{{ t.canFree }} <span style="color:var(--accent);font-variant-numeric:tabular-nums;">{{ safeTxt }}</span> {{ t.safely }}</span>
+      <span style="font-size:13px;color:var(--ink2);line-height:1.45;">{{ t.freeSafelySub }}</span>
+      <div><button onClick="{{ goCleanup }}" style="height:36px;padding:0 16px;border:0;background:var(--accent);color:var(--onaccent);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;display:inline-flex;align-items:center;gap:10px;" style-hover="background:var(--accent2)">{{ t.reviewCleanup }}<span>→</span></button></div>
+    </div>
+    <button onClick="{{ goMemory }}" style="grid-column:span 2;background:var(--bg);border:0;padding:18px 22px;text-align:left;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:28px;align-items:end;transition:background .2s;" style-hover="background:var(--hover)">
+      <span style="display:flex;flex-direction:column;gap:10px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">{{ t.memory }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;font-variant-numeric:tabular-nums;">{{ memUsedTxt }} <span style="color:var(--ink2);font-size:14px;">/ 16 GB</span></span>
+        <span style="display:flex;gap:2px;height:8px;">
+          <sc-for list="{{ memSegs }}" as="g" hint-placeholder-count="3"><span style="flex:none;width:{{ g.w }};background:{{ g.bg }};transition:width .6s;"></span></sc-for>
+          <span style="flex:1;background:var(--track);"></span>
+        </span>
+      </span>
+      <span style="display:flex;flex-direction:column;gap:10px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">CPU · {{ t.topApp }}: {{ topAppLine }}</span>
+        <span style="display:flex;align-items:flex-end;gap:12px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:300;font-variant-numeric:tabular-nums;width:56px;">{{ cpuTxt }}</span>
+          <span style="flex:1;display:flex;align-items:flex-end;gap:1px;height:26px;">
+            <sc-for list="{{ cpuMini }}" as="b" hint-placeholder-count="30"><span style="flex:1;height:{{ b.h }};background:{{ b.bg }};transition:height .4s;"></span></sc-for>
+          </span>
+        </span>
+      </span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;">{{ t.seeMemory }} →</span>
+    </button>
+  </div>
+  <sc-if value="{{ showUnlockBanner }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:center;gap:16px;padding:14px 18px;border:1px dashed var(--line2);flex-wrap:wrap;">
+      <span style="font-family:'JetBrains Mono',monospace;color:var(--ink2);">[ ]</span>
+      <span style="flex:1;min-width:240px;font-size:14px;">{{ t.unlockBanner }}</span>
+      <button onClick="{{ openUnlock }}" style="height:34px;padding:0 14px;border:1px solid var(--ink);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--ink);color:var(--bg)">{{ t.unlockCta }} →</button>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isStorage }}" hint-placeholder-val="{{ false }}">
+<div style="height:100%;overflow-y:auto;overflow-x:hidden;padding:28px 36px 32px;display:flex;flex-direction:column;gap:20px;animation:pwIn .5s cubic-bezier(.2,.7,.2,1);">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">02 / {{ t.navStorage }}</div>
+      <h1 style="margin:0;font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:1.1;">{{ t.storageTitle }}</h1>
+      <div style="font-size:15px;font-variant-numeric:tabular-nums;">{{ usedLine }}</div>
+      <div style="font-size:13.5px;color:var(--ink2);max-width:520px;line-height:1.45;">{{ t.storageHelp }}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+      <div role="radiogroup" style="display:flex;border:1px solid var(--line2);">
+        <sc-for list="{{ driveBtns }}" as="b" hint-placeholder-count="2">
+          <button role="radio" aria-checked="{{ b.aria }}" onClick="{{ b.onClick }}" style="height:32px;padding:0 14px;border:0;border-right:1px solid var(--line2);cursor:pointer;font-size:13px;background:{{ b.bg }};color:{{ b.fg }};display:flex;gap:8px;align-items:center;transition:background .25s,color .25s;"><span style="font-family:'JetBrains Mono',monospace;">{{ b.letter }}</span>{{ b.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);font-variant-numeric:tabular-nums;">
+        <span style="color:{{ statusDot }};animation:{{ dotAnim }};">●</span>
+        <span>{{ statusLine }}</span>
+        <sc-if value="{{ canRescan }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ rescan }}" style="border:0;background:transparent;padding:0;cursor:pointer;font:inherit;color:var(--ink);text-decoration:underline;text-underline-offset:3px;">{{ t.scanAgain }}</button>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div style="display:flex;gap:2px;height:76px;position:relative;">
+      <sc-for list="{{ segs }}" as="g" hint-placeholder-count="7">
+        <button onClick="{{ g.onClick }}" title="{{ g.title }}" aria-label="{{ g.title }}" style="flex:none;width:{{ g.w }};height:100%;border:0;padding:0;cursor:pointer;background:{{ g.bg }};transition:width .9s cubic-bezier(.2,.7,.2,1);"></button>
+      </sc-for>
+      <div style="flex:1;min-width:0;background:var(--track);display:flex;align-items:flex-end;justify-content:flex-end;padding:6px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink2);white-space:nowrap;overflow:hidden;">{{ freeTxt }}</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:.06em;">
+      <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100% · {{ totalTxt }}</span>
+    </div>
+  </div>
+  <sc-if value="{{ showOvercount }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;gap:12px;align-items:flex-start;font-size:13px;color:var(--ink2);line-height:1.45;padding:12px 16px;background:var(--surface);border:1px solid var(--line);">
+      <span style="font-family:'JetBrains Mono',monospace;color:var(--ink);">i</span><span>{{ t.overcount }}</span>
+    </div>
+  </sc-if>
+  <sc-if value="{{ showUnlockStorage }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;align-items:center;gap:16px;padding:12px 16px;border:1px dashed var(--line2);flex-wrap:wrap;">
+      <span style="font-family:'JetBrains Mono',monospace;color:var(--ink2);">[ ]</span>
+      <span style="flex:1;min-width:220px;font-size:13px;">{{ t.unlockBanner }}</span>
+      <button onClick="{{ openUnlock }}" style="height:30px;padding:0 12px;border:1px solid var(--ink);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--ink);color:var(--bg)">{{ t.unlockCta }} →</button>
+    </div>
+  </sc-if>
+  <div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;">
+    <div style="display:flex;flex-direction:column;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);padding-bottom:10px;">{{ t.categories }}</div>
+      <sc-for list="{{ legend }}" as="r" hint-placeholder-count="7">
+        <button onClick="{{ r.onClick }}" aria-pressed="{{ r.aria }}" style="display:grid;grid-template-columns:34px minmax(0,1fr) 52px 74px 12px;align-items:center;gap:12px;padding:10px;border:0;border-top:1px solid var(--line);background:{{ r.bg }};text-align:left;cursor:pointer;transition:background .25s;" style-hover="background:var(--hover)">
+          <span style="height:16px;background:{{ r.sw }};outline:1px solid var(--line2);transition:background .3s;"></span>
+          <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+            <span style="font-size:14px;">{{ r.name }}</span>
+            <span style="font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.desc }}</span>
+          </span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink2);text-align:right;font-variant-numeric:tabular-nums;">{{ r.pct }}</span>
+          <span style="font-size:14px;text-align:right;font-variant-numeric:tabular-nums;">{{ r.size }}</span>
+          <span style="font-family:'JetBrains Mono',monospace;color:var(--ink2);">›</span>
+        </button>
+      </sc-for>
+      <div style="border-top:1px solid var(--line);padding-top:14px;">
+        <button onClick="{{ browseAll }}" style="height:38px;padding:0 16px;border:1px solid var(--ink);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:inline-flex;align-items:center;gap:10px;" style-hover="background:var(--ink);color:var(--bg)">{{ t.browseAll }} →</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);padding-bottom:10px;">{{ placesTitle }}</div>
+      <sc-if value="{{ placesScan }}" hint-placeholder-val="{{ false }}">
+        <div style="border-top:1px solid var(--line);padding:22px 0;display:flex;flex-direction:column;gap:14px;">
+          <div style="height:2px;background:var(--track);position:relative;overflow:hidden;"><div style="position:absolute;left:0;top:0;bottom:0;width:30%;background:var(--ink);animation:pwSweep 1.4s linear infinite;"></div></div>
+          <span style="font-size:13px;color:var(--ink2);">{{ t.appearAfter }}</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ placesUnm }}" hint-placeholder-val="{{ false }}">
+        <div style="border-top:1px solid var(--line);padding:18px 0;display:flex;flex-direction:column;gap:14px;align-items:flex-start;">
+          <span style="font-size:14px;line-height:1.5;text-wrap:pretty;">{{ t.unmeasuredExplain }}</span>
+          <button onClick="{{ openUnlock }}" style="height:32px;padding:0 12px;border:1px solid var(--ink);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--ink);color:var(--bg)">{{ t.unlockCta }} →</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ placesList }}" hint-placeholder-val="{{ true }}">
+        <sc-for list="{{ places }}" as="pl" hint-placeholder-count="3">
+          <button onClick="{{ pl.open }}" disabled="{{ pl.noOpen }}" style="border:0;border-top:1px solid var(--line);background:transparent;text-align:left;padding:12px 8px;margin:0 -8px;cursor:pointer;display:flex;flex-direction:column;gap:5px;animation:pwIn .45s both;animation-delay:{{ pl.delay }};transition:background .2s;" style-hover="background:var(--hover)">
+            <div style="display:flex;justify-content:space-between;gap:12px;align-items:baseline;width:100%;">
+              <span style="font-size:14px;min-width:0;">{{ pl.title }}</span>
+              <span style="font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap;display:flex;gap:10px;">{{ pl.size }}<span style="font-family:'JetBrains Mono',monospace;color:var(--ink2);width:8px;">{{ pl.chev }}</span></span>
+            </div>
+            <div style="font-size:12px;color:var(--ink2);line-height:1.4;">{{ pl.desc }}</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="flex:1;min-width:0;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ pl.path }}</span>
+              <span style="width:84px;height:4px;background:var(--track);position:relative;flex:none;"><span style="position:absolute;left:0;top:0;bottom:0;width:{{ pl.w }};background:var(--ink);"></span></span>
+            </div>
+          </button>
+        </sc-for>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isFolders }}" hint-placeholder-val="{{ false }}">
+<div style="height:100%;display:flex;flex-direction:column;min-height:0;animation:pwIn .5s cubic-bezier(.2,.7,.2,1);">
+  <div style="padding:28px 36px 14px;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">05 / {{ t.navFolders }}</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;">
+      <h1 style="margin:0;font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:1.1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;">{{ fbTitle }}</h1>
+      <span style="font-size:14px;color:var(--ink2);font-variant-numeric:tabular-nums;">{{ fbTotal }}</span>
+    </div>
+    <div style="font-size:13px;color:var(--ink2);">{{ t.fbHelp }}</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--line2);padding:4px;">
+      <button onClick="{{ fbBack }}" disabled="{{ noBack }}" aria-label="{{ t.back }}" style="height:30px;padding:0 10px;border:0;background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:{{ backOp }};display:flex;gap:6px;align-items:center;" style-hover="background:var(--hover)">← {{ t.back }}</button>
+      <button onClick="{{ fbUp }}" disabled="{{ noUp }}" aria-label="{{ t.up }}" style="height:30px;padding:0 10px;border:0;border-right:1px solid var(--line2);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:{{ upOp }};display:flex;gap:6px;align-items:center;" style-hover="background:var(--hover)">↑ {{ t.up }}</button>
+      <nav aria-label="Breadcrumb" style="display:flex;align-items:center;flex-wrap:wrap;gap:2px;min-width:0;flex:1;padding-left:4px;">
+        <sc-for list="{{ crumbs }}" as="c" hint-placeholder-count="3">
+          <span style="display:flex;align-items:center;gap:2px;min-width:0;">
+            <span style="color:var(--ink3);font-family:'JetBrains Mono',monospace;padding:0 2px;">{{ c.sep }}</span>
+            <button onClick="{{ c.onClick }}" style="height:28px;padding:0 6px;border:0;background:transparent;cursor:pointer;font-size:13px;color:{{ c.fg }};max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" style-hover="background:var(--hover);color:var(--ink)">{{ c.label }}</button>
+          </span>
+        </sc-for>
+      </nav>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:22px minmax(0,1fr) 150px 84px 156px;gap:14px;padding:0 46px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">
+    <span></span><span>{{ t.colName }}</span><span>{{ t.colShare }}</span><span style="text-align:right;">{{ t.colSize }}</span><span></span>
+  </div>
+  <div style="flex:1;min-height:0;overflow:auto;padding:0 36px 24px;">
+    <sc-if value="{{ fbList }}" hint-placeholder-val="{{ true }}">
+      <sc-for list="{{ fbRows }}" as="r" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:22px minmax(0,1fr) 150px 84px 156px;gap:14px;align-items:center;border-top:1px solid var(--line);padding:0 10px;height:44px;transition:background .15s;" style-hover="background:var(--hover)">
+          <span style="display:flex;align-items:center;justify-content:center;">
+            <sc-if value="{{ r.kindFolder }}" hint-placeholder-val="{{ true }}"><span style="position:relative;width:18px;height:13px;display:block;"><span style="position:absolute;left:0;top:0;width:8px;height:4px;background:{{ r.ic }};"></span><span style="position:absolute;left:0;top:3px;right:0;bottom:0;background:{{ r.ic }};"></span></span></sc-if>
+            <sc-if value="{{ r.kindFile }}" hint-placeholder-val="{{ false }}"><span style="width:12px;height:15px;border:1.5px solid var(--ink2);display:block;"></span></sc-if>
+            <sc-if value="{{ r.kindDrive }}" hint-placeholder-val="{{ false }}"><span style="width:18px;height:11px;border:1.5px solid var(--ink);display:block;position:relative;"><span style="position:absolute;right:2px;top:3px;width:2px;height:2px;background:var(--ink);"></span></span></sc-if>
+          </span>
+          <button onClick="{{ r.open }}" disabled="{{ r.noOpen }}" title="{{ r.name }}" style="min-width:0;height:100%;text-align:left;border:0;background:transparent;padding:0;cursor:{{ r.cursor }};display:flex;align-items:center;gap:10px;font-size:14px;">
+            <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">{{ r.name }}</span>
+            <sc-if value="{{ r.locked }}" hint-placeholder-val="{{ false }}">
+              <span title="{{ t.lockedTip }}" style="flex:none;height:20px;padding:0 6px;display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--line2);font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);">■ {{ t.lockedBadge }}</span>
+            </sc-if>
+            <span style="flex:none;font-family:'JetBrains Mono',monospace;color:var(--ink2);">{{ r.chev }}</span>
+          </button>
+          <span style="height:6px;background:var(--track);position:relative;"><span style="position:absolute;left:0;top:0;bottom:0;width:{{ r.w }};background:var(--ink);transition:width .5s cubic-bezier(.2,.7,.2,1);"></span></span>
+          <span style="text-align:right;font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap;">{{ r.size }}</span>
+          <span style="display:flex;justify-content:flex-end;">
+            <button onClick="{{ r.explorer }}" style="height:26px;padding:0 8px;border:1px solid var(--line2);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);white-space:nowrap;" style-hover="color:var(--ink);border-color:var(--ink)">{{ t.showExplorer }}</button>
+          </span>
+        </div>
+      </sc-for>
+    </sc-if>
+    <sc-if value="{{ fbEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="border-top:1px solid var(--line);padding:60px 0;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;">
+        <span style="position:relative;width:36px;height:26px;display:block;margin-bottom:8px;"><span style="position:absolute;left:0;top:0;width:15px;height:7px;border:1.5px solid var(--ink2);border-bottom:0;"></span><span style="position:absolute;left:0;top:6px;right:0;bottom:0;border:1.5px solid var(--ink2);"></span></span>
+        <span style="font-size:17px;">{{ t.emptyTitle }}</span>
+        <span style="font-size:13px;color:var(--ink2);">{{ t.emptyBody }}</span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ fbLockedState }}" hint-placeholder-val="{{ false }}">
+      <div style="border-top:1px solid var(--line);padding:56px 0;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink2);border:1px dashed var(--line2);padding:6px 10px;">■ {{ t.lockedBadge }}</span>
+        <span style="font-size:17px;">{{ t.lockedTitle }}</span>
+        <span style="font-size:13px;color:var(--ink2);max-width:420px;line-height:1.5;">{{ t.lockedBody }}</span>
+        <button onClick="{{ openUnlock }}" style="margin-top:6px;height:36px;padding:0 14px;border:1px solid var(--ink);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--ink);color:var(--bg)">{{ t.unlockCta }} →</button>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCleanup }}" hint-placeholder-val="{{ false }}">
+<div style="height:100%;overflow-y:auto;overflow-x:hidden;padding:28px 36px 0;display:flex;flex-direction:column;gap:18px;animation:pwIn .5s cubic-bezier(.2,.7,.2,1);">
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">03 / {{ t.navCleanup }}</div>
+    <h1 style="margin:0;font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums;">{{ cleanTitle }}</h1>
+    <div style="font-size:14px;color:var(--ink2);">{{ cleanSub }}</div>
+  </div>
+
+  <sc-if value="{{ phSelect }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 0 8px;flex-wrap:wrap;">
+            <span style="display:inline-flex;align-items:center;gap:8px;height:22px;padding:0 8px;border:1px solid {{ g.bc }};font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;"><span style="color:{{ g.gc }};">{{ g.glyph }}</span>{{ g.label }}</span>
+            <span style="font-size:12px;color:var(--ink2);">{{ g.desc }}</span>
+          </div>
+          <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
+            <button role="checkbox" aria-checked="{{ it.aria }}" onClick="{{ it.onClick }}" style="display:grid;grid-template-columns:20px minmax(0,1fr) 90px;gap:16px;align-items:start;padding:14px 10px;border:0;border-top:1px solid var(--line);background:transparent;text-align:left;cursor:pointer;transition:background .2s;" style-hover="background:var(--hover)">
+              <span style="width:18px;height:18px;margin-top:2px;border:1.5px solid var(--ink);background:{{ it.boxBg }};display:flex;align-items:center;justify-content:center;color:var(--bg);font-size:12px;line-height:1;transition:background .18s;">{{ it.mark }}</span>
+              <span style="display:flex;flex-direction:column;gap:4px;min-width:0;">
+                <span style="font-size:15px;">{{ it.title }}</span>
+                <span style="font-size:13px;color:var(--ink2);">{{ it.desc }}</span>
+                <span style="font-size:13px;line-height:1.4;"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);">{{ t.ifRemoved }}</span> {{ it.cons }}</span>
+              </span>
+              <span style="font-size:15px;text-align:right;font-variant-numeric:tabular-nums;">{{ it.size }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+    <div style="position:sticky;bottom:0;margin-top:auto;background:var(--bg);border-top:1px solid var(--line2);padding:14px 0 18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:220px;">
+        <span style="font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;">{{ selLine }}</span>
+        <span style="height:4px;background:var(--track);position:relative;"><span style="position:absolute;left:0;top:0;bottom:0;width:{{ selW }};background:var(--accent);transition:width .35s cubic-bezier(.2,.7,.2,1);"></span></span>
+      </div>
+      <button onClick="{{ askClean }}" disabled="{{ cleanDisabled }}" style="height:44px;padding:0 20px;border:0;background:var(--accent);color:var(--onaccent);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;display:inline-flex;align-items:center;gap:12px;opacity:{{ cleanOp }};font-variant-numeric:tabular-nums;" style-hover="background:var(--accent2)">{{ cleanBtn }}<span>→</span></button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ phCleaning }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;">
+      <sc-for list="{{ cleanRows }}" as="c" hint-placeholder-count="4">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 220px 64px;gap:18px;align-items:center;padding:14px 0;border-top:1px solid var(--line);">
+          <span style="font-size:15px;">{{ c.title }}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink);letter-spacing:.02em;">{{ c.bar }}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;text-align:right;color:var(--ink2);font-variant-numeric:tabular-nums;">{{ c.pct }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ phDone }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:18px;padding:12px 0 32px;animation:pwIn .5s;">
+      <div style="display:flex;gap:14px;align-items:center;font-size:14px;color:var(--ink2);"><span style="font-family:'JetBrains Mono',monospace;color:var(--accent);">■</span>{{ t.skipped }}</div>
+      <div style="display:flex;flex-direction:column;">
+        <sc-for list="{{ doneRows }}" as="c" hint-placeholder-count="4">
+          <div style="display:flex;justify-content:space-between;padding:11px 0;border-top:1px solid var(--line);font-size:14px;"><span>{{ c.title }}</span><span style="font-variant-numeric:tabular-nums;color:var(--ink2);">{{ c.size }}</span></div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button onClick="{{ finishClean }}" style="height:40px;padding:0 18px;border:0;background:var(--ink);color:var(--bg);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;">{{ t.done }}</button>
+        <button onClick="{{ goHome }}" style="height:40px;padding:0 18px;border:1px solid var(--line2);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;" style-hover="background:var(--hover)">{{ t.backHome }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ phEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px 0;text-align:center;">
+      <pre aria-hidden="true" style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:15px;color:var(--ink2);">  +-----------+
+  | 0000 0000 |
+  | 0000 0000 |
+  +-----------+</pre>
+      <span style="font-size:18px;">{{ t.nothingTitle }}</span>
+      <span style="font-size:13px;color:var(--ink2);">{{ t.nothingSub }}</span>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMemory }}" hint-placeholder-val="{{ false }}">
+<div style="height:100%;overflow-y:auto;overflow-x:hidden;padding:28px 36px 28px;display:flex;flex-direction:column;gap:20px;animation:pwIn .5s cubic-bezier(.2,.7,.2,1);">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">04 / {{ t.navMemory }}</div>
+      <h1 style="margin:0;font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:1.1;">{{ t.navMemory }}</h1>
+      <div style="font-size:15px;line-height:1.5;">{{ calmLine }}</div>
+      <div style="font-size:13px;color:var(--ink2);">{{ t.memHelp }}</div>
+    </div>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);display:flex;gap:8px;align-items:center;"><span style="color:var(--accent);animation:pwBlink 2s steps(1) infinite;">●</span>{{ t.live }}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1px;background:var(--line);border:1px solid var(--line);">
+    <div style="background:var(--bg);padding:20px 22px;display:flex;flex-direction:column;gap:14px;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">{{ t.memory }}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:40px;font-weight:300;line-height:1;font-variant-numeric:tabular-nums;">{{ memUsedTxt }}<span style="font-size:16px;color:var(--ink2);"> / 16 GB</span></span>
+      <span style="display:flex;gap:2px;height:22px;">
+        <sc-for list="{{ memSegs }}" as="g" hint-placeholder-count="3"><span style="flex:none;width:{{ g.w }};background:{{ g.bg }};transition:width .6s;"></span></sc-for>
+        <span style="flex:1;background:var(--track);"></span>
+      </span>
+      <span style="display:flex;flex-wrap:wrap;gap:6px 18px;">
+        <sc-for list="{{ memLegend }}" as="l" hint-placeholder-count="4">
+          <span style="display:flex;align-items:center;gap:8px;font-size:12px;"><span style="width:14px;height:10px;background:{{ l.bg }};outline:1px solid var(--line2);"></span>{{ l.label }}<span style="font-family:'JetBrains Mono',monospace;color:var(--ink2);font-variant-numeric:tabular-nums;">{{ l.val }}</span></span>
+        </sc-for>
+      </span>
+      <span style="font-size:12.5px;color:var(--ink2);line-height:1.45;">{{ t.cachedNote }}</span>
+    </div>
+    <div style="background:var(--bg);padding:20px 22px;display:flex;flex-direction:column;gap:14px;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">CPU</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:40px;font-weight:300;line-height:1;font-variant-numeric:tabular-nums;">{{ cpuTxt }}</span>
+      <div style="position:relative;height:72px;border-bottom:1px solid var(--line2);">
+        <div style="position:absolute;left:0;right:0;top:0;border-top:1px dashed var(--line);"></div>
+        <div style="position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--line);"></div>
+        <span style="position:absolute;right:0;top:-14px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--ink3);">25%</span>
+        <div style="position:absolute;inset:0;display:flex;align-items:flex-end;gap:1px;">
+          <sc-for list="{{ cpuBars }}" as="b" hint-placeholder-count="60"><span style="flex:1;height:{{ b.h }};background:{{ b.bg }};transition:height .5s cubic-bezier(.2,.7,.2,1);"></span></sc-for>
+        </div>
+      </div>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);">{{ t.last60 }}</span>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;">
+    <div style="display:grid;grid-template-columns:34px minmax(0,1fr) 100px 88px 168px;gap:14px;padding:0 10px 8px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">
+      <span></span><span>{{ t.appsCol }}</span><span style="text-align:right;">{{ t.memColLong }}</span><span style="text-align:right;">{{ t.cpuColLong }}</span><span></span>
+    </div>
+    <sc-for list="{{ apps }}" as="a" hint-placeholder-count="8">
+      <div style="border-top:1px solid var(--line);">
+        <div style="display:grid;grid-template-columns:34px minmax(0,1fr) 100px 88px 168px;gap:14px;align-items:center;padding:10px;transition:background .2s;" style-hover="background:var(--hover)">
+          <span style="width:30px;height:30px;border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink2);">{{ a.ic }}</span>
+          <button onClick="{{ a.toggle }}" aria-expanded="{{ a.aria }}" disabled="{{ a.noExpand }}" style="display:flex;flex-direction:column;gap:2px;min-width:0;border:0;background:transparent;padding:0;text-align:left;cursor:pointer;">
+            <span style="font-size:14px;display:flex;gap:8px;align-items:center;min-width:0;"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);width:10px;">{{ a.sign }}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.name }}</span></span>
+            <span style="font-size:12px;color:var(--ink2);padding-left:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.sub }}</span>
+          </button>
+          <span style="font-size:14px;text-align:right;font-variant-numeric:tabular-nums;">{{ a.mem }}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;">{{ a.cpu }}</span>
+          <span style="display:flex;justify-content:flex-end;gap:6px;">
+            <sc-if value="{{ a.hasStorage }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ a.onStorage }}" style="height:26px;padding:0 8px;border:1px solid var(--line2);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);" style-hover="color:var(--ink);border-color:var(--ink)">{{ t.storageShort }}</button>
+            </sc-if>
+            <sc-if value="{{ a.canClose }}" hint-placeholder-val="{{ true }}">
+              <button onClick="{{ a.onClose }}" style="height:26px;padding:0 10px;border:1px solid var(--line2);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;" style-hover="background:var(--ink);color:var(--bg)">{{ t.closeApp }}</button>
+            </sc-if>
+            <sc-if value="{{ a.locked }}" hint-placeholder-val="{{ false }}">
+              <span title="{{ t.protectedTip }}" style="height:26px;padding:0 8px;display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);border:1px dashed var(--line2);">■ {{ t.protected }}</span>
+            </sc-if>
+          </span>
+        </div>
+        <sc-if value="{{ a.expanded }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;padding:0 10px 10px 58px;animation:pwIn .3s;">
+            <sc-if value="{{ a.hasNote }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:12.5px;color:var(--ink2);padding:2px 0 8px;line-height:1.45;max-width:520px;">{{ a.note }}</div>
+            </sc-if>
+            <sc-for list="{{ a.children }}" as="c" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 100px 88px 168px;gap:14px;padding:6px 0;border-top:1px dashed var(--line);font-size:13px;color:var(--ink2);">
+                <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',monospace;font-size:11.5px;">{{ c.name }}</span>
+                <span style="text-align:right;font-variant-numeric:tabular-nums;">{{ c.mem }}</span>
+                <span style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:11.5px;font-variant-numeric:tabular-nums;">{{ c.cpu }}</span>
+                <span></span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ is3d }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 340px;height:100%;min-height:0;animation:pwFade .6s;">
+  <div style="position:relative;overflow:hidden;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;">
+    <div style="position:absolute;top:16px;left:20px;right:20px;display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);pointer-events:none;z-index:2;">
+      <span>{{ t.hint3d }}</span><span>{{ t.machine }}</span>
+    </div>
+    <div ref="{{ stageRef }}" onPointerDown="{{ onDown }}" onPointerMove="{{ onMove }}" onPointerUp="{{ onUp }}" onPointerLeave="{{ onLeave }}" onWheel="{{ onWheel }}" style="flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;user-select:none;">
+      <div style="position:relative;flex:none;transform:scale(.5);">
+        <pre ref="{{ rainRef }}" aria-hidden="true" style="margin:0;font-family:'JetBrains Mono',monospace;font-size:7px;line-height:7.6px;color:var(--ink3);opacity:.22;"></pre>
+        <pre ref="{{ dimRef }}" aria-hidden="true" style="position:absolute;inset:0;margin:0;font-family:'JetBrains Mono',monospace;font-size:7px;line-height:7.6px;color:var(--ink2);font-weight:500;"></pre>
+        <pre ref="{{ baseRef }}" aria-hidden="true" style="position:absolute;inset:0;margin:0;font-family:'JetBrains Mono',monospace;font-size:7px;line-height:7.6px;color:var(--ink);"></pre>
+        <pre ref="{{ hiRef }}" aria-hidden="true" style="position:absolute;inset:0;margin:0;font-family:'JetBrains Mono',monospace;font-size:7px;line-height:7.6px;color:var(--accent);font-weight:500;"></pre>
+        <div ref="{{ labelsRef }}" aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;"></div>
+      </div>
+    </div>
+    <div style="position:absolute;right:20px;bottom:72px;display:flex;flex-direction:column;border:1px solid var(--line2);background:var(--bg);z-index:3;font-family:'JetBrains Mono',monospace;">
+      <button onClick="{{ zoomIn }}" aria-label="Zoom in" style="width:34px;height:34px;border:0;border-bottom:1px solid var(--line2);background:transparent;cursor:pointer;font-size:15px;" style-hover="background:var(--hover)">+</button>
+      <button onClick="{{ zoomReset }}" aria-label="Reset zoom" style="width:34px;height:26px;border:0;border-bottom:1px solid var(--line2);background:transparent;cursor:pointer;font-size:9px;color:var(--ink2);font-variant-numeric:tabular-nums;" style-hover="background:var(--hover);color:var(--ink)">{{ zoomTxt }}</button>
+      <button onClick="{{ zoomOut }}" aria-label="Zoom out" style="width:34px;height:34px;border:0;background:transparent;cursor:pointer;font-size:15px;" style-hover="background:var(--hover)">−</button>
+    </div>
+    <sc-if value="{{ show3dHint }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:20px;bottom:72px;max-width:320px;padding:16px 18px;background:var(--surface);border:1px solid var(--line2);display:flex;flex-direction:column;gap:8px;z-index:3;animation:pwIn .5s .4s both;">
+        <span style="font-size:15px;">{{ t.hintTitle }}</span>
+        <span style="font-size:13px;color:var(--ink2);line-height:1.45;">{{ t.hintBody }}</span>
+        <div><button onClick="{{ dismiss3dHint }}" style="margin-top:4px;height:30px;padding:0 14px;border:0;background:var(--ink);color:var(--bg);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;">{{ t.gotIt }} ↓</button></div>
+      </div>
+    </sc-if>
+    <div role="tablist" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--line);">
+      <sc-for list="{{ partChips }}" as="c" hint-placeholder-count="6">
+        <button role="tab" aria-selected="{{ c.aria }}" onClick="{{ c.onClick }}" style="height:52px;border:0;border-right:1px solid var(--line);background:{{ c.bg }};color:{{ c.fg }};cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:background .25s,color .25s;" style-hover="background:var(--hover);color:var(--ink)">
+          <span style="font-size:9px;opacity:.7;">{{ c.idx }}</span><span>{{ c.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </div>
+  <aside style="overflow:auto;padding:24px 24px 28px;display:flex;flex-direction:column;gap:20px;">
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);">{{ partIdx }}</span>
+      <h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em;line-height:1.15;">{{ partName }}</h2>
+      <span style="font-size:13.5px;color:var(--ink2);line-height:1.45;">{{ partDesc }}</span>
+    </div>
+
+    <sc-if value="{{ pSsd }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:16px;animation:pwIn .45s;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);padding-top:14px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:300;font-variant-numeric:tabular-nums;">{{ ssdUsed }}</span>
+          <span style="font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums;">{{ ssdFree }}</span>
+        </div>
+        <pre ref="{{ driveRef }}" aria-label="{{ ssdUsed }}" style="margin:0;font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:12.5px;color:var(--ink);"></pre>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <sc-for list="{{ driveLegend }}" as="l" hint-placeholder-count="7">
+            <div style="display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:10px;font-size:12.5px;align-items:center;">
+              <span style="font-family:'JetBrains Mono',monospace;">{{ l.ch }}</span><span>{{ l.name }}</span><span style="font-variant-numeric:tabular-nums;color:var(--ink2);">{{ l.size }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:12px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">{{ t.topFolders }}</span>
+          <sc-for list="{{ topFolders }}" as="f" hint-placeholder-count="5">
+            <div style="display:flex;flex-direction:column;gap:2px;padding:3px 0;">
+              <span style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ f.name }}</span>
+              <span style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink2);"><span>{{ f.bar }}</span><span>{{ f.size }}</span></span>
+            </div>
+          </sc-for>
+        </div>
+        <button onClick="{{ openStorage3d }}" style="height:38px;border:1px solid var(--ink);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--ink);color:var(--bg)">{{ t.openStorage }} →</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ pRam }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px;animation:pwIn .45s;">
+        <div style="border-top:1px solid var(--line);padding-top:14px;font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:300;font-variant-numeric:tabular-nums;">{{ memUsedTxt }}<span style="font-size:14px;color:var(--ink2);"> / 16 GB</span></div>
+        <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:14px;">{{ memAscii }}</pre>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <sc-for list="{{ memAsciiLegend }}" as="l" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:10px;font-size:12.5px;"><span style="font-family:'JetBrains Mono',monospace;">{{ l.ch }}</span><span>{{ l.label }}</span><span style="font-variant-numeric:tabular-nums;color:var(--ink2);">{{ l.val }}</span></div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;border-top:1px solid var(--line);padding-top:12px;gap:6px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">{{ t.topMem }}</span>
+          <sc-for list="{{ topMem }}" as="a" hint-placeholder-count="4">
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 0;"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.name }}</span><span style="font-variant-numeric:tabular-nums;">{{ a.mem }}</span></div>
+          </sc-for>
+        </div>
+        <span style="font-size:12.5px;color:var(--ink2);line-height:1.45;">{{ t.cachedNote }}</span>
+        <button onClick="{{ goMemory }}" style="height:38px;border:1px solid var(--ink);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--ink);color:var(--bg)">{{ t.openMemory }} →</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ pCpu }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px;animation:pwIn .45s;">
+        <div style="border-top:1px solid var(--line);padding-top:14px;font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:300;font-variant-numeric:tabular-nums;">{{ cpuTxt }}</div>
+        <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:16px;letter-spacing:-.02em;">{{ cpuSpark }}</pre>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);">{{ t.last60 }}</span>
+        <div style="display:flex;flex-direction:column;border-top:1px solid var(--line);padding-top:12px;gap:6px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);">{{ t.topCpu }}</span>
+          <sc-for list="{{ topCpu }}" as="a" hint-placeholder-count="4">
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 0;"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.name }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-variant-numeric:tabular-nums;">{{ a.cpu }}</span></div>
+          </sc-for>
+        </div>
+        <button onClick="{{ goMemory }}" style="height:38px;border:1px solid var(--ink);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--ink);color:var(--bg)">{{ t.openMemory }} →</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ pGpu }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px;animation:pwIn .45s;">
+        <div style="border-top:1px solid var(--line);padding-top:14px;display:flex;justify-content:space-between;align-items:baseline;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:300;font-variant-numeric:tabular-nums;">{{ gpuTxt }}</span>
+          <span style="font-size:13px;color:var(--ink2);">{{ t.gpuNow }}</span>
+        </div>
+        <pre style="margin:0;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:16px;letter-spacing:-.02em;">{{ gpuSpark }}</pre>
+        <div style="display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:14px;">
+          <span style="display:inline-flex;align-items:center;gap:8px;height:22px;padding:0 8px;border:1px solid var(--line2);width:fit-content;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;">● {{ t.safe }}</span>
+          <span style="font-size:13.5px;line-height:1.5;">{{ shaderNote }}</span>
+        </div>
+        <button onClick="{{ goCleanup }}" style="height:38px;border:1px solid var(--ink);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--ink);color:var(--bg)">{{ t.openCleanup }} →</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ pPsu }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:16px;animation:pwIn .45s;">
+        <div style="border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:6px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:300;font-variant-numeric:tabular-nums;">{{ hiberTxt }}</span>
+          <span style="font-size:14px;">{{ t.psuHiber }} <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);">hiberfil.sys</span></span>
+        </div>
+        <pre aria-hidden="true" style="margin:0;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:13px;color:var(--ink2);">  +----------------+
+  | > ON   > SLEEP |--+
+  | > HIBERNATE    |  | RAM -> DISK
+  +----------------+  v
+       hiberfil.sys  [{{ hiberBar }}]</pre>
+        <span style="font-size:13.5px;line-height:1.5;">{{ t.psuHiberNote }}</span>
+        <button onClick="{{ openHidden }}" style="height:38px;border:1px solid var(--ink);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--ink);color:var(--bg)">{{ t.openStorage }} →</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ pBin }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:14px;animation:pwIn .45s;">
+        <div style="border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:300;font-variant-numeric:tabular-nums;">{{ cleanTotalTxt }}</span>
+          <span style="font-size:13px;color:var(--ink2);">{{ t.canFreeShort }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;">
+          <sc-for list="{{ binList }}" as="b" hint-placeholder-count="7">
+            <div style="display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13px;align-items:center;">
+              <span style="font-family:'JetBrains Mono',monospace;color:{{ b.gc }};">{{ b.glyph }}</span>
+              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ b.title }}</span>
+              <span style="font-variant-numeric:tabular-nums;color:var(--ink2);">{{ b.size }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <button onClick="{{ goCleanup }}" style="height:38px;border:0;background:var(--accent);color:var(--onaccent);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--accent2)">{{ t.reviewCleanup }} →</button>
+      </div>
+    </sc-if>
+  </aside>
+</div>
+</sc-if>
+
+</main>
+</div>
+
+<div style="display:flex;align-items:center;gap:18px;padding:0 16px;border-top:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.06em;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;">
+  <span style="display:flex;gap:8px;align-items:center;"><span style="color:{{ statusDot }};animation:{{ dotAnim }};">●</span>{{ statusShort }}</span>
+  <span>C: {{ cPct }}</span>
+  <span>RAM {{ memUsedTxt }}/16 GB</span>
+  <span>CPU {{ cpuTxt }}</span>
+  <span style="flex:1;"></span>
+  <span style="color:var(--ink3);letter-spacing:.14em;">{{ bitsLine }}</span>
+</div>
+
+<sc-if value="{{ hasDialog }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;animation:pwFade .25s;z-index:20;">
+  <div role="dialog" aria-modal="true" style="width:500px;max-width:calc(100% - 48px);background:var(--surface);border:1px solid var(--line2);padding:28px;display:flex;flex-direction:column;gap:18px;animation:pwIn .4s cubic-bezier(.2,.7,.2,1);box-shadow:0 30px 60px -20px rgba(0,0,0,.5);">
+    <sc-if value="{{ dUnlock }}" hint-placeholder-val="{{ false }}">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);">[ ] → [■]</span>
+      <h2 style="margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em;">{{ t.unlockTitle }}</h2>
+      <p style="margin:0;font-size:14px;line-height:1.55;color:var(--ink2);text-wrap:pretty;">{{ t.unlockWhy }}</p>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1px;background:var(--line);border:1px solid var(--line);">
+        <div style="background:var(--surface);padding:14px;display:flex;flex-direction:column;gap:6px;"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);">{{ t.canSee }}</span><span style="font-size:13px;line-height:1.45;">{{ t.seeList }}</span></div>
+        <div style="background:var(--surface);padding:14px;display:flex;flex-direction:column;gap:6px;"><span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);">{{ t.wont }}</span><span style="font-size:13px;line-height:1.45;">{{ t.wontList }}</span></div>
+      </div>
+      <sc-if value="{{ waiting }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="height:2px;background:var(--track);position:relative;overflow:hidden;"><div style="position:absolute;left:0;top:0;bottom:0;width:30%;background:var(--accent);animation:pwSweep 1.1s linear infinite;"></div></div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);">{{ t.waiting }}</span>
+        </div>
+      </sc-if>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button onClick="{{ declineUnlock }}" style="height:40px;padding:0 16px;border:1px solid var(--line2);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--hover)">{{ t.notNow }}</button>
+        <button onClick="{{ confirmUnlock }}" style="height:40px;padding:0 18px;border:0;background:var(--accent);color:var(--onaccent);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--accent2)">{{ t.unlock }}</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ dDeclined }}" hint-placeholder-val="{{ false }}">
+      <h2 style="margin:0;font-size:24px;font-weight:500;">{{ t.declinedTitle }}</h2>
+      <p style="margin:0;font-size:14px;line-height:1.55;color:var(--ink2);">{{ t.declinedSub }}</p>
+      <div style="display:flex;justify-content:flex-end;"><button onClick="{{ closeDialog }}" style="height:40px;padding:0 20px;border:0;background:var(--ink);color:var(--bg);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;">OK</button></div>
+    </sc-if>
+    <sc-if value="{{ dClean }}" hint-placeholder-val="{{ false }}">
+      <h2 style="margin:0;font-size:24px;font-weight:500;font-variant-numeric:tabular-nums;">{{ confirmTitle }}</h2>
+      <p style="margin:0;font-size:14px;line-height:1.5;color:var(--ink2);">{{ t.confirmSub }}</p>
+      <div style="display:flex;flex-direction:column;">
+        <sc-for list="{{ confirmRows }}" as="c" hint-placeholder-count="4">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px;"><span>{{ c.title }}</span><span style="font-variant-numeric:tabular-nums;color:var(--ink2);">{{ c.size }}</span></div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ binSelected }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:13px;line-height:1.5;padding:12px 14px;border:1px dashed var(--line2);">{{ t.binNote }}</div>
+      </sc-if>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button onClick="{{ closeDialog }}" style="height:40px;padding:0 16px;border:1px solid var(--line2);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--hover)">{{ t.cancel }}</button>
+        <button onClick="{{ doClean }}" style="height:40px;padding:0 18px;border:0;background:var(--accent);color:var(--onaccent);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--accent2)">{{ t.confirmClean }}</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ dClose }}" hint-placeholder-val="{{ false }}">
+      <h2 style="margin:0;font-size:24px;font-weight:500;">{{ closeTitle }}</h2>
+      <p style="margin:0;font-size:14px;line-height:1.5;color:var(--ink2);">{{ t.closeSub }}</p>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button onClick="{{ closeDialog }}" style="height:40px;padding:0 16px;border:1px solid var(--line2);background:transparent;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;" style-hover="background:var(--hover)">{{ t.cancel }}</button>
+        <button onClick="{{ confirmClose }}" style="height:40px;padding:0 18px;border:0;background:var(--ink);color:var(--bg);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;">{{ t.closeApp }}</button>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div role="status" style="position:absolute;right:20px;bottom:44px;max-width:420px;padding:12px 16px;background:var(--ink);color:var(--bg);font-size:13px;line-height:1.4;display:flex;gap:10px;animation:pwIn .35s cubic-bezier(.2,.7,.2,1);z-index:30;"><span style="font-family:'JetBrains Mono',monospace;">■</span>{{ toast }}</div>
+</sc-if>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;welcome&quot;,&quot;home&quot;,&quot;storage&quot;,&quot;cleanup&quot;,&quot;memory&quot;,&quot;3d&quot;],&quot;default&quot;:&quot;welcome&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Flow&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Look&quot;},&quot;binaryRain&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;3D mode&quot;},&quot;rotateSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0,&quot;max&quot;:0.6,&quot;step&quot;:0.05,&quot;default&quot;:0.15,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;3D mode&quot;}}">
+const COLS = 340, ROWS = 156;
+const L = (en, pt) => ({ en, pt });
+
+function fmt(gb, lang) {
+  let v, u = 'GB';
+  if (gb >= 1000) { v = (gb / 1024).toFixed(2); u = 'TB'; }
+  else if (gb < 1) { v = String(Math.round(gb * 1000)); u = 'MB'; }
+  else if (gb < 10) { v = String(Math.round(gb * 100) / 100); if (!v.includes('.')) v += '.0'; }
+  else if (gb < 100) v = gb.toFixed(1);
+  else v = String(Math.round(gb));
+  if (lang === 'pt') v = v.replace('.', ',');
+  return v + ' ' + u;
+}
+const num = (n, lang) => Math.round(n).toLocaleString(lang === 'pt' ? 'pt-BR' : 'en-US');
+const dec = (v, d, lang) => { const s = v.toFixed(d); return lang === 'pt' ? s.replace('.', ',') : s; };
+function pct1(sizes) {
+  const tot = sizes.reduce((a, b) => a + b, 0) || 1;
+  const raw = sizes.map(s => s / tot * 1000), fl = raw.map(Math.floor);
+  let rem = 1000 - fl.reduce((a, b) => a + b, 0);
+  raw.map((r, i) => [r - fl[i], i]).sort((a, b) => b[0] - a[0]).slice(0, rem).forEach(([, i]) => fl[i]++);
+  return fl.map(v => v / 10);
+}
+function pat(id, c) {
+  switch (id) {
+    case 'games': return c;
+    case 'apps': return `repeating-linear-gradient(45deg, ${c} 0 2px, transparent 2px 6px)`;
+    case 'files': return `radial-gradient(${c} 1.3px, transparent 1.8px) 0 0 / 5px 5px`;
+    case 'windows': return `repeating-linear-gradient(0deg, ${c} 0 2px, transparent 2px 5px)`;
+    case 'hidden': return `repeating-linear-gradient(45deg, ${c} 0 1px, transparent 1px 5px), repeating-linear-gradient(-45deg, ${c} 0 1px, transparent 1px 5px)`;
+    case 'other': return `repeating-linear-gradient(90deg, ${c} 0 1px, transparent 1px 4px)`;
+    default: return `repeating-linear-gradient(90deg, ${c} 0 4px, transparent 4px 8px) 0 50% / 100% 2px no-repeat`;
+  }
+}
+
+const CATN = {
+  games: L(['Games', 'Games and their data'], ['Jogos', 'Jogos e seus dados']),
+  apps: L(['Apps', 'Installed programs and their data'], ['Apps', 'Programas instalados e seus dados']),
+  files: L(['Your files', 'Your personal files'], ['Seus arquivos', 'Seus arquivos pessoais']),
+  windows: L(['Windows', 'Windows itself'], ['Windows', 'O próprio Windows']),
+  hidden: L(['Hidden system', 'Space Windows uses behind the scenes'], ['Sistema oculto', 'Espaço que o Windows usa nos bastidores']),
+  other: L(['Other', 'Everything else'], ['Outros', 'Todo o resto']),
+  unmeasured: L(['Not measured yet', "Used space the scan can't see yet"], ['Ainda não medido', 'Espaço usado que a verificação ainda não vê']),
+};
+const p = (gb, path, en, ed, pt, pd) => ({ gb, path, en: [en, ed], pt: [pt, pd] });
+const HIDDEN_PART = [
+  p(17.0, 'C:\\pagefile.sys', 'Page file', 'Extra memory on disk when RAM runs short', 'Arquivo de paginação', 'Memória extra no disco quando a RAM aperta'),
+  p(6.38, 'C:\\hiberfil.sys', 'Hibernation file', 'Saves your open apps when the PC hibernates', 'Arquivo de hibernação', 'Guarda seus apps abertos quando o PC hiberna'),
+  p(0.016, 'C:\\swapfile.sys', 'Swap file', "Used by Store apps when they're paused", 'Arquivo de troca', 'Usado por apps da Loja quando pausados'),
+];
+const HIDDEN_FULL = [
+  HIDDEN_PART[0],
+  p(11.6, 'C:\\System Volume Information', 'Restore points', 'Snapshots that can undo system changes', 'Pontos de restauração', 'Cópias que desfazem mudanças no sistema'),
+  HIDDEN_PART[1],
+  p(4.2, 'Reserved by Windows', 'Windows reserved storage', 'Kept free so updates always fit', 'Armazenamento reservado', 'Reservado para as atualizações sempre caberem'),
+  p(2.4, 'C:\\$MFT', 'NTFS file system data', "The drive's own index of files", 'Dados do sistema de arquivos NTFS', 'O índice de arquivos do próprio disco'),
+  p(0.5, '—', 'Unaccounted', 'Small gaps between measurements', 'Não atribuído', 'Pequenas diferenças entre medições'),
+  HIDDEN_PART[2],
+];
+const DRIVES = {
+  C: { letter: 'C:', label: L('Local Disk', 'Disco local'), total: 953, used: 877, files: 1747000, cats: [
+    ['games', 201, [p(192, 'C:\\Program Files (x86)\\Steam', 'Steam games', 'Your Steam library and its downloads', 'Jogos da Steam', 'Sua biblioteca Steam e downloads'), p(6.8, 'C:\\Program Files\\Epic Games', 'Epic Games', 'Games installed by the Epic launcher', 'Epic Games', 'Jogos instalados pelo launcher da Epic'), p(2.0, 'C:\\XboxGames', 'Xbox games', 'Games from the Xbox app', 'Jogos do Xbox', 'Jogos do app Xbox')]],
+    ['apps', 412, [p(168, 'C:\\Program Files (x86)', 'Installed programs (32-bit)', 'Older-style programs are installed here', 'Programas instalados (32 bits)', 'Onde ficam programas no formato antigo'), p(148, 'C:\\Users\\User\\AppData', 'App data (AppData)', 'Hidden folder where apps keep settings and caches', 'Dados de apps (AppData)', 'Pasta oculta onde apps guardam configurações e caches'), p(74.2, 'C:\\Program Files', 'Installed programs', 'Where most apps are installed', 'Programas instalados', 'Onde a maioria dos apps é instalada')]],
+    ['files', 57.5, [p(55.8, 'C:\\Users\\User', 'User folder', 'Documents, Pictures, Downloads and Desktop', 'Pasta do usuário', 'Documentos, Imagens, Downloads e Área de trabalho'), p(1.65, 'C:\\$Recycle.Bin', 'Recycle Bin', 'Deleted files waiting to be emptied', 'Lixeira', 'Arquivos apagados esperando para sair de vez')]],
+    ['windows', 49.5, [p(48.9, 'C:\\Windows', 'Windows system files', 'The files Windows needs to run', 'Arquivos do sistema', 'Os arquivos que o Windows precisa para funcionar'), p(0.669, 'C:\\$WINDOWS.~BT', 'Windows upgrade files', 'Left over from the last big update', 'Arquivos de atualização', 'Sobras da última grande atualização')]],
+    ['hidden', 23.4, HIDDEN_PART],
+    ['other', 114, [p(114, 'C:\\', 'Unrecognized folders in C:\\', "Folders we couldn't match to a category", 'Pastas não reconhecidas em C:\\', 'Pastas que não conseguimos ligar a uma categoria')]],
+    ['unmeasured', 18.7, []],
+  ] },
+  D: { letter: 'D:', label: L('Novo volume', 'Novo volume'), total: 1393, used: 1106, files: 412300, cats: [
+    ['games', 780, [p(702, 'D:\\SteamLibrary', 'Steam library', 'A second Steam library folder', 'Biblioteca Steam', 'Uma segunda pasta de biblioteca Steam'), p(78, 'D:\\Epic Games', 'Epic Games', 'Games installed by the Epic launcher', 'Epic Games', 'Jogos instalados pelo launcher da Epic')]],
+    ['files', 210, [p(140, 'D:\\Fotos', 'Fotos', 'Photo folder', 'Fotos', 'Pasta de fotos'), p(70, 'D:\\Videos', 'Videos', 'Video folder', 'Vídeos', 'Pasta de vídeos')]],
+    ['apps', 64, [p(64, 'D:\\Programas', 'Programs', 'Apps installed on D:', 'Programas', 'Apps instalados no D:')]],
+    ['other', 52, [p(52, 'D:\\', 'Unrecognized folders in D:\\', "Folders we couldn't match to a category", 'Pastas não reconhecidas em D:\\', 'Pastas que não conseguimos ligar a uma categoria')]],
+  ] },
+};
+const CLEAN = [
+  { id: 'temp', gb: 3.2, lvl: 0, en: ['Temporary files', 'Leftovers apps create while they run.', 'Nothing noticeable. Windows recreates them.'], pt: ['Arquivos temporários', 'Sobras que os apps criam enquanto rodam.', 'Nada perceptível. O Windows recria.'] },
+  { id: 'browser', gb: 2.8, lvl: 0, en: ['Browser caches', 'Saved copies of websites.', 'Sites load a little slower the first time.'], pt: ['Caches do navegador', 'Cópias salvas de sites.', 'Os sites carregam um pouco mais devagar na primeira vez.'] },
+  { id: 'shader', gb: 1.9, lvl: 0, en: ['Game graphics files', 'Graphics data games prepare in advance (shader cache).', 'Games may stutter briefly on first launch.'], pt: ['Arquivos de gráficos dos jogos', 'Dados gráficos que os jogos preparam antes (cache de shader).', 'Jogos podem engasgar um pouco na primeira abertura.'] },
+  { id: 'dumps', gb: 0.64, lvl: 0, en: ['Old error reports', 'Saved when an app crashed in the past.', "Only matters if you're investigating a crash."], pt: ['Relatórios de erro antigos', 'Salvos quando algum app travou no passado.', 'Só importa se você estiver investigando uma falha.'] },
+  { id: 'wu', gb: 5.1, lvl: 1, en: ['Windows update leftovers', 'Copies kept after updates install.', 'Recent updates can no longer be uninstalled.'], pt: ['Sobras do Windows Update', 'Cópias guardadas após instalar atualizações.', 'Atualizações recentes não poderão ser desinstaladas.'] },
+  { id: 'bin', gb: 1.65, lvl: 1, en: ['Recycle Bin', '412 items, the oldest from 3 months ago.', 'The files are gone for good.'], pt: ['Lixeira', '412 itens, o mais antigo de 3 meses atrás.', 'Os arquivos somem de vez.'] },
+  { id: 'prev', gb: 7.9, lvl: 2, en: ['Previous Windows installation', 'Kept so you can return to the older version.', "You can't go back to the previous Windows."], pt: ['Instalação anterior do Windows', 'Guardada para você voltar à versão anterior.', 'Você não poderá voltar ao Windows anterior.'] },
+];
+const APPS = [
+  { id: 'vm', ic: 'VM', name: L('WSL / Docker virtual machine', 'Máquina virtual WSL / Docker'), sub: L('vmmem · Linux virtual machine', 'vmmem · máquina virtual Linux'), note: L('Linux runs in a small virtual machine. Its memory comes back when you close Docker.', 'O Linux roda numa pequena máquina virtual. A memória volta quando você fecha o Docker.'), mem: 3.4, cpu: 2.1, close: true, kids: [['vmmemWSL', 3.4, 2.1]] },
+  { id: 'chrome', ic: 'GC', name: L('Google Chrome', 'Google Chrome'), sub: L('Google LLC · 31 processes', 'Google LLC · 31 processos'), mem: 2.1, cpu: 4.0, close: true, storage: 'apps', kids: [['Browser', 0.41, 0.8], ['GPU process', 0.32, 1.2], ['Tab: YouTube', 0.29, 1.1], ['Tab: Gmail', 0.2, 0.3], ['Extensions (6)', 0.18, 0.2], ['+ 26', 0.7, 0.4]] },
+  { id: 'code', ic: 'VS', name: L('Visual Studio Code', 'Visual Studio Code'), sub: L('Microsoft · 9 processes', 'Microsoft · 9 processos'), mem: 1.2, cpu: 1.1, close: true, kids: [['Code.exe', 0.52, 0.5], ['Extension host', 0.44, 0.4], ['Terminal', 0.24, 0.2]] },
+  { id: 'svc', ic: 'WS', name: L('Windows services', 'Serviços do Windows'), sub: L('Background helpers Windows needs', 'Ajudantes em segundo plano que o Windows precisa'), mem: 1.1, cpu: 0.9, locked: true, kids: [['Windows Update', 0.31, 0.3], ['Windows Search', 0.27, 0.2], ['Microsoft Defender', 0.24, 0.3], ['Windows Audio', 0.09, 0.1], ['Print Spooler', 0.05, 0]] },
+  { id: 'memc', ic: 'MC', name: L('Memory Compression', 'Compressão de memória'), sub: L('Windows', 'Windows'), note: L('Squeezes rarely used memory so more fits in RAM.', 'Compacta memória pouco usada para caber mais na RAM.'), mem: 0.9, cpu: 0.2, locked: true, kids: [] },
+  { id: 'discord', ic: 'DC', name: L('Discord', 'Discord'), sub: L('Discord Inc. · 6 processes', 'Discord Inc. · 6 processos'), mem: 0.62, cpu: 0.5, close: true, kids: [['Discord', 0.38, 0.3], ['GPU process', 0.14, 0.1], ['Voice', 0.1, 0.1]] },
+  { id: 'steam', ic: 'ST', name: L('Steam', 'Steam'), sub: L('Valve · 4 processes', 'Valve · 4 processos'), mem: 0.48, cpu: 0.3, close: true, storage: 'games', kids: [['steam.exe', 0.21, 0.1], ['steamwebhelper', 0.27, 0.2]] },
+  { id: 'explorer', ic: 'EX', name: L('Windows Explorer', 'Explorador do Windows'), sub: L('Taskbar, Start and file windows', 'Barra de tarefas, Iniciar e janelas de arquivos'), mem: 0.18, cpu: 0.4, locked: true, kids: [] },
+];
+const N_ = (n, gb, k, o) => Object.assign({ n, gb, k }, o || {});
+const FL = (n, gb) => ({ n, gb, file: true });
+const TREE = {
+  C: N_('C:', 877, [
+    N_('Program Files (x86)', 360, [
+      N_('Steam', 192, [N_('steamapps', 191.2, [N_('common', 188.8, [N_('Cyberpunk 2077', 64.8), N_('Red Dead Redemption 2', 52.1), N_("Baldur's Gate 3", 41.3), N_('Counter-Strike 2', 30.6)]), N_('shadercache', 1.9), N_('workshop', 0.5)]), N_('bin', 0.6), N_('logs', 0.196), FL('steam.exe', 0.004)]),
+      N_('Microsoft Visual Studio', 41.2), N_('Adobe', 34.8), N_('Autodesk', 28.4), N_('Windows Kits', 22.4), N_('Microsoft Office', 19.6), N_('Microsoft SDKs', 12.3), N_('Common Files', 8.1), N_('Google', 1.2)]),
+    N_('Users', 204.2, [
+      N_('User', 203.8, [
+        N_('AppData', 148, [
+          N_('Local', 112, [N_('Packages', 21.3), N_('Microsoft', 18.6), N_('Programs', 15.46), N_('Docker', 14.4), N_('Google', 9.8), N_('JetBrains', 8.2), N_('npm-cache', 6.1), N_('Spotify', 4.7), N_('pip', 3.3), N_('Temp', 3.2), N_('Steam', 2.1), N_('NVIDIA', 1.9), N_('Discord', 1.4), N_('D3DSCache', 0.9), N_('CrashDumps', 0.64)]),
+          N_('Roaming', 31.2, [N_('.minecraft', 12.6), N_('Adobe', 6.8), N_('Microsoft', 4.1), N_('Code', 3.4), N_('Telegram Desktop', 1.9), N_('Zoom', 1.2), N_('discord', 0.9), N_('Spotify', 0.3)]),
+          N_('LocalLow', 4.8)]),
+        N_('Downloads', 21.4, [FL('Windows11_23H2.iso', 6.2), FL('backup_celular.zip', 5.6), FL('fotos_viagem_2026.zip', 4.8), FL('video_aula_modulo3.mp4', 2.1), N_('OBS gravações', 1.81), FL('Docker Desktop Installer.exe', 0.58), FL('BlenderSetup.msi', 0.31), FL('steam_setup.exe', 0.003), FL('Relatório_financeiro_anual_consolidado_versão_final_revisada_2026.pdf', 0.002)]),
+        N_('Documents', 12.6), N_('Pictures', 9.8), N_('Videos', 7.2), N_('Desktop', 3.1),
+        N_('Music', 1.7, [N_('Biblioteca', 1.7), N_('Playlists', 0, [])])]),
+      N_('Public', 0.4)]),
+    N_('Program Files', 74.2, [N_('WindowsApps', 38.1, null, { locked: 1 }), N_('Microsoft Office', 12.3), N_('JetBrains', 6.9), N_('Epic Games', 6.8), N_('Common Files', 4.6), N_('NVIDIA Corporation', 3.4), N_('Docker', 2.1)]),
+    N_('Windows', 48.9, [N_('WinSxS', 14.2), N_('Installer', 9.6), N_('System32', 7.8), N_('servicing', 5.4), N_('SoftwareDistribution', 5.1), N_('assembly', 3.4), N_('SysWOW64', 2.1), N_('Fonts', 0.9), N_('Temp', 0.4), N_('CSC', 0, null, { locked: 1 })]),
+    N_('Projetos', 41.2), N_('Emuladores', 38.4), N_('VMs', 34.4), N_('ProgramData', 29.3),
+    N_('System Volume Information', 18.7, null, { locked: 1 }),
+    FL('pagefile.sys', 17.0), FL('hiberfil.sys', 6.38), N_('XboxGames', 2.0), N_('$Recycle.Bin', 1.65), N_('$WINDOWS.~BT', 0.669), FL('swapfile.sys', 0.016)]),
+  D: N_('D:', 1106, [
+    N_('SteamLibrary', 702, [N_('steamapps', 702, [N_('common', 702, [N_('Call of Duty', 231.4), N_('Microsoft Flight Simulator', 198.2), N_('Forza Horizon 5', 143.8), N_('Starfield', 128.6)])])]),
+    N_('Fotos', 140), N_('Epic Games', 78), N_('Videos', 70), N_('Programas', 64), N_('Diversos', 52)]),
+};
+const POOL = ['data.pak', 'resources.bin', 'textures.pak', 'cache.db', 'app.exe', 'audio.bank', 'update.log', 'config.json'];
+function hashStr(s) { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return x >>> 0; }
+function kidsOf(node) {
+  if (node.k) return node.k;
+  const hh = hashStr(node.n), n = 3 + hh % 5, w = Array.from({ length: n }, (_, i) => 1 / (i + 1 + ((hh >> i) & 3)));
+  const sw = w.reduce((a, b) => a + b, 0);
+  node.k = w.map((v, i) => FL(POOL[(hh + i) % POOL.length].replace('.', i > 3 ? '_' + i + '.' : '.'), node.gb * v / sw));
+  return node.k;
+}
+const PARTS = ['ssd', 'ram', 'cpu', 'gpu', 'psu', 'bin'];
+const PLABEL = { en: { ssd: 'DRIVE', ram: 'MEMORY', cpu: 'PROCESSOR', gpu: 'GRAPHICS', psu: 'POWER', bin: 'TRASH' }, pt: { ssd: 'DISCO', ram: 'MEMÓRIA', cpu: 'PROCESSADOR', gpu: 'VÍDEO', psu: 'ENERGIA', bin: 'LIXEIRA' } };
+const MODEL = [
+  { id: 'case', dim: 1, boxes: [[-2.2, 2.2, -4.2, 4.2, -4.6, 4.6]] },
+  { id: 'mobo', dim: 1, boxes: [[1.75, 1.95, -2.4, 3.9, -4.2, 3.4]] },
+  { id: 'psu', boxes: [[-2.0, 2.0, -4.05, -2.9, 0.8, 4.4]] },
+  { id: 'cpu', boxes: [[0.4, 1.75, 1.3, 3.1, -1.9, -0.2], [1.45, 1.75, 1.7, 2.7, -1.5, -0.6]] },
+  { id: 'ram', boxes: [[1.0, 1.75, 1.1, 3.5, 0.3, 0.5], [1.0, 1.75, 1.1, 3.5, 0.75, 0.95], [1.0, 1.75, 1.1, 3.5, 1.2, 1.4], [1.0, 1.75, 1.1, 3.5, 1.65, 1.85]] },
+  { id: 'gpu', boxes: [[-0.9, 1.75, -1.3, -0.5, -4.2, 1.8]] },
+  { id: 'ssd', boxes: [[-1.9, -0.2, -2.7, -2.2, -4.4, -2.6]] },
+  { id: 'bin', boxes: [[3.2, 4.6, -4.2, -2.4, -0.7, 0.7], [3.1, 4.7, -2.4, -2.2, -0.8, 0.8]] },
+];
+const BOOT = {
+  en: ['PENNYWORTH 0.1', '', '> drives ............... C:  D:', '> files on C: .......... 1.7 M', '> memory ............... 16 GB', '> account .............. none', '> internet ............. not needed', '> ready.'],
+  pt: ['PENNYWORTH 0.1', '', '> discos ............... C:  D:', '> arquivos em C: ....... 1,7 mi', '> memória .............. 16 GB', '> conta ................ nenhuma', '> internet ............. dispensável', '> pronto.'],
+};
+const T = {
+  en: { navHome: 'Home', navStorage: 'Storage', navCleanup: 'Cleanup', navMemory: 'Memory & CPU', navHomeHint: 'Summary of your PC', navStorageHint: 'What fills your drive', navCleanupHint: 'Free up space safely', navMemoryHint: 'What is running now', navFolders: 'Folders', navFoldersHint: 'Browse like in Explorer', thisPc: 'This PC', back: 'Back', up: 'Up', fbHelp: 'Click a folder to open it. Biggest items are at the top.', items: 'items', notMeasured: 'not measured', lockedBadge: 'Locked', lockedTip: "Windows didn't let Pennyworth read this folder. This is normal for system folders.", lockedTitle: "Windows didn't allow reading this folder.", lockedBody: 'This is normal for system folders, and nothing is wrong. The full scan can measure it.', emptyTitle: 'This folder is empty.', emptyBody: 'Nothing here is using space.', showExplorer: 'Show in Explorer', explorerToast: 'Opening in Windows Explorer:', browseAll: 'Browse all folders', colName: 'Name', colShare: 'Share of this folder', colSize: 'Size', openFolder: 'Open folder', storageHelp: 'Each block of the bar is one kind of content. Click a category to see where its space is.', placesWhere: 'Where the space in {c} is', memHelp: 'Click an app to see its details. Closing apps you are not using frees memory.', calmYes: 'Your PC is relaxed right now. Nothing needs to be closed.', calmNo: 'Your PC is busy right now. The apps at the top are using the most.', memColLong: 'Memory used', cpuColLong: 'Processor', hintTitle: 'This is the inside of your PC.', hintBody: 'Click a part, or use the buttons below, to see what it does and how much it is using.', gotIt: 'Got it', homeStatusFull: 'Drive C: is almost full ({p}). The easiest way to get space back is the safe cleanup below.', homeStatusOk: 'Everything looks fine. Drive C: is {p} full.', modeTip: 'Simple: lists and numbers. 3D: explore the PC part by part.', modeMin: 'Simple', mode3d: '3D', themeDark: 'Dark', themeLight: 'Light', version: 'v0.1 · open source', welcomeKicker: 'At your service', welcomeTitle: 'Your PC, kept in order.', welcomeSub: 'Pennyworth looks through your drive and explains, in plain words, what is using your space.', pt1: 'See where your space goes', pt2: 'Free space safely', pt3: "See what's slowing your PC", privacy: 'Everything stays on your PC. No account, no internet needed.', language: 'Language', langSystem: 'System default', analyze: 'Analyze my PC', greet: 'Good evening.', homeTitle: 'Your PC at a glance', drives: 'Drives', almostFull: 'Almost full', usedOf: 'used of', use: 'use', seeStorage: 'See storage', canFree: 'You can free', safely: 'safely', freeSafelySub: 'Caches and temporary files. Windows recreates them on its own.', reviewCleanup: 'Review cleanup', memory: 'Memory', topApp: 'top', seeMemory: 'See Memory & CPU', unlockBanner: 'See everything, including hidden system space, in seconds.', unlockCta: 'Unlock full scan', storageTitle: 'Where is my space?', scanAgain: 'Scan again', fromAgo: 'From 2 hours ago', justNow: 'Scanned just now', filesFound: 'files found', files: 'files', scanning: 'Scanning…', ready: 'Ready', overcount: 'Some files were counted more than once (hard links), so totals are a little high. The full scan will show exact numbers.', categories: 'Categories', biggest: 'Biggest places', appearAfter: 'Appear when the scan finishes.', unmeasuredExplain: 'Windows protects some areas, like restore points, so a normal scan can’t read them. The full scan measures them exactly.', free: 'free', cleanSub: 'Only safe items are pre-selected. Nothing is removed until you confirm.', ifRemoved: 'If removed', safe: 'Safe', usually: 'Usually safe', think: 'Think first', safeDesc: 'Clean without worry. Windows recreates these on its own. Already selected.', usuallyDesc: 'Fine for most people. Read the note on each item.', thinkDesc: 'Only clean if you are sure. This has a real consequence.', selected: 'Selected', of: 'of', clean: 'Clean', confirmSub: "These items will be removed. This can't be undone.", binNote: "The Recycle Bin has 412 items, the oldest from 3 months ago. They'll be gone for good.", cancel: 'Cancel', confirmClean: 'Clean now', cleaning: 'Cleaning…', freed: 'Freed', skipped: "3 files skipped because they're in use.", done: 'Done', backHome: 'Back to home', nothingTitle: 'Nothing to clean right now.', nothingSub: 'Pennyworth will let you know when caches grow again.', live: 'Live', inUse: 'In use', compressed: 'Compressed', cached: 'Cached', memFree: 'Free', cachedNote: "Cached memory isn't wasted. Windows hands it back instantly when an app needs it.", last60: 'Last 60 seconds', appsCol: 'Apps', memCol: 'Memory', closeApp: 'Close', protected: 'Protected', protectedTip: 'Windows needs this to run, so it can’t be closed.', storageShort: 'Storage', closeSub: 'Save your work first. The app closes the way it normally would.', closedToast: 'closed. Memory freed:', unlockTitle: 'Unlock full scan', unlockWhy: 'To measure hidden system space and scan in seconds, Pennyworth needs to read the drive directly. Windows will ask for your permission.', canSee: 'It can see', seeList: 'Restore points, protected folders and the exact hidden system space.', wont: "It won't", wontList: 'Delete anything without showing you first.', unlock: 'Unlock', notNow: 'Not now', waiting: 'Waiting for Windows permission…', declinedTitle: 'No problem.', declinedSub: 'You can unlock anytime from Storage. Pennyworth keeps working in normal mode.', unlockedToast: 'Full scan unlocked. Hidden system space is now exact.', hint3d: 'Drag to rotate · scroll to zoom · click a part', machine: 'C: · 16 GB · 6 parts', topFolders: 'Biggest folders', gpuNow: 'Usage now', psuHiber: 'Hibernation file', psuHiberNote: 'Turning hibernation off frees this space, but the PC can no longer hibernate. Pennyworth only changes it if you ask.', openStorage: 'Open Storage', openMemory: 'Open Memory & CPU', openCleanup: 'Open Cleanup', topCpu: 'Using the processor', topMem: 'Using memory', canFreeShort: 'can be freed, sorted by safety', shader: 'Shader caches use {s}. Safe to clean; games rebuild them on first launch.',
+    parts: { ssd: ['Storage drive', 'Where everything you install and save is kept.'], ram: ['Memory (RAM)', 'Short-term memory for the apps open right now.'], cpu: ['Processor', 'Does the work. Low numbers mean your PC is relaxed.'], gpu: ['Graphics card', 'Draws everything on screen, games most of all.'], psu: ['Power supply', 'Power and sleep. Hibernation keeps your session while the PC is off.'], bin: ['Recycle Bin & cleanup', 'What can go, and how safe it is to remove.'] } },
+  pt: { navHome: 'Início', navStorage: 'Armazenamento', navCleanup: 'Limpeza', navMemory: 'Memória e CPU', navHomeHint: 'Resumo do seu PC', navStorageHint: 'O que ocupa seu disco', navCleanupHint: 'Liberar espaço com segurança', navMemoryHint: 'O que está rodando agora', navFolders: 'Pastas', navFoldersHint: 'Navegue como no Explorador', thisPc: 'Este PC', back: 'Voltar', up: 'Subir', fbHelp: 'Clique numa pasta para abrir. Os itens maiores ficam no topo.', items: 'itens', notMeasured: 'não medido', lockedBadge: 'Bloqueada', lockedTip: 'O Windows não deixou o Pennyworth ler esta pasta. Isso é normal em pastas do sistema.', lockedTitle: 'O Windows não deixou ler esta pasta.', lockedBody: 'Isso é normal em pastas do sistema, e não há nada de errado. A verificação completa consegue medir.', emptyTitle: 'Esta pasta está vazia.', emptyBody: 'Nada aqui está ocupando espaço.', showExplorer: 'Mostrar no Explorador', explorerToast: 'Abrindo no Explorador do Windows:', browseAll: 'Ver todas as pastas', colName: 'Nome', colShare: 'Parte desta pasta', colSize: 'Tamanho', openFolder: 'Abrir pasta', storageHelp: 'Cada bloco da barra é um tipo de conteúdo. Clique numa categoria para ver onde está o espaço.', placesWhere: 'Onde está o espaço de {c}', memHelp: 'Clique num app para ver detalhes. Fechar apps que você não está usando libera memória.', calmYes: 'Seu PC está tranquilo agora. Nada precisa ser fechado.', calmNo: 'Seu PC está ocupado agora. Os apps do topo são os que mais usam.', memColLong: 'Memória usada', cpuColLong: 'Processador', hintTitle: 'Este é o seu PC por dentro.', hintBody: 'Clique numa peça, ou nos botões abaixo, para ver o que ela faz e quanto está usando.', gotIt: 'Entendi', homeStatusFull: 'O disco C: está quase cheio ({p}). O jeito mais fácil de ganhar espaço é a limpeza segura abaixo.', homeStatusOk: 'Tudo certo. O disco C: está {p} cheio.', modeTip: 'Simples: listas e números. 3D: explore o PC peça por peça.', modeMin: 'Simples', mode3d: '3D', themeDark: 'Escuro', themeLight: 'Claro', version: 'v0.1 · código aberto', welcomeKicker: 'Ao seu dispor', welcomeTitle: 'Seu PC, em ordem.', welcomeSub: 'O Pennyworth examina seu disco e explica, com palavras simples, o que está ocupando seu espaço.', pt1: 'Veja para onde vai seu espaço', pt2: 'Libere espaço com segurança', pt3: 'Veja o que deixa seu PC lento', privacy: 'Tudo fica no seu PC. Sem conta, sem precisar de internet.', language: 'Idioma', langSystem: 'Padrão do sistema', analyze: 'Analisar meu PC', greet: 'Boa noite.', homeTitle: 'Seu PC num relance', drives: 'Discos', almostFull: 'Quase cheio', usedOf: 'usados de', use: 'usam', seeStorage: 'Ver armazenamento', canFree: 'Você pode liberar', safely: 'com segurança', freeSafelySub: 'Caches e arquivos temporários. O Windows recria tudo sozinho.', reviewCleanup: 'Revisar limpeza', memory: 'Memória', topApp: 'maior', seeMemory: 'Ver memória e CPU', unlockBanner: 'Veja tudo, incluindo o espaço oculto do sistema, em segundos.', unlockCta: 'Desbloquear verificação completa', storageTitle: 'Para onde foi meu espaço?', scanAgain: 'Verificar de novo', fromAgo: 'De 2 horas atrás', justNow: 'Verificado agora', filesFound: 'arquivos encontrados', files: 'arquivos', scanning: 'Verificando…', ready: 'Pronto', overcount: 'Alguns arquivos foram contados mais de uma vez (links físicos), então os totais estão um pouco altos. A verificação completa mostra os números exatos.', categories: 'Categorias', biggest: 'Maiores lugares', appearAfter: 'Aparecem quando a verificação terminar.', unmeasuredExplain: 'O Windows protege algumas áreas, como pontos de restauração, e a verificação normal não consegue lê-las. A verificação completa mede tudo com exatidão.', free: 'livre', cleanSub: 'Só os itens seguros vêm marcados. Nada é removido antes da sua confirmação.', ifRemoved: 'Se remover', safe: 'Seguro', usually: 'Geralmente seguro', think: 'Pense antes', safeDesc: 'Pode limpar sem medo. O Windows recria sozinho. Já vem marcado.', usuallyDesc: 'Tudo bem para a maioria. Leia o aviso de cada item.', thinkDesc: 'Só limpe se tiver certeza. Tem consequência real.', selected: 'Selecionado', of: 'de', clean: 'Limpar', confirmSub: 'Estes itens serão removidos. Não dá para desfazer.', binNote: 'A Lixeira tem 412 itens, o mais antigo de 3 meses atrás. Eles serão apagados de vez.', cancel: 'Cancelar', confirmClean: 'Limpar agora', cleaning: 'Limpando…', freed: 'Liberado', skipped: '3 arquivos ignorados porque estão em uso.', done: 'Concluir', backHome: 'Voltar ao início', nothingTitle: 'Nada para limpar agora.', nothingSub: 'O Pennyworth avisa quando os caches crescerem de novo.', live: 'Ao vivo', inUse: 'Em uso', compressed: 'Comprimida', cached: 'Em cache', memFree: 'Livre', cachedNote: 'Memória em cache não é desperdício. O Windows devolve na hora quando um app precisa.', last60: 'Últimos 60 segundos', appsCol: 'Apps', memCol: 'Memória', closeApp: 'Fechar', protected: 'Protegido', protectedTip: 'O Windows precisa disto para funcionar, então não pode ser fechado.', storageShort: 'Espaço', closeSub: 'Salve seu trabalho antes. O app fecha do jeito normal.', closedToast: 'fechado. Memória liberada:', unlockTitle: 'Desbloquear verificação completa', unlockWhy: 'Para medir o espaço oculto do sistema e verificar em segundos, o Pennyworth precisa ler o disco diretamente. O Windows vai pedir sua permissão.', canSee: 'Ele consegue ver', seeList: 'Pontos de restauração, pastas protegidas e o espaço oculto exato.', wont: 'Ele não vai', wontList: 'Apagar nada sem mostrar antes.', unlock: 'Desbloquear', notNow: 'Agora não', waiting: 'Aguardando permissão do Windows…', declinedTitle: 'Tudo bem.', declinedSub: 'Você pode desbloquear quando quiser em Armazenamento. O Pennyworth continua funcionando no modo normal.', unlockedToast: 'Verificação completa desbloqueada. O espaço oculto agora é exato.', hint3d: 'Arraste para girar · role para zoom · clique numa peça', machine: 'C: · 16 GB · 6 peças', topFolders: 'Maiores pastas', gpuNow: 'Uso agora', psuHiber: 'Arquivo de hibernação', psuHiberNote: 'Desligar a hibernação libera este espaço, mas o PC deixa de hibernar. O Pennyworth só muda isso se você pedir.', openStorage: 'Abrir armazenamento', openMemory: 'Abrir memória e CPU', openCleanup: 'Abrir limpeza', topCpu: 'Usando o processador', topMem: 'Usando memória', canFreeShort: 'podem ser liberados, por nível de segurança', shader: 'Caches de shader ocupam {s}. Seguro limpar; os jogos recriam no primeiro uso.',
+    parts: { ssd: ['Disco de armazenamento', 'Onde fica tudo o que você instala e salva.'], ram: ['Memória (RAM)', 'Memória de curto prazo para os apps abertos agora.'], cpu: ['Processador', 'Faz o trabalho. Números baixos significam PC tranquilo.'], gpu: ['Placa de vídeo', 'Desenha tudo na tela, principalmente jogos.'], psu: ['Fonte de energia', 'Energia e repouso. A hibernação guarda sua sessão com o PC desligado.'], bin: ['Lixeira e limpeza', 'O que pode sair, e quão seguro é remover.'] } },
+};
+Object.assign(T.en, {
+  welcomeTitle: '{g} Shall we put your PC in order?', welcomeSub: "I'll look through your drive and tell you plainly where your space has gone. Nothing will be touched without your say-so.",
+  pt1: "I'll show you where your space has gone", pt2: "I'll free space, but only what's safe", pt3: "I'll tell you what is keeping your PC busy",
+  privacy: 'Everything stays here, on your PC. No account, no internet. Discretion is rather the point.',
+  greetM: 'Good morning.', greetA: 'Good afternoon.', greetE: 'Good evening.', homeTitle: 'Your PC, at a glance',
+  homeStatusFull: 'If I may: drive C: is nearly full ({p}). The safe cleanup below is the gentlest remedy.', homeStatusOk: 'All is in order. Drive C: is {p} full.',
+  canFree: 'I can safely free', safely: 'for you.', freeSafelySub: "Caches and temporary files. Windows rebuilds them on its own; you won't miss them.",
+  unlockBanner: "There's a corner of your drive I'm not yet permitted to see. With your leave, I can measure it in seconds.",
+  storageTitle: 'Where your space has gone', storageHelp: "Each block of the bar is one kind of content. Select a category and I'll show you where it lives.",
+  overcount: 'A small confession: some files were counted twice (hard links), so these totals run a touch high. The full scan will set it straight.',
+  appearAfter: "One moment. I'll list them as soon as I've finished.", unmeasuredExplain: 'Windows keeps a few rooms locked, restore points among them. With your permission, the full scan will measure them precisely.',
+  cleanSub: "I've only ticked what's safe. Nothing leaves until you say so.",
+  safeDesc: 'Safe to clear. Windows rebuilds these on its own. Already ticked for you.', usuallyDesc: 'Fine for most. Do read the note on each one.', thinkDesc: 'I would think twice. This one has a real consequence.',
+  confirmSub: "Shall I proceed? Once removed, these can't be brought back.", cancel: 'Not just yet', confirmClean: 'Yes, clean',
+  binNote: "The Recycle Bin holds 412 items, the oldest from three months ago. They'll be gone for good, I'm afraid.",
+  skipped: '3 files were in use, so I left them be.', done: 'Very good', nothingTitle: 'Nothing to tidy at present.', nothingSub: "I'll let you know when the caches pile up again.",
+  cleaningSub: 'One item at a time. Do carry on using your PC.', doneSub: 'Here is what I removed:',
+  calmYes: 'Your PC is at ease. Nothing needs closing.', calmNo: 'Your PC is rather busy. The apps at the top are the ones to watch.',
+  memHelp: "Select an app for details. Closing what you're not using frees memory.", cachedNote: "Cached memory isn't wasted, I assure you. Windows hands it back the instant an app asks.",
+  closeSub: "Do save your work first. I'll close it the proper way.", closedToast: 'is closed. Memory recovered:',
+  unlockTitle: 'May I see the rest of the drive?', unlockWhy: "To measure the hidden system space, and to do it in seconds, I need to read the drive directly. Windows will ask for your permission; it's only proper.",
+  canSee: 'What I will see', wont: 'What I will not do', wontList: 'Delete anything without showing you first. You have my word.',
+  waiting: "Awaiting Windows' permission…", declinedTitle: 'Of course.', declinedSub: "I'll carry on in normal mode. Should you change your mind, it's in Storage.",
+  unlockedToast: 'Thank you. I can now see everything, hidden system space included.',
+  hintTitle: 'Your PC, from the inside.', hintBody: "Select a part, or use the buttons below, and I'll tell you what it does and how it's getting on.", gotIt: 'Understood',
+  fbHelp: "Select a folder to open it. I've put the largest at the top.", lockedTitle: "Windows wouldn't let me in here.",
+  lockedBody: 'Quite normal for system folders; nothing is amiss. With your permission, the full scan can measure it.', lockedTip: 'Windows keeps this folder locked. Quite normal for system folders.',
+  emptyBody: 'Nothing here is taking up space.',
+  psuHiberNote: "Switching hibernation off would free this space, though the PC could no longer hibernate. I'll leave it as is unless you ask.",
+  shader: 'Game graphics files take {s}. Safe to clear; games rebuild them on first launch.', canFreeShort: 'can be freed, sorted by how safe it is',
+  parts: { ssd: ['Storage drive', 'Where everything you install and keep is stored.'], ram: ['Memory (RAM)', 'Short-term memory, for whatever is open at the moment.'], cpu: ['Processor', 'It does the work. Low numbers mean it is taking things easy.'], gpu: ['Graphics card', 'It draws everything on screen, games above all.'], psu: ['Power supply', 'Power and rest. Hibernation keeps your session safe while the PC sleeps.'], bin: ['Recycle Bin & cleanup', 'What can go, and how safe it is to let it go.'] },
+});
+Object.assign(T.pt, {
+  welcomeTitle: '{g} Vamos pôr seu PC em ordem?', welcomeSub: 'Vou examinar seu disco e dizer, com franqueza, para onde foi seu espaço. Nada será tocado sem a sua permissão.',
+  pt1: 'Mostro para onde foi seu espaço', pt2: 'Libero espaço, apenas o que for seguro', pt3: 'Digo o que anda ocupando seu PC',
+  privacy: 'Tudo fica aqui, no seu PC. Sem conta, sem internet. Discrição é o mínimo.',
+  greetM: 'Bom dia.', greetA: 'Boa tarde.', greetE: 'Boa noite.', homeTitle: 'Seu PC, num relance',
+  homeStatusFull: 'Se me permite: o disco C: está quase cheio ({p}). A limpeza segura abaixo é o remédio mais gentil.', homeStatusOk: 'Tudo em ordem. O disco C: está {p} cheio.',
+  canFree: 'Posso liberar', safely: 'com toda a segurança.', freeSafelySub: 'Caches e arquivos temporários. O Windows os refaz sozinho; não farão falta.',
+  unlockBanner: 'Há um canto do disco que ainda não tenho permissão para ver. Com a sua licença, meço em segundos.',
+  storageTitle: 'Para onde foi seu espaço', storageHelp: 'Cada bloco da barra é um tipo de conteúdo. Escolha uma categoria e eu mostro onde ela está.',
+  overcount: 'Uma pequena confissão: alguns arquivos foram contados duas vezes (links físicos), então os totais estão um tanto altos. A verificação completa põe tudo em ordem.',
+  appearAfter: 'Um momento. Listo assim que terminar.', unmeasuredExplain: 'O Windows mantém alguns cômodos trancados, como os pontos de restauração. Com sua permissão, a verificação completa mede tudo com precisão.',
+  cleanSub: 'Marquei apenas o que é seguro. Nada sai daqui sem a sua palavra.',
+  safeDesc: 'Pode limpar. O Windows refaz sozinho. Já deixei marcado.', usuallyDesc: 'Tudo bem para a maioria. Convém ler o aviso de cada um.', thinkDesc: 'Eu pensaria duas vezes. Este tem consequência real.',
+  confirmSub: 'Posso prosseguir? Uma vez removidos, não há como trazê-los de volta.', cancel: 'Ainda não', confirmClean: 'Sim, pode limpar',
+  binNote: 'A Lixeira guarda 412 itens, o mais antigo de três meses atrás. Receio que sumirão de vez.',
+  skipped: '3 arquivos estavam em uso, então os deixei em paz.', done: 'Muito bem', nothingTitle: 'Nada a arrumar no momento.', nothingSub: 'Aviso quando os caches voltarem a se acumular.',
+  cleaningSub: 'Um item de cada vez. Fique à vontade para continuar usando o PC.', doneSub: 'Eis o que removi:',
+  calmYes: 'Seu PC está tranquilo. Nada precisa ser fechado.', calmNo: 'Seu PC está bastante ocupado. Os apps do topo são os que merecem atenção.',
+  memHelp: 'Escolha um app para ver detalhes. Fechar o que não está usando libera memória.', cachedNote: 'Memória em cache não é desperdício, garanto. O Windows a devolve no instante em que um app pede.',
+  closeSub: 'Convém salvar seu trabalho antes. Fecharei da maneira adequada.', closedToast: 'foi fechado. Memória recuperada:',
+  unlockTitle: 'Posso ver o restante do disco?', unlockWhy: 'Para medir o espaço oculto do sistema, e em segundos, preciso ler o disco diretamente. O Windows vai pedir sua permissão; é o correto.',
+  canSee: 'O que verei', wont: 'O que não farei', wontList: 'Apagar qualquer coisa sem antes mostrar a você. Tem a minha palavra.',
+  waiting: 'Aguardando a permissão do Windows…', declinedTitle: 'Pois não.', declinedSub: 'Sigo no modo normal. Se mudar de ideia, está em Armazenamento.',
+  unlockedToast: 'Obrigado. Agora vejo tudo, inclusive o espaço oculto do sistema.',
+  hintTitle: 'Seu PC, por dentro.', hintBody: 'Escolha uma peça, ou use os botões abaixo, e eu conto o que ela faz e como está se saindo.', gotIt: 'Entendido',
+  fbHelp: 'Escolha uma pasta para abrir. Deixei as maiores no topo.', lockedTitle: 'O Windows não me deixou entrar aqui.',
+  lockedBody: 'Perfeitamente normal em pastas do sistema; não há nada de errado. Com sua permissão, a verificação completa consegue medir.', lockedTip: 'O Windows mantém esta pasta trancada. Normal em pastas do sistema.',
+  emptyBody: 'Nada aqui ocupa espaço.',
+  psuHiberNote: 'Desligar a hibernação liberaria este espaço, mas o PC deixaria de hibernar. Deixo como está, a menos que peça.',
+  shader: 'Arquivos de gráficos dos jogos ocupam {s}. Seguro limpar; os jogos os refazem no primeiro uso.',
+  parts: { ssd: ['Disco de armazenamento', 'Onde fica guardado tudo o que você instala e salva.'], ram: ['Memória (RAM)', 'Memória de curto prazo, para o que está aberto agora.'], cpu: ['Processador', 'Faz o trabalho. Números baixos significam que está folgado.'], gpu: ['Placa de vídeo', 'Desenha tudo na tela, sobretudo os jogos.'], psu: ['Fonte de energia', 'Energia e descanso. A hibernação guarda sua sessão enquanto o PC dorme.'], bin: ['Lixeira e limpeza', 'O que pode sair, e quão seguro é deixar ir.'] },
+});
+BOOT.en = ['PENNYWORTH 0.1', '', '> {g}', '> drives ............... C:  D:', '> files on C: .......... 1.7 M', '> memory ............... 16 GB', '> account .............. not required', '> at your service.'];
+BOOT.pt = ['PENNYWORTH 0.1', '', '> {g}', '> discos ............... C:  D:', '> arquivos em C: ....... 1,7 mi', '> memória .............. 16 GB', '> conta ................ dispensável', '> ao seu dispor.'];
+const rbits = n => Array.from({ length: n }, () => (Math.random() < .5 ? '0' : '1')).join('');
+const spark = (arr, max) => arr.map(v => '▁▂▃▄▅▆▇█'[Math.max(0, Math.min(7, Math.floor(v / max * 8)))]).join('');
+
+class Component extends DCLogic {
+  state = { theme: 'dark', lang: 'pt', langPref: 'pt', mode: 'min', screen: 'welcome', drive: 'C', cat: 'apps', scanning: false, prog: 1, fresh: false, unlocked: false, grow: 1, dialog: null, waiting: false, sel: { temp: true, browser: true, shader: true, dumps: true }, cleaned: {}, phase: 'select', cleanOrder: [], cleanProg: {}, freed: 0, expanded: {}, closed: {}, closeId: null, toast: null, part: 'ssd', boot: 0, live: null, cpuHist: Array.from({ length: 60 }, (_, i) => 6 + Math.sin(i / 5) * 2 + Math.random() * 3), gpuHist: Array.from({ length: 30 }, () => 8 + Math.random() * 8), zoomShow: 1, hint3d: true, fbPath: ['C:'], fbHist: [], memUsed: 11.2, bits: rbits(64), scale: 1 };
+  stageRef = React.createRef(); rainRef = React.createRef(); dimRef = React.createRef(); baseRef = React.createRef(); hiRef = React.createRef(); driveRef = React.createRef(); labelsRef = React.createRef();
+  rot = { a: -0.9, b: 0.32, drag: null, last: 0, zoom: 1, zt: 1 }; hover = null; hits = []; driveT0 = 0; lastDraw = 0; lastNow = 0;
+
+  componentDidMount() {
+    this.applyProps(true);
+    this.onResize = () => { const s = Math.min(1, (window.innerWidth - 48) / 1100, (window.innerHeight - 48) / 760); this.setState({ scale: Math.max(0.4, s) }); };
+    this.onResize(); window.addEventListener('resize', this.onResize);
+    this.tickT = setInterval(() => this.tick(), 1000);
+    this.bootT = setInterval(() => { if (this.state.boot < 9) this.setState(s => ({ boot: s.boot + 1 })); }, 300);
+    const loop = now => { this.raf = requestAnimationFrame(loop); if (now - this.lastDraw > 40) { this.lastDraw = now; this.draw(now); } };
+    this.raf = requestAnimationFrame(loop);
+  }
+  componentDidUpdate(prev) {
+    if (prev.startScreen !== this.props.startScreen || prev.theme !== this.props.theme) this.applyProps(false);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); clearInterval(this.tickT); clearInterval(this.bootT); clearInterval(this.scanT); clearInterval(this.cleanT); window.removeEventListener('resize', this.onResize); }
+  applyProps(first) {
+    const st = this.props.startScreen ?? 'welcome';
+    const upd = { theme: this.props.theme ?? 'dark' };
+    if (st === '3d') Object.assign(upd, { mode: '3d', screen: 'home' }); else Object.assign(upd, { mode: 'min', screen: st });
+    this.setState(upd);
+    if (!first || st !== 'welcome') this.driveT0 = performance.now();
+  }
+  tick() {
+    const s = this.state, live = {};
+    for (const a of APPS) { const b = (s.live && s.live[a.id]) || a; live[a.id] = { mem: Math.min(a.mem * 1.08, Math.max(a.mem * 0.92, b.mem + (Math.random() - .5) * a.mem * 0.04)), cpu: Math.max(0, a.cpu + (Math.random() - .5) * a.cpu * 1.4) }; }
+    const closedMem = APPS.filter(a => s.closed[a.id]).reduce((x, a) => x + a.mem, 0);
+    const cpu = 2.4 + APPS.filter(a => !s.closed[a.id]).reduce((x, a) => x + live[a.id].cpu, 0) + (Math.random() < .12 ? Math.random() * 9 : 0);
+    this.setState({ live, cpuHist: [...s.cpuHist.slice(1), cpu], gpuHist: [...s.gpuHist.slice(1), Math.max(2, 11 + (Math.random() - .5) * 10)], memUsed: 11.2 - closedMem + (Math.random() - .5) * 0.08, bits: rbits(64) });
+  }
+  go(screen, extra) {
+    this.setState({ screen, mode: 'min', grow: 0, ...(extra || {}) });
+    setTimeout(() => this.setState({ grow: 1 }), 40);
+  }
+  startScan(dur) {
+    clearInterval(this.scanT); const t0 = performance.now();
+    this.setState({ scanning: true, prog: 0 });
+    this.scanT = setInterval(() => {
+      const k = Math.min(1, (performance.now() - t0) / dur);
+      this.setState({ prog: 1 - Math.pow(1 - k, 2) });
+      if (k >= 1) { clearInterval(this.scanT); this.setState({ scanning: false, fresh: true, prog: 1 }); }
+    }, 50);
+  }
+  cats(d) {
+    const dr = DRIVES[d];
+    return dr.cats.map(([id, gb, places]) => ({ id, gb, places }))
+      .map(c => (d === 'C' && this.state.unlocked && c.id === 'hidden') ? { ...c, gb: 42.1, places: HIDDEN_FULL } : c)
+      .filter(c => !(d === 'C' && this.state.unlocked && c.id === 'unmeasured'));
+  }
+  toast(msg) { clearTimeout(this.toastT); this.setState({ toast: msg }); this.toastT = setTimeout(() => this.setState({ toast: null }), 3400); }
+  resolve(path) {
+    if (!path.length) return { n: 'PC', gb: 0, k: [TREE.C, TREE.D], pc: true };
+    let node = TREE[path[0][0]]; if (!node) return null;
+    for (const seg of path.slice(1)) { const nx = (node.k || []).find(c => c.n.toLowerCase() === seg.toLowerCase()); if (!nx) return null; node = nx; }
+    return node;
+  }
+  pathFrom(str) { const parts = str.split('\\').filter(Boolean); return this.resolve(parts) ? parts : null; }
+  openPath(path) { this.setState(s => ({ fbHist: [...s.fbHist, s.fbPath], fbPath: path })); }
+  setZoom(z) { this.rot.zt = Math.max(0.5, Math.min(2.6, z)); this.rot.last = performance.now(); this.setState({ zoomShow: this.rot.zt }); }
+  selectPart(id) { this.setState({ part: id, hint3d: false }); this.driveT0 = performance.now(); }
+  startClean() {
+    const items = CLEAN.filter(c => !this.state.cleaned[c.id] && this.state.sel[c.id]);
+    const order = items.map(c => c.id), freed = items.reduce((a, c) => a + c.gb, 0);
+    this.setState({ dialog: null, phase: 'cleaning', cleanOrder: order, cleanProg: {}, freed });
+    let i = 0, pr = 0; clearInterval(this.cleanT);
+    this.cleanT = setInterval(() => {
+      pr += 0.07 + Math.random() * 0.06;
+      if (pr >= 1) { this.setState(s => ({ cleanProg: { ...s.cleanProg, [order[i]]: 1 } })); i++; pr = 0; }
+      else this.setState(s => ({ cleanProg: { ...s.cleanProg, [order[i]]: pr } }));
+      if (i >= order.length) { clearInterval(this.cleanT); setTimeout(() => this.setState(s => { const cleaned = { ...s.cleaned }; order.forEach(id => cleaned[id] = true); return { phase: 'done', cleaned }; }), 350); }
+    }, 60);
+  }
+  hitAt(e) {
+    const el = this.baseRef.current; if (!el) return null;
+    const r = el.getBoundingClientRect(); const cw = r.width / COLS, ch = r.height / ROWS;
+    const c = (e.clientX - r.left) / cw, ro = (e.clientY - r.top) / ch;
+    let best = null;
+    for (const h of this.hits) if (c >= h.x0 - 1 && c <= h.x1 + 1 && ro >= h.y0 - 1 && ro <= h.y1 + 1 && (!best || h.area < best.area)) best = h;
+    return best ? best.id : null;
+  }
+  draw(now) {
+    const dt = Math.min(0.1, (now - (this.lastNow || now)) / 1000); this.lastNow = now;
+    const dr = this.driveRef.current;
+    if (dr) dr.textContent = this.driveArt(1 - Math.pow(1 - Math.min(1, (now - this.driveT0) / 1600), 3));
+    const base = this.baseRef.current; if (!base) return;
+    if (!this.rot.drag && now - this.rot.last > 1800) this.rot.a += dt * (this.props.rotateSpeed ?? 0.15);
+    this.rot.zoom += (this.rot.zt - this.rot.zoom) * 0.18;
+    const N = COLS * ROWS;
+    if (!this.chb) { this.chb = new Array(N); this.ly = new Uint8Array(N); this.zb = new Float32Array(N); }
+    const chb = this.chb, ly = this.ly, zb = this.zb; chb.fill(' '); ly.fill(0); zb.fill(1e9);
+    const ca = Math.cos(this.rot.a), sa = Math.sin(this.rot.a), cb = Math.cos(this.rot.b), sb = Math.sin(this.rot.b);
+    const D = 20, F = 20, SY = 4.3 * ROWS / 48 * this.rot.zoom, SX = SY * 1.85, cx = COLS / 2, cy = ROWS / 2 + 1;
+    const proj = (x, y, z) => { const x1 = x * ca + z * sa, z1 = -x * sa + z * ca; const y2 = y * cb - z1 * sb, z2 = y * sb + z1 * cb; const q = F / (z2 + D); return [cx + x1 * q * SX, cy - y2 * q * SY, z2]; };
+    const put = (c, r, chr, z, l) => { c = Math.round(c); r = Math.round(r); if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return; const i = r * COLS + c; if (z < zb[i]) { zb[i] = z; chb[i] = chr; ly[i] = l; } };
+    const line = (P, Q, l) => {
+      const dx = Q[0] - P[0], dy = Q[1] - P[1]; let a2 = Math.abs(Math.atan2(dy * 1.85, dx)); if (a2 > Math.PI / 2) a2 = Math.PI - a2;
+      const chr = a2 < 0.39 ? '-' : a2 > 1.18 ? '|' : (dx * dy > 0 ? '\\' : '/');
+      const st = Math.ceil(Math.max(Math.abs(dx), Math.abs(dy))) || 1;
+      for (let k = 0; k <= st; k++) { const u = k / st, X = P[0] + dx * u, Y = P[1] + dy * u, Z = P[2] + (Q[2] - P[2]) * u; put(X, Y, chr, Z, l); if (l === 1) { put(X + 1, Y, chr, Z + 0.01, l); put(X, Y + 1, chr, Z + 0.01, l); put(X + 1, Y + 1, chr, Z + 0.01, l); } }
+    };
+    const boxPts = b => { const pts = []; for (let i = 0; i < 8; i++) pts.push(proj(b[i & 1 ? 1 : 0], b[i & 2 ? 3 : 2], b[i & 4 ? 5 : 4])); return pts; };
+    const drawBox = (b, l) => { const pts = boxPts(b); for (let i = 0; i < 8; i++) for (const m of [1, 2, 4]) if (!(i & m)) line(pts[i], pts[i | m], l); return pts; };
+    const fillBox = (b, chr) => { const P = boxPts(b); const F6 = [[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[0,2,6,4],[1,3,7,5]]; for (const f of F6) { const q = f.map(i => P[i]); let x0 = Math.floor(Math.min(...q.map(v => v[0]))), x1 = Math.ceil(Math.max(...q.map(v => v[0]))), y0 = Math.floor(Math.min(...q.map(v => v[1]))), y1 = Math.ceil(Math.max(...q.map(v => v[1]))); const z = q.reduce((a, v) => a + v[2], 0) / 4 + 0.03; for (let r = Math.max(0, y0); r <= Math.min(ROWS - 1, y1); r++) for (let c = Math.max(0, x0); c <= Math.min(COLS - 1, x1); c++) { let inside = true, sg = 0; for (let k = 0; k < 4; k++) { const A = q[k], B = q[(k + 1) % 4]; const cr = (B[0] - A[0]) * (r - A[1]) - (B[1] - A[1]) * (c - A[0]); const sn = Math.sign(cr); if (sn !== 0) { if (sg === 0) sg = sn; else if (sn !== sg) { inside = false; break; } } } if (inside && ((r + c) % 2 === 0)) put(c, r, chr, z, 3); } } };
+    const sel = this.state.part, hov = this.hover, lang = this.state.lang, hits = [], labels = [];
+    for (const m of MODEL) {
+      const l = m.dim ? 1 : (m.id === sel || m.id === hov ? 3 : 2);
+      let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+      if (m.id === sel) for (const b of m.boxes) fillBox(b, '.');
+      for (const b of m.boxes) for (const q of drawBox(b, l)) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }
+      if (!m.dim) {
+        const b = m.boxes[0]; const top = proj((b[0] + b[1]) / 2, Math.max(...m.boxes.map(x => x[3])), (b[4] + b[5]) / 2);
+        const txt = PLABEL[lang][m.id]; const lc = Math.round(top[0] - 6), lr = Math.round(y0) - 2;
+        labels.push({ txt, lc, lr, l, cx: top[0] });
+        hits.push({ id: m.id, x0: Math.min(x0, lc), x1: Math.max(x1, lc + 12), y0: Math.min(y0, lr), y1, area: (x1 - x0) * (y1 - y0) });
+      }
+      if (m.id === sel) {
+        const b = m.boxes[0], ext = [b[1] - b[0], b[3] - b[2], b[5] - b[4]], ax = ext.indexOf(Math.max(...ext));
+        const u = (now / 1400) % 1, v = b[ax * 2] + ext[ax] * u;
+        const bb = b.slice(); bb[ax * 2] = v; bb[ax * 2 + 1] = v;
+        const pts = boxPts(bb); const seen = new Set();
+        for (let i = 0; i < 8; i++) for (const m2 of [1, 2, 4]) if (!(i & m2) && ext[[1, 2, 4].indexOf(m2)] !== 0) { const j = i | m2; const k = [i, j].map(z => { const c = bb[z & 1 ? 1 : 0], d = bb[z & 2 ? 3 : 2], e = bb[z & 4 ? 5 : 4]; return c + ',' + d + ',' + e; }).sort().join('|'); if (seen.has(k) || k.split('|')[0] === k.split('|')[1]) continue; seen.add(k); line(pts[i], pts[j], 3); }
+      }
+    }
+    const lw = this.labelsRef.current; if (lw) { if (!lw.children.length) labels.forEach(() => { const sp = document.createElement('span'); sp.style.cssText = "position:absolute;transform:translate(-50%,-100%);font-family:'JetBrains Mono',monospace;font-size:20px;letter-spacing:.12em;white-space:nowrap;pointer-events:none;padding:4px 10px;transition:color .2s,background .2s;"; lw.appendChild(sp); }); labels.forEach((lb, k) => { const sp = lw.children[k]; sp.textContent = lb.txt; sp.style.left = (lb.cx / COLS * 100) + '%'; sp.style.top = (lb.lr / ROWS * 100) + '%'; const on = lb.l === 3; sp.style.color = on ? 'var(--onaccent)' : 'var(--ink2)'; sp.style.background = on ? 'var(--accent)' : 'transparent'; }); }
+    this.hits = hits;
+    const rainOn = this.props.binaryRain ?? true, ts = now / 1000, flip = Math.floor(now / 380);
+    const out = [[], [], [], []];
+    for (let r = 0; r < ROWS; r++) {
+      const rows = ['', '', '', ''];
+      for (let c = 0; c < COLS; c++) {
+        const i = r * COLS + c, l = ly[i];
+        let rc = ' ';
+        if (rainOn && l === 0) { const h = (c * 2654435761) >>> 0; if (h % 7 === 0) { const sp = 2 + (h >> 4) % 5, off = (h >> 8) % 60; const head = (ts * sp + off) % (ROWS + 14); const d = head - r; if (d >= 0 && d < 7) rc = (((h >> 3) + r + flip) & 1) ? '1' : '0'; } }
+        rows[0] += rc; rows[1] += l === 1 ? chb[i] : ' '; rows[2] += l === 2 ? chb[i] : ' '; rows[3] += l === 3 ? chb[i] : ' ';
+      }
+      for (let k = 0; k < 4; k++) out[k].push(rows[k]);
+    }
+    const refs = [this.rainRef, this.dimRef, this.baseRef, this.hiRef];
+    refs.forEach((rf, k) => { if (rf.current) rf.current.textContent = out[k].join('\n'); });
+  }
+  driveArt(e) {
+    const W = 30, H = 8, N = W * H, d = DRIVES.C, cats = this.cats('C');
+    const CH = { games: '#', apps: '%', files: '+', windows: '=', hidden: '*', other: ':', unmeasured: '-' };
+    const seq = []; for (const c of cats) { const n = Math.round(c.gb / d.total * N); for (let k = 0; k < n; k++) seq.push(CH[c.id]); }
+    const filled = Math.floor(seq.length * e);
+    let o = '+' + '-'.repeat(W + 2) + '+\n';
+    for (let r = 0; r < H; r++) { let row = ''; for (let c = 0; c < W; c++) { const i = r * W + c; row += i < filled ? seq[i] : '.'; } o += '| ' + row + ' |\n'; }
+    o += '+' + '-'.repeat(W + 2) + '+\n  C:\\  ' + Math.round(e * 100) + '%';
+    return o;
+  }
+
+  renderVals() {
+    const s = this.state, lang = s.lang, pt = lang === 'pt', f = g => fmt(g, lang);
+    const T0 = T[lang], hr = new Date().getHours(), greet = hr < 12 ? T0.greetM : hr < 18 ? T0.greetA : T0.greetE;
+    const t = { ...T0, greet, welcomeTitle: T0.welcomeTitle.replace('{g}', greet) };
+    const tog = v => v ? { bg: 'var(--ink)', fg: 'var(--bg)' } : { bg: 'transparent', fg: 'var(--ink2)' };
+    const isWelcome = s.screen === 'welcome', is3d = !isWelcome && s.mode === '3d';
+    const scr = k => !isWelcome && !is3d && s.screen === k;
+    const live = s.live || {};
+    const LV = [{ g: '●', k: 'safe' }, { g: '◐', k: 'usually' }, { g: '○', k: 'think' }];
+
+    const nav = [['home', '01', t.navHome, t.navHomeHint], ['storage', '02', t.navStorage, t.navStorageHint], ['cleanup', '03', t.navCleanup, t.navCleanupHint], ['memory', '04', t.navMemory, t.navMemoryHint], ['folders', '05', t.navFolders, t.navFoldersHint]].map(([k, idx, label, hint]) => {
+      const on = s.screen === k; return { idx, label, hint, bg: on ? 'var(--hover)' : 'transparent', fg: on ? 'var(--ink)' : 'var(--ink2)', ic: on ? 'var(--accent)' : 'var(--ink3)', onClick: () => this.go(k) };
+    });
+    const b = s.bits;
+    const chipArt = ' +-+-+-+-+-+\n-| ' + b.slice(0, 4) + ' ' + b.slice(4, 8) + ' |-\n-| ' + b.slice(8, 12) + ' ' + b.slice(12, 16) + ' |-\n ' + '+-+-+-+-+-+';
+
+    const BW = 40, lines = BOOT[lang].slice(0, Math.min(s.boot, 8)).map(l => l.replace('{g}', greet.toLowerCase()));
+    const cursor = s.boot >= 8 ? '> _' : (s.bits[0] === '1' ? '_' : ' ');
+    const body = [...lines, cursor]; while (body.length < 10) body.push('');
+    const bootArt = '+' + '-'.repeat(BW) + '+\n' + body.map(l => '|  ' + (l + ' '.repeat(BW)).slice(0, BW - 2) + '|').join('\n') + '\n+' + '-'.repeat(19) + '++' + '-'.repeat(19) + '+\n' + ' '.repeat(15) + '-----++-----';
+    const bitsBlock = [0, 16, 32].map(o => b.slice(o, o + 16).replace(/(.{4})/g, '$1 ').trim()).join('\n');
+
+    const drv = DRIVES[s.drive], cats = this.cats(s.drive);
+    const catSel = cats.find(c => c.id === s.cat) || cats[0];
+    const pcts = pct1(cats.map(c => c.gb)), gp = s.grow * s.prog;
+    const segs = cats.map(c => ({ w: (c.gb / drv.total * 100 * gp).toFixed(3) + '%', bg: pat(c.id, c.id === catSel.id ? 'var(--accent)' : (c.id === 'unmeasured' ? 'var(--ink2)' : 'var(--ink)')), title: CATN[c.id][lang][0] + ' · ' + f(c.gb), onClick: () => this.setState({ cat: c.id }) }));
+    const legend = cats.map((c, i) => { const on = c.id === catSel.id; return { name: CATN[c.id][lang][0], desc: CATN[c.id][lang][1], pct: dec(pcts[i], 1, lang) + '%', size: f(Math.max(0.001, c.gb * s.prog)), sw: pat(c.id, on ? 'var(--accent)' : 'var(--ink)'), bg: on ? 'var(--hover)' : 'transparent', aria: on ? 'true' : 'false', onClick: () => this.setState({ cat: c.id }) }; });
+    const places = (catSel.places || []).map((q, i) => { const pp = this.pathFrom(q.path); return { canOpen: !!pp, noOpen: !pp, chev: pp ? '›' : '', open: () => { if (pp) this.go('folders', { fbPath: pp, fbHist: [] }); }, title: q[lang][0], desc: q[lang][1], path: q.path, size: f(q.gb), w: Math.max(1.5, q.gb / catSel.gb * 100).toFixed(1) + '%', delay: (i * 60) + 'ms' }; });
+    const fileCount = drv.files * (s.scanning ? s.prog : 1);
+    const statusLine = s.scanning ? `${t.scanning} ${num(fileCount, lang)} ${t.filesFound}` : `${s.fresh ? t.justNow : t.fromAgo} · ${num(drv.files, lang)} ${t.files}`;
+
+    const cC = DRIVES.C, cCats = this.cats('C');
+    const driveCards = ['C', 'D'].map(k => { const d = DRIVES[k], pc = d.used / d.total, warn = pc > 0.9; return { letter: d.letter, label: d.label[lang], usedLine: `${f(d.used)} ${t.usedOf} ${f(d.total)}`, w: (pc * 100 * s.grow).toFixed(2) + '%', barBg: warn ? 'var(--accent)' : 'var(--ink)', warnTxt: warn ? '▲ ' + t.almostFull : '', pctTxt: Math.round(pc * 100) + '%', onClick: () => this.go('storage', { drive: k, cat: k === 'C' ? 'apps' : 'games' }) }; });
+    const big = cCats.reduce((a, c) => c.gb > a.gb ? c : a, cCats[0]);
+    const miniSegs = cCats.map(c => ({ w: (c.gb / cC.total * 100 * s.grow).toFixed(3) + '%', bg: pat(c.id, c.id === big.id ? 'var(--accent)' : 'var(--ink)') }));
+
+    const items = CLEAN.filter(c => !s.cleaned[c.id]);
+    const totalAll = items.reduce((a, c) => a + c.gb, 0);
+    const selItems = items.filter(c => s.sel[c.id]), selGb = selItems.reduce((a, c) => a + c.gb, 0);
+    const safeGb = items.filter(c => c.lvl === 0).reduce((a, c) => a + c.gb, 0);
+    const groups = [0, 1, 2].map(l => ({ glyph: LV[l].g, label: t[LV[l].k], desc: t[LV[l].k + 'Desc'], gc: l === 2 ? 'var(--accent)' : 'var(--ink)', bc: l === 2 ? 'var(--accent)' : 'var(--line2)', items: items.filter(c => c.lvl === l).map(c => { const on = !!s.sel[c.id]; return { title: c[lang][0], desc: c[lang][1], cons: c[lang][2], size: f(c.gb), aria: on ? 'true' : 'false', boxBg: on ? 'var(--ink)' : 'transparent', mark: on ? '✓' : '', onClick: () => this.setState(st => ({ sel: { ...st.sel, [c.id]: !st.sel[c.id] } })) }; }) })).filter(g => g.items.length);
+    const phEmpty = s.phase === 'select' && items.length === 0;
+    const cleanTitle = s.phase === 'done' ? `${t.freed} ${f(s.freed)}` : s.phase === 'cleaning' ? t.cleaning : phEmpty ? t.nothingTitle : `${t.canFree} ${f(totalAll)}`;
+    const cleanRows = s.cleanOrder.map(id => { const c = CLEAN.find(x => x.id === id), v = s.cleanProg[id] || 0, n = Math.round(v * 24); return { title: c[lang][0], bar: '[' + '#'.repeat(n) + '.'.repeat(24 - n) + ']', pct: v >= 1 ? f(c.gb) : Math.round(v * 100) + '%' }; });
+    const doneRows = s.cleanOrder.map(id => { const c = CLEAN.find(x => x.id === id); return { title: c[lang][0], size: f(c.gb) }; });
+
+    const memUsed = s.memUsed, memComp = 0.9, memCache = Math.max(0, 16 - memUsed - memComp - 0.8);
+    const memFree = Math.max(0, 16 - memUsed - memComp - memCache);
+    const memSegs = [['games', memUsed], ['apps', memComp], ['files', memCache]].map(([p2, v]) => ({ w: (v / 16 * 100 * s.grow).toFixed(2) + '%', bg: pat(p2, 'var(--ink)') }));
+    const memLegend = [[t.inUse, memUsed, 'games'], [t.compressed, memComp, 'apps'], [t.cached, memCache, 'files'], [t.memFree, memFree, null]].map(([label, v, p2]) => ({ label, val: f(v), bg: p2 ? pat(p2, 'var(--ink)') : 'var(--track)' }));
+    const cpuNow = s.cpuHist[59];
+    const cpuBars = s.cpuHist.map((v, i) => ({ h: Math.min(100, v / 25 * 100).toFixed(1) + '%', bg: i === 59 ? 'var(--accent)' : 'var(--ink)' }));
+    const cpuMini = s.cpuHist.slice(30).map((v, i) => ({ h: Math.min(100, v / 25 * 100).toFixed(1) + '%', bg: i === 29 ? 'var(--accent)' : 'var(--ink2)' }));
+    const appRows = APPS.filter(a => !s.closed[a.id]).map(a => {
+      const v = live[a.id] || a, exp = !!s.expanded[a.id], canExp = a.kids.length > 0 || !!a.note;
+      return { ic: a.ic, name: a.name[lang], sub: a.sub[lang], mem: f(v.mem), cpu: dec(v.cpu, 1, lang) + '%', sign: canExp ? (exp ? '−' : '+') : '·', aria: exp ? 'true' : 'false', noExpand: !canExp, expanded: exp && canExp, toggle: () => this.setState(st => ({ expanded: { ...st.expanded, [a.id]: !st.expanded[a.id] } })), hasNote: !!a.note, note: a.note ? a.note[lang] : '', children: a.kids.map(([n, m, c]) => ({ name: n, mem: f(m * (v.mem / a.mem)), cpu: dec(c, 1, lang) + '%' })), locked: !!a.locked, canClose: !!a.close, onClose: () => this.setState({ dialog: 'close', closeId: a.id }), hasStorage: !!a.storage, onStorage: () => this.go('storage', { drive: 'C', cat: a.storage }), _mem: v.mem, _cpu: v.cpu };
+    });
+    const chrome = appRows.find(a => a.name === 'Google Chrome');
+    const topAppLine = chrome ? `Chrome ${chrome.mem}` : '';
+    const closeApp = APPS.find(a => a.id === s.closeId);
+
+    const partName = t.parts[s.part][0], pIdx = PARTS.indexOf(s.part) + 1;
+    const partChips = PARTS.map((id, i) => { const on = id === s.part; return { idx: '0' + (i + 1), label: PLABEL[lang][id], aria: on ? 'true' : 'false', bg: on ? 'var(--ink)' : 'transparent', fg: on ? 'var(--bg)' : 'var(--ink2)', onClick: () => this.selectPart(id) }; });
+    const CH = { games: '#', apps: '%', files: '+', windows: '=', hidden: '*', other: ':', unmeasured: '-' };
+    const driveLegend = cCats.map(c => ({ ch: CH[c.id], name: CATN[c.id][lang][0], size: f(c.gb) })).concat([{ ch: '.', name: pt ? 'Livre' : 'Free', size: f(cC.total - cC.used) }]);
+    const allPlaces = cCats.flatMap(c => c.places || []).sort((x, y) => y.gb - x.gb).slice(0, 5);
+    const topFolders = allPlaces.map(q => { const n = Math.round(q.gb / allPlaces[0].gb * 16); return { name: q[lang][0], bar: '#'.repeat(n) + '.'.repeat(16 - n), size: f(q.gb) }; });
+    const ma = [Math.round(memUsed / 16 * 32), Math.round(memComp / 16 * 32), Math.round(memCache / 16 * 32)];
+    const memAscii = '[' + '#'.repeat(ma[0]) + '%'.repeat(ma[1]) + ':'.repeat(ma[2]) + '.'.repeat(Math.max(0, 32 - ma[0] - ma[1] - ma[2])) + ']';
+    const memAsciiLegend = [['#', t.inUse, memUsed], ['%', t.compressed, memComp], [':', t.cached, memCache], ['.', t.memFree, memFree]].map(([ch, label, v]) => ({ ch, label, val: f(v) }));
+    const byMem = [...appRows].sort((x, y) => y._mem - x._mem).slice(0, 4).map(a => ({ name: a.name, mem: a.mem }));
+    const byCpu = [...appRows].sort((x, y) => y._cpu - x._cpu).slice(0, 4).map(a => ({ name: a.name, cpu: a.cpu }));
+    const shaderItem = items.find(c => c.id === 'shader');
+    const hb = Math.round(6.38 / 16 * 12);
+
+    const isLocked = n => !!n.locked && !s.unlocked;
+    const fbNode = this.resolve(s.fbPath) || TREE.C;
+    const fbLockedState = isLocked(fbNode);
+    const fbKids = fbLockedState || fbNode.file ? [] : [...kidsOf(fbNode)].sort((x, y) => (isLocked(y) ? -1 : y.gb) - (isLocked(x) ? -1 : x.gb));
+    const fbMax = Math.max(0.0001, ...fbKids.filter(k => !isLocked(k)).map(k => k.gb));
+    const fbUnmeasured = fbKids.filter(isLocked).reduce((a, k) => a + k.gb, 0);
+    const fbTotalGb = fbNode.pc ? TREE.C.gb + TREE.D.gb : fbNode.gb;
+    const fbRows = fbKids.map(k => {
+      const lk = isLocked(k), isDrive = fbNode.pc, kind = isDrive ? 'drive' : k.file ? 'file' : 'folder';
+      const path = isDrive ? [k.n] : [...s.fbPath, k.n];
+      const full = isDrive ? k.n + '\\' : path.join('\\');
+      const name = isDrive ? `${DRIVES[k.n[0]].label[lang]} (${k.n})` : k.n;
+      return { name, kindFolder: kind === 'folder', kindFile: kind === 'file', kindDrive: kind === 'drive', ic: lk ? 'var(--ink3)' : 'var(--ink)',
+        size: lk ? '—' : f(k.gb), w: lk ? '0%' : Math.max(k.gb > 0 ? 1 : 0, k.gb / (isDrive ? DRIVES[k.n[0]].total : fbMax) * 100).toFixed(1) + '%',
+        locked: lk, noOpen: kind === 'file', cursor: kind === 'file' ? 'default' : 'pointer', chev: kind === 'file' ? '' : '›',
+        open: () => { if (kind !== 'file') this.openPath(path); },
+        explorer: () => this.toast(`${t.explorerToast} ${full}`) };
+    });
+    const crumbs = [{ label: t.thisPc, sep: '', path: [] }, ...s.fbPath.map((seg, i) => ({ label: i === 0 ? `${DRIVES[seg[0]].label[lang]} (${seg})` : seg, sep: '›', path: s.fbPath.slice(0, i + 1) }))]
+      .map((c, i, arr) => ({ ...c, fg: i === arr.length - 1 ? 'var(--ink)' : 'var(--ink2)', onClick: () => { if (i !== arr.length - 1) this.openPath(c.path); } }));
+    const dialog = s.dialog;
+    return {
+      t, theme: s.theme, scale: String(s.scale), boxW: (1100 * s.scale) + 'px', boxH: (760 * s.scale) + 'px',
+      modeMin: tog(s.mode === 'min'), mode3d: tog(s.mode === '3d'), langPt: tog(pt), langEn: tog(!pt),
+      setMin: () => this.setState({ mode: 'min', screen: isWelcome ? 'welcome' : s.screen }),
+      set3d: () => { this.driveT0 = performance.now(); this.setState({ mode: '3d', screen: isWelcome ? 'home' : s.screen }); },
+      setPt: () => this.setState({ lang: 'pt', langPref: 'pt' }), setEn: () => this.setState({ lang: 'en', langPref: 'en' }),
+      toggleTheme: () => this.setState({ theme: s.theme === 'dark' ? 'light' : 'dark' }),
+      themeLabel: s.theme === 'dark' ? t.themeDark : t.themeLight,
+      showSidebar: !isWelcome && !is3d, bodyCols: (!isWelcome && !is3d) ? '216px minmax(0,1fr)' : 'minmax(0,1fr)',
+      nav, chipArt,
+      isWelcome, isHome: scr('home'), isStorage: scr('storage'), isCleanup: scr('cleanup'), isMemory: scr('memory'), is3d,
+      points: [t.pt1, t.pt2, t.pt3].map((text, i) => ({ idx: '0' + (i + 1), text, delay: (200 + i * 120) + 'ms' })),
+      langOpts: [['system', t.langSystem], ['en', 'English'], ['pt', 'Português']].map(([k, label]) => { const on = s.langPref === k; return { label, aria: on ? 'true' : 'false', bg: on ? 'var(--ink)' : 'transparent', fg: on ? 'var(--bg)' : 'var(--ink2)', onClick: () => this.setState({ langPref: k, lang: k === 'system' ? ((navigator.language || 'pt').startsWith('pt') ? 'pt' : 'en') : k }) }; }),
+      analyze: () => { this.go('storage', { drive: 'C', cat: 'apps', fresh: false }); this.startScan(6500); },
+      bootArt, bitsBlock, bitsLine: b.slice(0, 32).replace(/(.{8})/g, '$1 ').trim(),
+      driveCards, teaserLine: `${CATN[big.id][lang][0]} ${t.use} ${f(big.gb)}`, miniSegs, safeTxt: f(safeGb),
+      goStorage: () => this.go('storage', { drive: 'C' }), goCleanup: () => this.go('cleanup'), goMemory: () => this.go('memory'), goHome: () => this.go('home'),
+      memUsedTxt: dec(memUsed, 1, lang), memSegs, memLegend, cpuTxt: Math.round(cpuNow) + '%', cpuBars, cpuMini, topAppLine,
+      showUnlockBanner: !s.unlocked, openUnlock: () => this.setState({ dialog: 'unlock', waiting: false }),
+      usedLine: `${f(drv.used)} ${t.usedOf} ${f(drv.total)}`, statusLine, canRescan: !s.scanning,
+      rescan: () => this.startScan(s.unlocked ? 1600 : 4500),
+      statusDot: s.scanning ? 'var(--accent)' : 'var(--ink2)', dotAnim: s.scanning ? 'pwBlink 1s steps(1) infinite' : 'none',
+      statusShort: s.scanning ? t.scanning : t.ready, cPct: Math.round(cC.used / cC.total * 100) + '%',
+      driveBtns: ['C', 'D'].map(k => { const on = s.drive === k; return { letter: DRIVES[k].letter, label: DRIVES[k].label[lang], aria: on ? 'true' : 'false', bg: on ? 'var(--ink)' : 'transparent', fg: on ? 'var(--bg)' : 'var(--ink2)', onClick: () => this.setState({ drive: k, cat: k === 'C' ? 'apps' : 'games', grow: 0 }, () => setTimeout(() => this.setState({ grow: 1 }), 40)) }; }),
+      segs, freeTxt: `${f(drv.total - drv.used)} ${t.free}`, totalTxt: f(drv.total),
+      showOvercount: s.drive === 'C' && !s.unlocked && !s.scanning, showUnlockStorage: s.drive === 'C' && !s.unlocked,
+      legend, placesTitle: t.placesWhere.replace('{c}', CATN[catSel.id][lang][0]), places,
+      placesScan: s.scanning, placesUnm: !s.scanning && catSel.id === 'unmeasured', placesList: !s.scanning && catSel.id !== 'unmeasured',
+      cleanTitle, cleanSub: s.phase === 'select' ? (phEmpty ? t.nothingSub : t.cleanSub) : s.phase === 'cleaning' ? t.cleaningSub : t.doneSub,
+      phSelect: s.phase === 'select' && !phEmpty, phCleaning: s.phase === 'cleaning', phDone: s.phase === 'done', phEmpty,
+      groups, selLine: `${t.selected}: ${f(selGb)} ${t.of} ${f(totalAll)}`, selW: (totalAll ? selGb / totalAll * 100 : 0).toFixed(1) + '%',
+      cleanBtn: `${t.clean} ${f(selGb)}`, cleanDisabled: selGb === 0, cleanOp: selGb === 0 ? '0.4' : '1',
+      askClean: () => { if (selGb > 0) this.setState({ dialog: 'clean' }); },
+      cleanRows, doneRows, finishClean: () => this.setState({ phase: 'select', cleanOrder: [], sel: { temp: true, browser: true, shader: true, dumps: true } }),
+      apps: appRows,
+      partChips, partIdx: `0${pIdx} / 06 · ${PLABEL[lang][s.part]}`, partName, partDesc: t.parts[s.part][1],
+      pSsd: s.part === 'ssd', pRam: s.part === 'ram', pCpu: s.part === 'cpu', pGpu: s.part === 'gpu', pPsu: s.part === 'psu', pBin: s.part === 'bin',
+      stageRef: this.stageRef, rainRef: this.rainRef, dimRef: this.dimRef, baseRef: this.baseRef, hiRef: this.hiRef, driveRef: this.driveRef, labelsRef: this.labelsRef,
+      onDown: e => { this.rot.drag = { x: e.clientX, y: e.clientY, a: this.rot.a, b: this.rot.b, moved: false }; if (e.currentTarget.setPointerCapture) e.currentTarget.setPointerCapture(e.pointerId); },
+      onMove: e => {
+        const d = this.rot.drag;
+        if (d) { const dx = e.clientX - d.x, dy = e.clientY - d.y; if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true; if (d.moved) { this.rot.a = d.a + dx * 0.01; this.rot.b = Math.max(-0.2, Math.min(0.9, d.b + dy * 0.006)); e.currentTarget.style.cursor = 'grabbing'; } }
+        else { this.hover = this.hitAt(e); e.currentTarget.style.cursor = this.hover ? 'pointer' : 'grab'; }
+      },
+      onUp: e => { const d = this.rot.drag; if (d && !d.moved) { const id = this.hitAt(e); if (id) this.selectPart(id); } this.rot.drag = null; this.rot.last = performance.now(); e.currentTarget.style.cursor = 'grab'; },
+      onLeave: () => { this.hover = null; },
+      onWheel: e => { this.setZoom(this.rot.zt * (e.deltaY < 0 ? 1.12 : 1 / 1.12)); },
+      zoomIn: () => this.setZoom(this.rot.zt * 1.25), zoomOut: () => this.setZoom(this.rot.zt / 1.25), zoomReset: () => this.setZoom(1), zoomTxt: Math.round(s.zoomShow * 100) + '%',
+      ssdUsed: f(cC.used), ssdFree: `${f(cC.total - cC.used)} ${t.free} · ${f(cC.total)}`, driveLegend, topFolders,
+      openStorage3d: () => this.go('storage', { drive: 'C', cat: 'apps' }), openHidden: () => this.go('storage', { drive: 'C', cat: 'hidden' }),
+      memAscii, memAsciiLegend, topMem: byMem, topCpu: byCpu,
+      cpuSpark: spark(s.cpuHist.slice(-30), 25), gpuSpark: spark(s.gpuHist, 30), gpuTxt: Math.round(s.gpuHist[29]) + '%',
+      shaderNote: shaderItem ? t.shader.replace('{s}', f(shaderItem.gb)) : (pt ? 'Caches de shader já foram limpos.' : 'Shader caches were already cleaned.'),
+      hiberTxt: f(6.38), hiberBar: '#'.repeat(hb) + '.'.repeat(12 - hb),
+      cleanTotalTxt: f(totalAll), binList: items.map(c => ({ glyph: LV[c.lvl].g, gc: c.lvl === 2 ? 'var(--accent)' : 'var(--ink)', title: c[lang][0], size: f(c.gb) })),
+      hasDialog: !!dialog, dUnlock: dialog === 'unlock', dDeclined: dialog === 'declined', dClean: dialog === 'clean', dClose: dialog === 'close', waiting: s.waiting,
+      closeDialog: () => this.setState({ dialog: null }),
+      declineUnlock: () => this.setState({ dialog: 'declined', waiting: false }),
+      confirmUnlock: () => { this.setState({ waiting: true }); setTimeout(() => { this.setState({ unlocked: true, dialog: null, waiting: false, drive: 'C', cat: 'hidden' }); if (s.screen !== 'storage' || s.mode === '3d') this.go('storage', { drive: 'C', cat: 'hidden' }); this.startScan(1600); this.toast(t.unlockedToast); }, 1500); },
+      confirmTitle: `${t.clean} ${f(selGb)}?`, confirmRows: selItems.map(c => ({ title: c[lang][0], size: f(c.gb) })), binSelected: !!s.sel.bin && !s.cleaned.bin,
+      doClean: () => this.startClean(),
+      closeTitle: closeApp ? `${t.closeApp} ${closeApp.name[lang]}?` : '',
+      confirmClose: () => { const a = closeApp; this.setState(st => ({ dialog: null, closed: { ...st.closed, [a.id]: true }, memUsed: st.memUsed - a.mem })); this.toast(`${a.name[lang]} ${t.closedToast} ${f(a.mem)}`); },
+      hasToast: !!s.toast, toast: s.toast || '',
+      isFolders: scr('folders'), fbRows, crumbs, fbLockedState, fbEmpty: !fbLockedState && fbKids.length === 0, fbList: fbKids.length > 0,
+      fbTitle: crumbs[crumbs.length - 1].label,
+      fbTotal: fbNode.pc ? `${fbKids.length} ${pt ? 'discos' : 'drives'}` : `${f(fbTotalGb)} · ${fbKids.length} ${t.items}${fbUnmeasured > 0 ? ' · ' + f(fbUnmeasured) + ' ' + t.notMeasured : ''}`,
+      noBack: s.fbHist.length === 0, noUp: s.fbPath.length === 0, canBack: s.fbHist.length > 0, backOp: s.fbHist.length ? '1' : '0.35', canUp: s.fbPath.length > 0, upOp: s.fbPath.length ? '1' : '0.35',
+      fbBack: () => this.setState(st => st.fbHist.length ? { fbPath: st.fbHist[st.fbHist.length - 1], fbHist: st.fbHist.slice(0, -1) } : null),
+      fbUp: () => { if (s.fbPath.length) this.openPath(s.fbPath.slice(0, -1)); },
+      browseAll: () => this.go('folders', { fbPath: [s.drive], fbHist: [] }),
+      show3dHint: s.hint3d, dismiss3dHint: () => this.setState({ hint3d: false }),
+      homeStatus: (cC.used / cC.total > 0.9 ? t.homeStatusFull : t.homeStatusOk).replace('{p}', Math.round(cC.used / cC.total * 100) + '%'),
+      calmLine: (cpuNow < 30 && memUsed < 14) ? t.calmYes : t.calmNo,
+    };
+  }
+}
+</script>
+</body>
+</html>
