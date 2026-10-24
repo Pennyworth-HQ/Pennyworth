@@ -57,9 +57,9 @@
     </ResourceDictionary>
   </ResourceDictionary.ThemeDictionaries>
 
-  <!-- Open-licence fonts from the design, with Windows fallbacks when they aren't installed. -->
-  <FontFamily x:Key="FontFamily.Base">Golos Text, Segoe UI Variable Text, Segoe UI</FontFamily>
-  <FontFamily x:Key="FontFamily.Mono">JetBrains Mono, Cascadia Mono, Consolas</FontFamily>
+  <!-- The design's fonts, bundled in Assets/Fonts (SIL OFL 1.1). Windows fonts cover missing glyphs. -->
+  <FontFamily x:Key="FontFamily.Base">avares://Pennyworth/Assets/Fonts#Golos Text, Segoe UI</FontFamily>
+  <FontFamily x:Key="FontFamily.Mono">avares://Pennyworth/Assets/Fonts#JetBrains Mono, Consolas</FontFamily>
 
   <x:Double x:Key="FontSize.Title">34</x:Double>
   <x:Double x:Key="FontSize.Heading">17</x:Double>
