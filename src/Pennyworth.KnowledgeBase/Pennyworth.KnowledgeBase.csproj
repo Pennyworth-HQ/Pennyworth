@@ -4,6 +4,8 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Data\locations.json" LogicalName="Pennyworth.KnowledgeBase.locations.json" />
+    <EmbeddedResource Include="Data\processes.json" LogicalName="Pennyworth.KnowledgeBase.processes.json" />
+    <EmbeddedResource Include="Data\cleanup.json" LogicalName="Pennyworth.KnowledgeBase.cleanup.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />

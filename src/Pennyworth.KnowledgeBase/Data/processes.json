@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "processes": [
+    {
+      "id": "windows-services",
+      "names": ["svchost"],
+      "title": { "en": "Windows services", "pt-BR": "Serviços do Windows" },
+      "subtitle": { "en": "Background helpers Windows needs", "pt-BR": "Ajudantes em segundo plano que o Windows precisa" },
+      "note": {
+        "en": "Many small Windows services share these processes. Expand to see which ones are running.",
+        "pt-BR": "Vários pequenos serviços do Windows dividem estes processos. Expanda para ver quais estão rodando."
+      },
+      "isProtected": true,
+      "canClose": false,
+      "listServices": true
+    },
+    {
+      "id": "wsl-vm",
+      "names": ["vmmem", "vmmemWSL"],
+      "title": { "en": "WSL / Docker virtual machine", "pt-BR": "Máquina virtual WSL / Docker" },
+      "subtitle": { "en": "vmmem · Linux virtual machine", "pt-BR": "vmmem · máquina virtual Linux" },
+      "note": {
+        "en": "Linux runs in a small virtual machine. Its memory comes back when you close Docker or WSL.",
+        "pt-BR": "O Linux roda numa pequena máquina virtual. A memória volta quando você fecha o Docker ou o WSL."
+      },
+      "isProtected": false,
+      "canClose": false
+    },
+    {
+      "id": "memory-compression",
+      "names": ["Memory Compression"],
+      "title": { "en": "Memory Compression", "pt-BR": "Compressão de memória" },
+      "subtitle": { "en": "Windows", "pt-BR": "Windows" },
+      "note": {
+        "en": "Squeezes rarely used memory so more fits in RAM.",
+        "pt-BR": "Compacta memória pouco usada para caber mais na RAM."
+      },
+      "isProtected": true,
+      "canClose": false
+    },
+    {
+      "id": "explorer",
+      "names": ["explorer"],
+      "title": { "en": "Windows Explorer", "pt-BR": "Explorador do Windows" },
+      "subtitle": { "en": "Taskbar, Start and file windows", "pt-BR": "Barra de tarefas, Iniciar e janelas de arquivos" },
+      "isProtected": true,
+      "canClose": false
+    },
+    {
+      "id": "defender",
+      "names": ["MsMpEng", "NisSrv", "MpDefenderCoreService", "SecurityHealthService"],
+      "title": { "en": "Microsoft Defender", "pt-BR": "Microsoft Defender" },
+      "subtitle": { "en": "Keeps your PC safe from viruses", "pt-BR": "Protege seu PC contra vírus" },
+      "isProtected": true,
+      "canClose": false
+    },
+    {
+      "id": "search",
+      "names": ["SearchIndexer", "SearchHost", "SearchProtocolHost", "SearchFilterHost"],
+      "title": { "en": "Windows Search", "pt-BR": "Pesquisa do Windows" },
+      "subtitle": { "en": "Keeps your files quick to find", "pt-BR": "Deixa seus arquivos rápidos de encontrar" },
+      "isProtected": true,
+      "canClose": false
+    },
+    {
+      "id": "desktop-window-manager",
+      "names": ["dwm"],
+      "title": { "en": "Desktop Window Manager", "pt-BR": "Gerenciador de Janelas da Área de Trabalho" },
+      "subtitle": { "en": "Draws every window on your screen", "pt-BR": "Desenha todas as janelas na tela" },
+      "isProtected": true,
+      "canClose": false
+    },
+    {
+      "id": "windows-core",
+      "names": ["System", "Registry", "smss", "csrss", "wininit", "services", "lsass", "winlogon", "fontdrvhost", "LsaIso", "Secure System", "WUDFHost", "sihost", "ctfmon", "RuntimeBroker", "StartMenuExperienceHost", "ShellExperienceHost", "TextInputHost", "spoolsv", "audiodg", "conhost", "dllhost", "taskhostw", "WmiPrvSE", "unsecapp", "SgrmBroker", "SystemSettings", "ApplicationFrameHost"],
+      "title": { "en": "Windows itself", "pt-BR": "O próprio Windows" },
+      "subtitle": { "en": "Core parts Windows needs to run", "pt-BR": "Partes essenciais para o Windows funcionar" },
+      "note": {
+        "en": "These keep Windows running. They are small and can't be closed.",
+        "pt-BR": "Estes mantêm o Windows funcionando. São pequenos e não podem ser fechados."
+      },
+      "isProtected": true,
+      "canClose": false
+    },
+    {
+      "id": "pennyworth",
+      "names": ["Pennyworth"],
+      "title": { "en": "Pennyworth", "pt-BR": "Pennyworth" },
+      "subtitle": { "en": "That's me, at your service", "pt-BR": "Sou eu, ao seu dispor" },
+      "isProtected": false,
+      "canClose": false
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "temp",
+      "safety": "Safe",
+      "kind": "FolderContents",
+      "paths": ["%TEMP%"],
+      "requiresAdmin": false,
+      "title": { "en": "Temporary files", "pt-BR": "Arquivos temporários" },
+      "description": { "en": "Leftovers apps create while they run.", "pt-BR": "Sobras que os apps criam enquanto rodam." },
+      "consequence": { "en": "Nothing noticeable. Windows recreates them.", "pt-BR": "Nada perceptível. O Windows recria." }
+    },
+    {
+      "id": "browser",
+      "safety": "Safe",
+      "kind": "FolderContents",
+      "paths": [
+        "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\Cache",
+        "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\Code Cache",
+        "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\GPUCache",
+        "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\Cache",
+        "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\Code Cache",
+        "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\GPUCache",
+        "%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\*\\Cache",
+        "%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\User Data\\*\\Code Cache",
+        "%LOCALAPPDATA%\\Mozilla\\Firefox\\Profiles\\*\\cache2"
+      ],
+      "requiresAdmin": false,
+      "title": { "en": "Browser caches", "pt-BR": "Caches do navegador" },
+      "description": { "en": "Saved copies of websites.", "pt-BR": "Cópias salvas de sites." },
+      "consequence": { "en": "Sites load a little slower the first time.", "pt-BR": "Os sites carregam um pouco mais devagar na primeira vez." }
+    },
+    {
+      "id": "shader",
+      "safety": "Safe",
+      "kind": "FolderContents",
+      "paths": [
+        "%LOCALAPPDATA%\\D3DSCache",
+        "%LOCALAPPDATA%\\NVIDIA\\DXCache",
+        "%LOCALAPPDATA%\\NVIDIA\\GLCache",
+        "%USERPROFILE%\\AppData\\LocalLow\\NVIDIA\\PerDriverVersion\\DXCache",
+        "%LOCALAPPDATA%\\AMD\\DxCache",
+        "%LOCALAPPDATA%\\AMD\\DxcCache",
+        "%LOCALAPPDATA%\\AMD\\VkCache",
+        "%LOCALAPPDATA%\\AMD\\GLCache",
+        "%LOCALAPPDATA%\\Intel\\ShaderCache"
+      ],
+      "requiresAdmin": false,
+      "title": { "en": "Game graphics files", "pt-BR": "Arquivos de gráficos dos jogos" },
+      "description": { "en": "Graphics data games prepare in advance (shader cache).", "pt-BR": "Dados gráficos que os jogos preparam antes (cache de shader)." },
+      "consequence": { "en": "Games may stutter briefly on first launch.", "pt-BR": "Jogos podem engasgar um pouco na primeira abertura." }
+    },
+    {
+      "id": "dumps",
+      "safety": "Safe",
+      "kind": "FolderContents",
+      "paths": [
+        "%LOCALAPPDATA%\\CrashDumps",
+        "%LOCALAPPDATA%\\Microsoft\\Windows\\WER\\ReportArchive",
+        "%LOCALAPPDATA%\\Microsoft\\Windows\\WER\\ReportQueue"
+      ],
+      "requiresAdmin": false,
+      "title": { "en": "Old error reports", "pt-BR": "Relatórios de erro antigos" },
+      "description": { "en": "Saved when an app crashed in the past.", "pt-BR": "Salvos quando algum app travou no passado." },
+      "consequence": { "en": "Only matters if you're investigating a crash.", "pt-BR": "Só importa se você estiver investigando uma falha." }
+    },
+    {
+      "id": "windows-update",
+      "safety": "UsuallySafe",
+      "kind": "FolderContents",
+      "paths": ["%SystemRoot%\\SoftwareDistribution\\Download"],
+      "requiresAdmin": true,
+      "title": { "en": "Windows update leftovers", "pt-BR": "Sobras do Windows Update" },
+      "description": { "en": "Copies kept after updates install.", "pt-BR": "Cópias guardadas após instalar atualizações." },
+      "consequence": { "en": "Recent updates can no longer be uninstalled.", "pt-BR": "Atualizações recentes não poderão ser desinstaladas." }
+    },
+    {
+      "id": "recycle-bin",
+      "safety": "UsuallySafe",
+      "kind": "RecycleBin",
+      "paths": [],
+      "requiresAdmin": false,
+      "title": { "en": "Recycle Bin", "pt-BR": "Lixeira" },
+      "description": { "en": "Files you deleted, waiting to be emptied.", "pt-BR": "Arquivos que você apagou, esperando para sair de vez." },
+      "consequence": { "en": "The files are gone for good.", "pt-BR": "Os arquivos somem de vez." }
+    },
+    {
+      "id": "previous-windows",
+      "safety": "ThinkFirst",
+      "kind": "FolderContents",
+      "paths": ["%SystemDrive%\\Windows.old"],
+      "requiresAdmin": true,
+      "title": { "en": "Previous Windows installation", "pt-BR": "Instalação anterior do Windows" },
+      "description": { "en": "Kept so you can return to the older version.", "pt-BR": "Guardada para você voltar à versão anterior." },
+      "consequence": { "en": "You can't go back to the previous Windows.", "pt-BR": "Você não poderá voltar ao Windows anterior." }
+    }
+  ]
+}

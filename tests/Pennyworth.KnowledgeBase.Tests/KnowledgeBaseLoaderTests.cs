@@ -49,3 +49,37 @@ public class KnowledgeBaseLoaderTests
         });
     }
 }
+
+public class CatalogTests
+{
+    [Fact]
+    public void Process_explanations_are_complete_and_unique()
+    {
+        var processes = KnowledgeBaseLoader.LoadProcesses().Processes;
+
+        Assert.NotEmpty(processes);
+        Assert.Equal(processes.Count, processes.Select(p => p.Id).Distinct().Count());
+        var names = processes.SelectMany(p => p.Names).ToList();
+        Assert.Equal(names.Count, names.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.All(processes, p =>
+        {
+            Assert.NotEmpty(p.Names);
+            Assert.False(string.IsNullOrWhiteSpace(p.Title.PtBr));
+            Assert.False(p.IsProtected && p.CanClose, $"{p.Id} is protected but closable");
+        });
+    }
+
+    [Fact]
+    public void Cleanup_rules_are_complete_and_unique()
+    {
+        var rules = KnowledgeBaseLoader.LoadCleanupRules().Rules;
+
+        Assert.Equal(rules.Count, rules.Select(r => r.Id).Distinct().Count());
+        Assert.Contains(rules, r => r.Kind == CleanupKind.RecycleBin);
+        Assert.All(rules, r =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(r.Consequence.PtBr));
+            Assert.True(r.Kind == CleanupKind.RecycleBin || r.Paths.Count > 0, $"{r.Id} has no paths");
+        });
+    }
+}
