@@ -6,6 +6,7 @@
     <IsAotCompatible>true</IsAotCompatible>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\pennyworth.ico</ApplicationIcon>
     <SatelliteResourceLanguages>en;pt-BR</SatelliteResourceLanguages>
   </PropertyGroup>
   <ItemGroup>
@@ -21,6 +22,11 @@
     <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
     <ProjectReference Include="..\Pennyworth.Insights\Pennyworth.Insights.csproj" />
     <ProjectReference Include="..\Pennyworth.Scanning\Pennyworth.Scanning.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Window icon and the transparent logo shown in the title bar. -->
+    <AvaloniaResource Include="Assets\pennyworth.ico" />
+    <AvaloniaResource Include="Assets\logo.png" />
   </ItemGroup>
   <ItemGroup>
     <!-- Golos Text and JetBrains Mono (SIL OFL 1.1); the licences ship next to the app. -->
