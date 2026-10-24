@@ -6,6 +6,7 @@
         x:Class="Pennyworth.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{x:Static res:Strings.AppTitle}"
+        Icon="/Assets/pennyworth.ico"
         Width="1100" Height="760" MinWidth="720" MinHeight="520"
         WindowStartupLocation="CenterScreen"
         ExtendClientAreaToDecorationsHint="True">
@@ -66,7 +67,7 @@
             WindowDecorationProperties.ElementRole="TitleBar">
       <Grid ColumnDefinitions="Auto,*,Auto" Margin="16,0,150,0">
         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <TextBlock Classes="mono" Text="▸■◂" Foreground="{DynamicResource Brush.Accent}" FontSize="11" />
+          <Image Source="/Assets/logo.png" Width="26" Height="26" RenderOptions.BitmapInterpolationMode="HighQuality" />
           <TextBlock Text="{controls:Upper {x:Static res:Strings.AppTitle}}" FontWeight="SemiBold" FontSize="12" LetterSpacing="2.4" />
         </StackPanel>
         <Button Grid.Column="2" Click="OnToggleTheme"
