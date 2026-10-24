@@ -8,6 +8,7 @@
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
         <ResourceInclude Source="avares://Pennyworth/Theme/Tokens.axaml" />
+        <ResourceInclude Source="avares://Pennyworth/Theme/WindowDecorations.axaml" />
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
   </Application.Resources>

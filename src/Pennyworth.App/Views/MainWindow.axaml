@@ -65,7 +65,7 @@
     <!-- Title bar: drag area; Windows draws the caption buttons on the right. -->
     <Border Classes="rule" BorderThickness="0,0,0,1" Background="{DynamicResource Brush.Background}"
             WindowDecorationProperties.ElementRole="TitleBar">
-      <Grid ColumnDefinitions="Auto,*,Auto" Margin="16,0,150,0">
+      <Grid ColumnDefinitions="Auto,*,Auto" Margin="16,0,148,0">
         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
           <Image Source="/Assets/logo.png" Width="26" Height="26" RenderOptions.BitmapInterpolationMode="HighQuality" />
           <TextBlock Text="{controls:Upper {x:Static res:Strings.AppTitle}}" FontWeight="SemiBold" FontSize="12" LetterSpacing="2.4" />
