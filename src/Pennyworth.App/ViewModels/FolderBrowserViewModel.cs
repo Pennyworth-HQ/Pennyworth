@@ -20,7 +20,7 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
     }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Items), nameof(Breadcrumbs), nameof(SizeText), nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(Items), nameof(Breadcrumbs), nameof(Title), nameof(SizeText), nameof(IsEmpty), nameof(IsLockedFolder))]
     [NotifyCanExecuteChangedFor(nameof(UpCommand))]
     public partial StorageNode Current { get; private set; }
 
@@ -41,9 +41,14 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
         }
     }
 
+    public string Title => Current.Name;
+
     public string SizeText => ByteSize.Format(Current.SizeOnDisk);
 
-    public bool IsEmpty => !Current.HasChildren;
+    /// <summary>Nothing inside, and not because Windows refused to list it.</summary>
+    public bool IsEmpty => !Current.HasChildren && !Current.IsLocked;
+
+    public bool IsLockedFolder => Current.IsLocked;
 
     [RelayCommand]
     private void Open(FolderItemViewModel item)

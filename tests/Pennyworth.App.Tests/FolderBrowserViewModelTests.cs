@@ -1,4 +1,5 @@
 using Pennyworth.App.ViewModels;
+using Pennyworth.Core.Storage;
 using static Pennyworth.App.Tests.SampleTrees;
 
 namespace Pennyworth.App.Tests;
@@ -40,6 +41,36 @@ public class FolderBrowserViewModelTests
         browser.NavigateToCommand.Execute(browser.Breadcrumbs[0]);
         Assert.Equal(@"C:\", browser.Current.FullPath);
         Assert.False(browser.UpCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void Titles_the_page_with_the_current_folder()
+    {
+        var browser = new FolderBrowserViewModel(Build().Root, new FakeExplorer(), () => { });
+        Assert.Equal(@"C:\", browser.Title);
+
+        browser.OpenCommand.Execute(browser.Items.Single(i => i.Name == "Games"));
+
+        Assert.Equal("Games", browser.Title);
+    }
+
+    [Fact]
+    public void Tells_locked_folders_apart_from_empty_ones()
+    {
+        var b = new StorageTreeBuilder(@"D:\", StorageCategory.Other);
+        int locked = b.AddDirectory(StorageTreeBuilder.RootIndex, "Locked", StorageCategory.Other);
+        b.MarkLocked(locked);
+        b.AddDirectory(StorageTreeBuilder.RootIndex, "Empty", StorageCategory.Other);
+        var browser = new FolderBrowserViewModel(b.Build().Root, new FakeExplorer(), () => { });
+
+        browser.OpenCommand.Execute(browser.Items.Single(i => i.Name == "Locked"));
+        Assert.True(browser.IsLockedFolder);
+        Assert.False(browser.IsEmpty);
+
+        browser.UpCommand.Execute(null);
+        browser.OpenCommand.Execute(browser.Items.Single(i => i.Name == "Empty"));
+        Assert.False(browser.IsLockedFolder);
+        Assert.True(browser.IsEmpty);
     }
 
     [Fact]
