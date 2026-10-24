@@ -52,7 +52,13 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
     public partial bool IsComplete { get; private set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PlacesTitle))]
     public partial CategoryRowViewModel? SelectedCategory { get; set; }
+
+    /// <summary>Heading of the biggest-places panel, naming the selected category.</summary>
+    public string PlacesTitle => SelectedCategory is { } selected
+        ? string.Format(Strings.PlacesIn, selected.Name)
+        : Strings.BiggestPlaces;
 
     public void ApplyProgress(ScanProgress progress)
     {
@@ -73,7 +79,7 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
         {
             row.Areas = tree.GetCategoryAreas(row.Category!.Value)
                 .Take(MaxAreasPerCategory)
-                .Select(CreateArea)
+                .Select(area => CreateArea(area, row.Bytes))
                 .ToArray();
         }
 
@@ -87,10 +93,11 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(IsComplete))]
     private void BrowseAll() => _openFolder(_tree!.Root);
 
-    private CategoryAreaViewModel CreateArea(CategoryArea area)
+    private CategoryAreaViewModel CreateArea(CategoryArea area, long categoryBytes)
     {
         var description = _locations.Describe(area.Node.FullPath);
-        return new CategoryAreaViewModel(area.Node, area.Bytes, description?.Title ?? area.Node.Name, description?.Description);
+        double share = categoryBytes == 0 ? 0 : (double)area.Bytes / categoryBytes;
+        return new CategoryAreaViewModel(area.Node, area.Bytes, description?.Title ?? area.Node.Name, description?.Description, share);
     }
 
     private void Update(IReadOnlyList<long> categoryBytes, long fileCount)
@@ -122,6 +129,7 @@ public sealed partial class CategoryRowViewModel : ObservableObject
     {
         Category = category;
         Name = category is { } c ? CategoryText.Name(c) : Strings.Category_Unaccounted;
+        Hint = category is { } h ? CategoryText.Hint(h) : Strings.CategoryHint_Unaccounted;
         ColorKey = category is { } k ? CategoryText.ColorKey(k) : CategoryText.UnaccountedKey;
         Swatch = [new BarSegment(ColorKey, 1)];
     }
@@ -129,6 +137,8 @@ public sealed partial class CategoryRowViewModel : ObservableObject
     public StorageCategory? Category { get; }
 
     public string Name { get; }
+
+    public string Hint { get; }
 
     public string ColorKey { get; }
 
@@ -158,7 +168,8 @@ public sealed partial class CategoryRowViewModel : ObservableObject
     }
 }
 
-public sealed record CategoryAreaViewModel(StorageNode Node, long Bytes, string Title, string? Description)
+/// <param name="Share">Share of its category's bytes, 0 to 1, for the small size bar.</param>
+public sealed record CategoryAreaViewModel(StorageNode Node, long Bytes, string Title, string? Description, double Share = 0)
 {
     public string Path => Node.FullPath;
 

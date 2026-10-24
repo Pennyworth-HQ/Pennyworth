@@ -75,6 +75,34 @@ public class StorageSummaryViewModelTests
     }
 
     [Fact]
+    public void Describes_categories_and_titles_the_places_panel()
+    {
+        var summary = Create();
+
+        Assert.All(summary.Categories.Append(summary.Unaccounted), row => Assert.False(string.IsNullOrWhiteSpace(row.Hint)));
+        Assert.Equal(Pennyworth.App.Resources.Strings.BiggestPlaces, summary.PlacesTitle);
+
+        summary.ApplyResult(Build());
+
+        Assert.Contains(summary.SelectedCategory!.Name, summary.PlacesTitle);
+    }
+
+    [Fact]
+    public void Areas_know_their_share_of_the_category()
+    {
+        var b = new StorageTreeBuilder(@"C:\", StorageCategory.Other);
+        int a = b.AddDirectory(StorageTreeBuilder.RootIndex, "A", StorageCategory.Games);
+        b.AddFile(a, "a.pak", 30 * Gb, 30 * Gb, StorageCategory.Games);
+        int c = b.AddDirectory(StorageTreeBuilder.RootIndex, "B", StorageCategory.Games);
+        b.AddFile(c, "b.pak", 10 * Gb, 10 * Gb, StorageCategory.Games);
+        var summary = Create();
+
+        summary.ApplyResult(b.Build());
+
+        Assert.Equal([0.75, 0.25], summary.SelectedCategory!.Areas.Select(area => Math.Round(area.Share, 3)));
+    }
+
+    [Fact]
     public void Falls_back_to_folder_name_for_unknown_areas()
     {
         var summary = Create();

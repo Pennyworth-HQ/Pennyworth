@@ -18,5 +18,16 @@ internal static class CategoryText
         _ => Strings.Category_Other,
     };
 
+    /// <summary>One plain-language line under the category name.</summary>
+    public static string Hint(StorageCategory category) => category switch
+    {
+        StorageCategory.Games => Strings.CategoryHint_Games,
+        StorageCategory.Apps => Strings.CategoryHint_Apps,
+        StorageCategory.YourFiles => Strings.CategoryHint_YourFiles,
+        StorageCategory.Windows => Strings.CategoryHint_Windows,
+        StorageCategory.HiddenSystem => Strings.CategoryHint_HiddenSystem,
+        _ => Strings.CategoryHint_Other,
+    };
+
     public static string ColorKey(StorageCategory category) => category.ToString();
 }
