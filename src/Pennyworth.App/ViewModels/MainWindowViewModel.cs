@@ -34,8 +34,27 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<DriveViewModel> Drives { get; } = [];
 
-    [ObservableProperty]
-    public partial DriveViewModel? SelectedDrive { get; set; }
+    /// <summary>
+    /// The drive shown. Clearing it is ignored: a drive list clears its selection when its
+    /// page unloads, and that must not forget the drive.
+    /// </summary>
+    public DriveViewModel? SelectedDrive
+    {
+        get;
+        set
+        {
+            if (value is null && field is not null)
+            {
+                OnPropertyChanged(); // Lets the list restore its selection.
+                return;
+            }
+
+            if (SetProperty(ref field, value))
+            {
+                OnSelectedDriveChanged(value);
+            }
+        }
+    }
 
     /// <summary>A <see cref="StorageSummaryViewModel"/> or a <see cref="FolderBrowserViewModel"/>.</summary>
     [ObservableProperty]
@@ -73,7 +92,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             ?? Drives.FirstOrDefault();
     }
 
-    partial void OnSelectedDriveChanged(DriveViewModel? value)
+    private void OnSelectedDriveChanged(DriveViewModel? value)
     {
         if (value is not null)
         {

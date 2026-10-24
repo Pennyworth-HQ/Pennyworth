@@ -124,6 +124,19 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Keeps_the_drive_when_a_list_clears_its_selection()
+    {
+        var (viewModel, scanner) = Create();
+        viewModel.Initialize();
+        await viewModel.CurrentScan;
+
+        viewModel.SelectedDrive = null; // what a ListBox does when its page unloads
+
+        Assert.Equal(@"C:\", viewModel.SelectedDrive?.Summary.RootPath);
+        Assert.Equal([@"C:\"], scanner.ScannedRoots);
+    }
+
+    [Fact]
     public void Drive_names_use_label_or_local_disk()
     {
         Assert.Equal("Games (D:)", new DriveViewModel(DriveD).Name);
