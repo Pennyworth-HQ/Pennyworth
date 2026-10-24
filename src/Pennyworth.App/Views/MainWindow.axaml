@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Pennyworth.App.ViewModels"
+        xmlns:res="using:Pennyworth.App.Resources"
+        x:Class="Pennyworth.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{x:Static res:Strings.AppTitle}"
+        Width="1100" Height="760" MinWidth="720" MinHeight="520"
+        WindowStartupLocation="CenterScreen">
+  <Grid RowDefinitions="Auto,*" Margin="{StaticResource Padding.Page}" RowSpacing="16">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+      <ListBox ItemsSource="{Binding Drives}" SelectedItem="{Binding SelectedDrive}">
+        <ListBox.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal" Spacing="8" />
+          </ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:DriveViewModel">
+            <StackPanel Width="200" Spacing="6">
+              <TextBlock Classes="heading" Text="{Binding Name}" />
+              <ProgressBar Minimum="0" Maximum="1" Value="{Binding UsedFraction}" />
+              <TextBlock Classes="caption" Text="{Binding UsedText}" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6" HorizontalAlignment="Right">
+        <Button Content="{x:Static res:Strings.Rescan}" Command="{Binding RescanCommand}" HorizontalAlignment="Right" />
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+          <ProgressBar IsIndeterminate="True" Width="60" IsVisible="{Binding IsScanning}" VerticalAlignment="Center" />
+          <TextBlock Classes="caption" Text="{Binding StatusText}" />
+        </StackPanel>
+      </StackPanel>
+    </Grid>
+
+    <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" />
+  </Grid>
+</Window>

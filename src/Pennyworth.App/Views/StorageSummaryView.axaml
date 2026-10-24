@@ -1,0 +1,84 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:res="using:Pennyworth.App.Resources"
+             xmlns:controls="using:Pennyworth.App.Controls"
+             x:Class="Pennyworth.App.Views.StorageSummaryView"
+             x:DataType="vm:StorageSummaryViewModel">
+  <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="16">
+    <StackPanel Spacing="4">
+      <TextBlock Classes="title" Text="{x:Static res:Strings.StorageTitle}" />
+      <TextBlock Classes="secondary" Text="{Binding UsedText}" />
+    </StackPanel>
+
+    <controls:SegmentedBar Grid.Row="1" Height="22" Radius="8"
+                           Segments="{Binding Segments}"
+                           TrackBrush="{DynamicResource Brush.Track}" />
+
+    <TextBlock Grid.Row="2" Classes="warning" TextWrapping="Wrap"
+               Text="{x:Static res:Strings.OvercountHint}"
+               IsVisible="{Binding HasOvercount}" />
+
+    <Grid Grid.Row="3" ColumnDefinitions="340,*" ColumnSpacing="16">
+      <Border Classes="card">
+        <Grid RowDefinitions="*,Auto,Auto" RowSpacing="12">
+          <ListBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:CategoryRowViewModel">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                  <controls:SegmentedBar Width="12" Height="12" Radius="6" Segments="{Binding Swatch}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="2" Classes="caption" Text="{Binding PercentText}" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="3" Text="{Binding SizeText}" FontWeight="SemiBold" MinWidth="70" TextAlignment="Right" VerticalAlignment="Center" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <StackPanel Grid.Row="1" Spacing="4" Margin="12,0">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+              <controls:SegmentedBar Width="12" Height="12" Radius="6" Segments="{Binding Unaccounted.Swatch}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Text="{Binding Unaccounted.Name}" />
+              <TextBlock Grid.Column="2" Text="{Binding Unaccounted.SizeText}" FontWeight="SemiBold" />
+            </Grid>
+            <TextBlock Classes="caption" TextWrapping="Wrap" Text="{x:Static res:Strings.UnaccountedHint}" />
+          </StackPanel>
+
+          <Button Grid.Row="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                  Content="{x:Static res:Strings.BrowseAllFolders}"
+                  Command="{Binding BrowseAllCommand}" />
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1" Classes="card">
+        <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
+          <TextBlock Classes="heading" Text="{x:Static res:Strings.BiggestPlaces}" />
+          <TextBlock Grid.Row="1" Classes="secondary" TextWrapping="Wrap"
+                     Text="{x:Static res:Strings.BiggestPlacesPending}"
+                     IsVisible="{Binding !IsComplete}" />
+          <ScrollViewer Grid.Row="2">
+            <ItemsControl ItemsSource="{Binding SelectedCategory.Areas}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:CategoryAreaViewModel">
+                  <Button Margin="0,0,0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                          Command="{Binding $parent[UserControl].((vm:StorageSummaryViewModel)DataContext).OpenAreaCommand}"
+                          CommandParameter="{Binding}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                      <StackPanel Spacing="2">
+                        <TextBlock Classes="heading" Text="{Binding Title}" />
+                        <TextBlock Classes="caption" Text="{Binding Path}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Classes="secondary" Text="{Binding Description}" TextWrapping="Wrap"
+                                   IsVisible="{Binding Description, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                      </StackPanel>
+                      <TextBlock Grid.Column="1" Text="{Binding SizeText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>
