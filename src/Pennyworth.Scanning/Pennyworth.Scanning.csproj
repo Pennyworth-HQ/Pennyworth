@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pennyworth.Scanning.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
+  </ItemGroup>
+</Project>
