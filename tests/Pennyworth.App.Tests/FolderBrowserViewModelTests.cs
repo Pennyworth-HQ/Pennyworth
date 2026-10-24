@@ -66,6 +66,7 @@ public class FolderBrowserViewModelTests
         browser.OpenCommand.Execute(browser.Items.Single(i => i.Name == "Locked"));
         Assert.True(browser.IsLockedFolder);
         Assert.False(browser.IsEmpty);
+        Assert.False(browser.HasItems);
 
         browser.UpCommand.Execute(null);
         browser.OpenCommand.Execute(browser.Items.Single(i => i.Name == "Empty"));

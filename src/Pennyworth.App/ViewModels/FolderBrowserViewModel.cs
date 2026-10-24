@@ -20,7 +20,7 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
     }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Items), nameof(Breadcrumbs), nameof(Title), nameof(SizeText), nameof(IsEmpty), nameof(IsLockedFolder))]
+    [NotifyPropertyChangedFor(nameof(Items), nameof(Breadcrumbs), nameof(Title), nameof(SizeText), nameof(IsEmpty), nameof(IsLockedFolder), nameof(HasItems))]
     [NotifyCanExecuteChangedFor(nameof(UpCommand))]
     public partial StorageNode Current { get; private set; }
 
@@ -49,6 +49,8 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
     public bool IsEmpty => !Current.HasChildren && !Current.IsLocked;
 
     public bool IsLockedFolder => Current.IsLocked;
+
+    public bool HasItems => Current.HasChildren;
 
     [RelayCommand]
     private void Open(FolderItemViewModel item)
