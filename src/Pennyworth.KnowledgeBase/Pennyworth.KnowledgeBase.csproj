@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Data\locations.json" LogicalName="Pennyworth.KnowledgeBase.locations.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
+  </ItemGroup>
+</Project>

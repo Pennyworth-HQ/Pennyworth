@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "locations": [
+    {
+      "id": "windows",
+      "path": "%SystemRoot%",
+      "category": "Windows",
+      "title": { "en": "Windows system files", "pt-BR": "Arquivos do sistema Windows" },
+      "description": {
+        "en": "The files Windows needs to run. Never delete anything here by hand.",
+        "pt-BR": "Os arquivos que o Windows precisa para funcionar. Nunca apague nada aqui manualmente."
+      }
+    },
+    {
+      "id": "windows-old",
+      "path": "%SystemDrive%\\Windows.old",
+      "category": "Windows",
+      "title": { "en": "Previous Windows installation", "pt-BR": "Instalação anterior do Windows" },
+      "description": {
+        "en": "A copy of your old Windows kept after an upgrade, so you can go back. Windows removes it after about 10 days.",
+        "pt-BR": "Uma cópia do Windows antigo guardada após uma atualização, para você poder voltar. O Windows a remove após cerca de 10 dias."
+      }
+    },
+    {
+      "id": "windows-upgrade-files",
+      "path": "%SystemDrive%\\$WINDOWS.~BT",
+      "category": "Windows",
+      "title": { "en": "Windows upgrade files", "pt-BR": "Arquivos de atualização do Windows" },
+      "description": {
+        "en": "Temporary files used while installing a Windows upgrade.",
+        "pt-BR": "Arquivos temporários usados durante a instalação de uma atualização do Windows."
+      }
+    },
+    {
+      "id": "program-files",
+      "path": "?:\\Program Files",
+      "category": "Apps",
+      "title": { "en": "Installed programs", "pt-BR": "Programas instalados" },
+      "description": {
+        "en": "Where most programs are installed. Remove programs with their uninstaller, not by deleting folders.",
+        "pt-BR": "Onde a maioria dos programas é instalada. Remova programas pelo desinstalador, não apagando pastas."
+      }
+    },
+    {
+      "id": "program-files-x86",
+      "path": "?:\\Program Files (x86)",
+      "category": "Apps",
+      "title": { "en": "Installed programs (32-bit)", "pt-BR": "Programas instalados (32 bits)" },
+      "description": {
+        "en": "Where older 32-bit programs are installed.",
+        "pt-BR": "Onde programas mais antigos de 32 bits são instalados."
+      }
+    },
+    {
+      "id": "program-data",
+      "path": "%ProgramData%",
+      "category": "Apps",
+      "title": { "en": "Shared app data", "pt-BR": "Dados compartilhados de apps" },
+      "description": {
+        "en": "Settings and data that programs share between all users of this PC.",
+        "pt-BR": "Configurações e dados que os programas compartilham entre todos os usuários deste PC."
+      }
+    },
+    {
+      "id": "user-profile",
+      "path": "%SystemDrive%\\Users\\*",
+      "category": "YourFiles",
+      "title": { "en": "User folder", "pt-BR": "Pasta do usuário" },
+      "description": {
+        "en": "Documents, pictures, downloads, desktop and other personal files of one user.",
+        "pt-BR": "Documentos, imagens, downloads, área de trabalho e outros arquivos pessoais de um usuário."
+      }
+    },
+    {
+      "id": "user-appdata",
+      "path": "%SystemDrive%\\Users\\*\\AppData",
+      "category": "Apps",
+      "title": { "en": "App data (AppData)", "pt-BR": "Dados de apps (AppData)" },
+      "description": {
+        "en": "A hidden folder where apps keep settings, caches and downloads for one user. Often much bigger than people expect.",
+        "pt-BR": "Uma pasta oculta onde os apps guardam configurações, caches e downloads de um usuário. Muitas vezes bem maior do que se imagina."
+      }
+    },
+    {
+      "id": "recycle-bin",
+      "path": "?:\\$Recycle.Bin",
+      "category": "YourFiles",
+      "title": { "en": "Recycle Bin", "pt-BR": "Lixeira" },
+      "description": {
+        "en": "Files you deleted. They still use space until the Recycle Bin is emptied.",
+        "pt-BR": "Arquivos que você apagou. Eles continuam ocupando espaço até a Lixeira ser esvaziada."
+      }
+    },
+    {
+      "id": "steam-library",
+      "path": "**\\steamapps",
+      "category": "Games",
+      "title": { "en": "Steam games", "pt-BR": "Jogos da Steam" },
+      "description": {
+        "en": "Games, mods and downloads from Steam.",
+        "pt-BR": "Jogos, mods e downloads da Steam."
+      }
+    },
+    {
+      "id": "epic-games",
+      "path": "?:\\Program Files\\Epic Games",
+      "category": "Games",
+      "title": { "en": "Epic Games", "pt-BR": "Epic Games" },
+      "description": {
+        "en": "Games installed by the Epic Games Launcher.",
+        "pt-BR": "Jogos instalados pela Epic Games Launcher."
+      }
+    },
+    {
+      "id": "xbox-games",
+      "path": "?:\\XboxGames",
+      "category": "Games",
+      "title": { "en": "Xbox / Game Pass games", "pt-BR": "Jogos do Xbox / Game Pass" },
+      "description": {
+        "en": "Games installed by the Xbox app.",
+        "pt-BR": "Jogos instalados pelo app Xbox."
+      }
+    },
+    {
+      "id": "riot-games",
+      "path": "?:\\Riot Games",
+      "category": "Games",
+      "title": { "en": "Riot Games", "pt-BR": "Riot Games" },
+      "description": {
+        "en": "Games from Riot, such as League of Legends and Valorant.",
+        "pt-BR": "Jogos da Riot, como League of Legends e Valorant."
+      }
+    },
+    {
+      "id": "system-volume-information",
+      "path": "?:\\System Volume Information",
+      "category": "HiddenSystem",
+      "title": { "en": "Restore points and system data", "pt-BR": "Pontos de restauração e dados do sistema" },
+      "description": {
+        "en": "Protected folder with restore points and indexing data. Its real size needs the full scan.",
+        "pt-BR": "Pasta protegida com pontos de restauração e dados de indexação. O tamanho real precisa da verificação completa."
+      }
+    },
+    {
+      "id": "recovery",
+      "path": "%SystemDrive%\\Recovery",
+      "category": "HiddenSystem",
+      "title": { "en": "Recovery tools", "pt-BR": "Ferramentas de recuperação" },
+      "description": {
+        "en": "Tools Windows uses to repair itself when it can't start.",
+        "pt-BR": "Ferramentas que o Windows usa para se reparar quando não consegue iniciar."
+      }
+    },
+    {
+      "id": "hibernation-file",
+      "path": "%SystemDrive%\\hiberfil.sys",
+      "category": "HiddenSystem",
+      "title": { "en": "Hibernation file", "pt-BR": "Arquivo de hibernação" },
+      "description": {
+        "en": "Saves your open apps when the PC hibernates. Usually 40% or more of your RAM size.",
+        "pt-BR": "Guarda seus apps abertos quando o PC hiberna. Normalmente 40% ou mais do tamanho da sua RAM."
+      }
+    },
+    {
+      "id": "page-file",
+      "path": "?:\\pagefile.sys",
+      "category": "HiddenSystem",
+      "title": { "en": "Page file (virtual memory)", "pt-BR": "Arquivo de paginação (memória virtual)" },
+      "description": {
+        "en": "Extra memory on disk Windows uses when RAM is full.",
+        "pt-BR": "Memória extra no disco que o Windows usa quando a RAM está cheia."
+      }
+    },
+    {
+      "id": "swap-file",
+      "path": "?:\\swapfile.sys",
+      "category": "HiddenSystem",
+      "title": { "en": "Swap file", "pt-BR": "Arquivo de troca" },
+      "description": {
+        "en": "Memory on disk used by Store apps.",
+        "pt-BR": "Memória no disco usada pelos apps da Store."
+      }
+    }
+  ]
+}

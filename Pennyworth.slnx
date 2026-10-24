@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Pennyworth.Core/Pennyworth.Core.csproj" />
+    <Project Path="src/Pennyworth.KnowledgeBase/Pennyworth.KnowledgeBase.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Pennyworth.Core.Tests/Pennyworth.Core.Tests.csproj" />
+    <Project Path="tests/Pennyworth.KnowledgeBase.Tests/Pennyworth.KnowledgeBase.Tests.csproj" />
   </Folder>
 </Solution>
