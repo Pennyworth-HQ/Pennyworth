@@ -1,0 +1,72 @@
+namespace Pennyworth.Core.Storage;
+
+/// <summary>An immutable scan result. Directory sizes include everything below them.</summary>
+public sealed class StorageTree
+{
+    private readonly NodeData[] _nodes;
+    private readonly string[] _names;
+    private readonly long[] _categoryBytes;
+    private Dictionary<StorageCategory, IReadOnlyList<CategoryArea>>? _areas;
+
+    internal StorageTree(string rootPath, NodeData[] nodes, string[] names, long fileCount, long totalBytes, long[] categoryBytes)
+    {
+        RootPath = rootPath;
+        _nodes = nodes;
+        _names = names;
+        FileCount = fileCount;
+        TotalBytes = totalBytes;
+        _categoryBytes = categoryBytes;
+    }
+
+    public string RootPath { get; }
+
+    public long FileCount { get; }
+
+    public long TotalBytes { get; }
+
+    public StorageNode Root => new(this, StorageTreeBuilder.RootIndex);
+
+    public long GetCategoryBytes(StorageCategory category) => _categoryBytes[(int)category];
+
+    /// <summary>
+    /// The top-most folders (or root files) where a category starts, each with only the
+    /// bytes below it that belong to that category. Largest first.
+    /// </summary>
+    public IReadOnlyList<CategoryArea> GetCategoryAreas(StorageCategory category)
+    {
+        _areas ??= ComputeAreas();
+        return _areas.TryGetValue(category, out var list) ? list : [];
+    }
+
+    internal ref readonly NodeData Node(int index) => ref _nodes[index];
+
+    internal string Name(int index) => _names[index];
+
+    private Dictionary<StorageCategory, IReadOnlyList<CategoryArea>> ComputeAreas()
+    {
+        // A node starts a new area when its category differs from its parent's.
+        var areaOf = new int[_nodes.Length];
+        var bytesByArea = new Dictionary<int, long>();
+        for (int i = 0; i < _nodes.Length; i++)
+        {
+            ref readonly NodeData node = ref _nodes[i];
+            areaOf[i] = i == 0 || node.Category != _nodes[node.Parent].Category ? i : areaOf[node.Parent];
+            if ((node.Flags & NodeFlags.Directory) == 0)
+            {
+                bytesByArea[areaOf[i]] = bytesByArea.GetValueOrDefault(areaOf[i]) + node.SizeOnDisk;
+            }
+        }
+
+        return bytesByArea
+            .Where(pair => pair.Value > 0)
+            .GroupBy(pair => _nodes[pair.Key].Category)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<CategoryArea>)group
+                    .Select(pair => new CategoryArea(new StorageNode(this, pair.Key), pair.Value))
+                    .OrderByDescending(area => area.Bytes)
+                    .ToArray());
+    }
+}
+
+public readonly record struct CategoryArea(StorageNode Node, long Bytes);
