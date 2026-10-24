@@ -23,6 +23,11 @@
     <ProjectReference Include="..\Pennyworth.Scanning\Pennyworth.Scanning.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Golos Text and JetBrains Mono (SIL OFL 1.1); the licences ship next to the app. -->
+    <AvaloniaResource Include="Assets\Fonts\*.ttf" />
+    <None Include="Assets\Fonts\*-OFL.txt" Link="licenses\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Update="Resources\Strings.resx">
       <StronglyTypedFileName>$(IntermediateOutputPath)Strings.Designer.cs</StronglyTypedFileName>
       <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
