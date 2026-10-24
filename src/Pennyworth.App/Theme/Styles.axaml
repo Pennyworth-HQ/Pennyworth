@@ -199,6 +199,10 @@
     <Setter Property="MinHeight" Value="10" />
     <Setter Property="CornerRadius" Value="0" />
   </Style>
+  <!-- The base theme's 200 px minimum would overflow the narrow share bars in list rows. -->
+  <Style Selector="ProgressBar:horizontal">
+    <Setter Property="MinWidth" Value="0" />
+  </Style>
 
   <!-- Tooltips use the inverted "toast" look from the design. -->
   <Style Selector="ToolTip">
