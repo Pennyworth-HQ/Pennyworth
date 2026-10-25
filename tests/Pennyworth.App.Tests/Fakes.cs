@@ -97,17 +97,29 @@ internal sealed class FakeCleanup(params (CleanupRule Rule, long Bytes)[] items)
 {
     public List<string> Cleaned { get; } = [];
 
+    /// <summary>The exact lists handed to <see cref="CleanAsync"/>.</summary>
+    public List<CleanupEstimate> CleanedLists { get; } = [];
+
     public IReadOnlyList<CleanupRule> Rules { get; } = items.Select(i => i.Rule).ToArray();
 
     public Task<CleanupEstimate> MeasureAsync(CleanupRule rule, CancellationToken cancellationToken)
     {
         long bytes = Cleaned.Contains(rule.Id) ? 0 : items.Single(i => i.Rule == rule).Bytes;
-        return Task.FromResult(new CleanupEstimate(rule, bytes, bytes == 0 ? 0 : 3, !rule.RequiresAdmin));
+        string folder = $@"C:\fake\{rule.Id}";
+        CleanupFile[] files = bytes == 0 ? [] :
+        [
+            new($@"{folder}\big.tmp", bytes / 2, DateTime.UnixEpoch, rule.Kind == CleanupKind.RecycleBin ? @"C:\Users\Bob\big.doc" : null),
+            new($@"{folder}\sub\notes.log", bytes / 4, DateTime.UnixEpoch),
+            new($@"{folder}\small.tmp", bytes - (bytes / 2) - (bytes / 4), DateTime.UnixEpoch),
+        ];
+        return Task.FromResult(new CleanupEstimate(rule, bytes, files.Length, !rule.RequiresAdmin, [new(folder, bytes, files.Length)], files));
     }
 
-    public Task<CleanupResult> CleanAsync(CleanupRule rule, IProgress<double>? progress, CancellationToken cancellationToken)
+    public Task<CleanupResult> CleanAsync(CleanupEstimate estimate, IProgress<double>? progress, CancellationToken cancellationToken)
     {
+        CleanupRule rule = estimate.Rule;
         Cleaned.Add(rule.Id);
+        CleanedLists.Add(estimate);
         progress?.Report(1);
         return Task.FromResult(new CleanupResult(rule, items.Single(i => i.Rule == rule).Bytes, 3, rule.Id == "temp" ? 2 : 0));
     }

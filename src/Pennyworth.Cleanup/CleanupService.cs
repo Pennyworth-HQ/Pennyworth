@@ -2,28 +2,48 @@ using Pennyworth.KnowledgeBase;
 
 namespace Pennyworth.Cleanup;
 
+/// <summary>One file (or, in the Recycle Bin, one deleted item) the cleanup will remove, as it was when listed.</summary>
+/// <param name="ChangedUtc">Last write time when listed (Recycle Bin: when it was deleted). A file changed since is left alone.</param>
+/// <param name="OriginalPath">Recycle Bin only: where the item was before it was deleted.</param>
+/// <param name="CompanionPath">Recycle Bin only: the bin's record file ($I...) removed together with the item.</param>
+public sealed record CleanupFile(string Path, long Size, DateTime ChangedUtc, string? OriginalPath = null, string? CompanionPath = null);
+
+/// <summary>A folder whose contents a rule cleans, with what is in it right now.</summary>
+public sealed record CleanupFolder(string Path, long Bytes, long Files);
+
+/// <summary>What cleaning a rule would remove, file by file. Cleaning removes exactly these files and nothing else.</summary>
 /// <param name="IsAvailable">False when the rule needs admin rights this app doesn't have yet.</param>
 /// <param name="Items">Files found (Recycle Bin: items in it).</param>
-public sealed record CleanupEstimate(CleanupRule Rule, long Bytes, long Items, bool IsAvailable);
+public sealed record CleanupEstimate(
+    CleanupRule Rule,
+    long Bytes,
+    long Items,
+    bool IsAvailable,
+    IReadOnlyList<CleanupFolder>? Folders = null,
+    IReadOnlyList<CleanupFile>? Files = null);
 
-/// <param name="Skipped">Files left alone because they were in use or protected.</param>
+/// <param name="Skipped">Files left alone: in use, protected, changed since they were listed, or already gone.</param>
 public sealed record CleanupResult(CleanupRule Rule, long BytesFreed, long FilesDeleted, long Skipped);
 
 public interface ICleanupService
 {
     IReadOnlyList<CleanupRule> Rules { get; }
 
-    /// <summary>Dry run: what cleaning the rule would free right now.</summary>
+    /// <summary>Dry run: lists every file cleaning the rule would remove right now.</summary>
     Task<CleanupEstimate> MeasureAsync(CleanupRule rule, CancellationToken cancellationToken);
 
-    /// <summary>Deletes for real. Rules needing admin rights are refused.</summary>
-    Task<CleanupResult> CleanAsync(CleanupRule rule, IProgress<double>? progress, CancellationToken cancellationToken);
+    /// <summary>
+    /// Deletes exactly the files of <paramref name="estimate"/>, nothing found later. Rules needing
+    /// admin rights are refused.
+    /// </summary>
+    Task<CleanupResult> CleanAsync(CleanupEstimate estimate, IProgress<double>? progress, CancellationToken cancellationToken);
 }
 
 /// <summary>
-/// Measures and cleans what the knowledge base allows. Hard rules: only the contents of the
-/// rule's folders are deleted (never the folders), nothing inside Windows or Program Files,
-/// links and junctions are never followed, and files in use are skipped.
+/// Measures and cleans what the knowledge base allows. Hard rules: only files listed in the
+/// preview are deleted, only inside the rule's folders (never the folders themselves), nothing
+/// inside Windows or Program Files, links and junctions are never followed, files in use or
+/// changed since the preview are skipped.
 /// </summary>
 public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string, string?>? getEnvironmentVariable = null) : ICleanupService
 {
@@ -43,50 +63,58 @@ public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string
     {
         if (rule.Kind == CleanupKind.RecycleBin)
         {
-            var (bytes, items) = RecycleBin.Query();
-            return new CleanupEstimate(rule, bytes, items, IsAvailable: true);
+            var items = RecycleBin.List();
+            return new CleanupEstimate(rule, items.Sum(i => i.Size), items.Count, IsAvailable: true, [], items);
         }
 
-        long total = 0, count = 0;
+        var folders = new List<CleanupFolder>();
+        var files = new List<CleanupFile>();
         foreach (string folder in FoldersOf(rule))
         {
+            long bytes = 0, count = 0;
             foreach (FileInfo file in Files(folder))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                total += SafeLength(file);
-                count++;
+                if (Describe(file) is { } listed)
+                {
+                    files.Add(listed);
+                    bytes += listed.Size;
+                    count++;
+                }
             }
+
+            folders.Add(new CleanupFolder(folder, bytes, count));
         }
 
-        return new CleanupEstimate(rule, total, count, IsAvailable: !rule.RequiresAdmin);
+        return new CleanupEstimate(rule, files.Sum(f => f.Size), files.Count, IsAvailable: !rule.RequiresAdmin, folders, files);
     }, cancellationToken);
 
-    public Task<CleanupResult> CleanAsync(CleanupRule rule, IProgress<double>? progress, CancellationToken cancellationToken) => Task.Run(() =>
+    public Task<CleanupResult> CleanAsync(CleanupEstimate estimate, IProgress<double>? progress, CancellationToken cancellationToken) => Task.Run(() =>
     {
+        CleanupRule rule = estimate.Rule;
         if (rule.RequiresAdmin)
         {
             throw new InvalidOperationException($"Cleanup rule '{rule.Id}' needs admin rights.");
         }
 
-        if (rule.Kind == CleanupKind.RecycleBin)
-        {
-            var (bytes, items) = RecycleBin.Query();
-            bool emptied = RecycleBin.Empty();
-            progress?.Report(1);
-            return new CleanupResult(rule, emptied ? bytes : 0, emptied ? items : 0, emptied ? 0 : items);
-        }
+        IReadOnlyList<CleanupFile> files = estimate.Files ?? [];
+        Func<CleanupFile, bool> delete = rule.Kind == CleanupKind.RecycleBin
+            ? RecycleBin.Delete
+            : DeleteFileIn(FoldersOf(rule));
 
-        var folders = FoldersOf(rule);
-        var files = folders.SelectMany(folder => Files(folder)).ToList();
         long freed = 0, deleted = 0, skipped = 0;
+        var touchedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < files.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            long length = SafeLength(files[i]);
-            if (TryDelete(files[i]))
+            if (delete(files[i]))
             {
-                freed += length;
+                freed += files[i].Size;
                 deleted++;
+                if (Path.GetDirectoryName(files[i].Path) is { } parent)
+                {
+                    touchedFolders.Add(parent);
+                }
             }
             else
             {
@@ -99,9 +127,13 @@ public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string
             }
         }
 
-        foreach (string folder in folders)
+        if (rule.Kind == CleanupKind.RecycleBin)
         {
-            RemoveEmptySubfolders(folder);
+            RecycleBin.RefreshIcon();
+        }
+        else
+        {
+            RemoveEmptiedFolders(touchedFolders, FoldersOf(rule));
         }
 
         progress?.Report(1);
@@ -110,6 +142,42 @@ public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string
 
     private IReadOnlyList<string> FoldersOf(CleanupRule rule) =>
         CleanupTargets.Resolve(rule.Paths, _env).Where(folder => SafetyGuard.MayCleanInside(folder, _env)).ToArray();
+
+    /// <summary>
+    /// Deletes a listed file only if it is still inside one of the rule's folders (checked again now),
+    /// is not a link, and hasn't changed since it was listed.
+    /// </summary>
+    private static Func<CleanupFile, bool> DeleteFileIn(IReadOnlyList<string> roots) => listed =>
+    {
+        string full = Path.GetFullPath(listed.Path);
+        if (!roots.Any(root => full.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        var file = new FileInfo(full);
+        try
+        {
+            if (!file.Exists
+                || (file.Attributes & FileAttributes.ReparsePoint) != 0
+                || file.LastWriteTimeUtc != listed.ChangedUtc)
+            {
+                return false; // Gone, a link, or changed since the preview: leave it.
+            }
+
+            if (file.IsReadOnly)
+            {
+                file.IsReadOnly = false;
+            }
+
+            file.Delete();
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false; // In use or protected: leave it.
+        }
+    };
 
     private static IEnumerable<FileInfo> Files(string folder)
     {
@@ -123,56 +191,46 @@ public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string
         }
     }
 
-    private static long SafeLength(FileInfo file)
+    private static CleanupFile? Describe(FileInfo file)
     {
         try
         {
-            return file.Length;
+            return new CleanupFile(file.FullName, file.Length, file.LastWriteTimeUtc);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return 0;
+            return null;
         }
     }
 
-    private static bool TryDelete(FileInfo file)
+    /// <summary>
+    /// Removes folders that this cleanup emptied, deepest first, never a rule's own folder and never
+    /// a folder that was already empty before.
+    /// </summary>
+    private static void RemoveEmptiedFolders(IEnumerable<string> touched, IReadOnlyList<string> roots)
     {
-        try
+        var rootSet = roots.Select(Path.TrimEndingDirectorySeparator).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var candidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string folder in touched)
         {
-            if (file.IsReadOnly)
+            for (string? current = folder; current is not null && !rootSet.Contains(current); current = Path.GetDirectoryName(current))
             {
-                file.IsReadOnly = false;
+                if (!roots.Any(root => current.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
+                {
+                    break;
+                }
+
+                candidates.Add(current);
             }
-
-            file.Delete();
-            return true;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return false; // In use or protected: leave it.
-        }
-    }
-
-    /// <summary>Deepest first, so parents empty out; the rule's own folder stays.</summary>
-    private static void RemoveEmptySubfolders(string folder)
-    {
-        string[] subfolders;
-        try
-        {
-            subfolders = Directory.GetDirectories(folder, "*", Walk);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return;
         }
 
-        foreach (string subfolder in subfolders.OrderByDescending(path => path.Length))
+        foreach (string folder in candidates.OrderByDescending(path => path.Length))
         {
             try
             {
-                if (!Directory.EnumerateFileSystemEntries(subfolder).Any())
+                if ((File.GetAttributes(folder) & FileAttributes.ReparsePoint) == 0 && !Directory.EnumerateFileSystemEntries(folder).Any())
                 {
-                    Directory.Delete(subfolder);
+                    Directory.Delete(folder);
                 }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

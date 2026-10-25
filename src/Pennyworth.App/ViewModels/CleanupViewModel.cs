@@ -175,7 +175,7 @@ public sealed partial class CleanupViewModel : ObservableObject
         foreach (CleanupItemViewModel item in selected)
         {
             var progress = new Progress<double>(value => item.Progress = value);
-            CleanupResult result = await _service.CleanAsync(item.Rule, progress, CancellationToken.None);
+            CleanupResult result = await _service.CleanAsync(item.Estimate, progress, CancellationToken.None);
             item.Progress = 1;
             item.FreedBytes = result.BytesFreed;
             FreedBytes += result.BytesFreed;
@@ -230,12 +230,16 @@ public sealed partial class CleanupItemViewModel : ObservableObject
 
     public CleanupItemViewModel(CleanupEstimate estimate)
     {
+        Estimate = estimate;
         Rule = estimate.Rule;
         Bytes = estimate.Bytes;
         Items = estimate.Items;
         IsAvailable = estimate.IsAvailable;
         IsSelected = IsAvailable && Rule.Safety == SafetyLevel.Safe;
     }
+
+    /// <summary>The exact list cleaning will delete; nothing found after it was made.</summary>
+    public CleanupEstimate Estimate { get; }
 
     public CleanupRule Rule { get; }
 
