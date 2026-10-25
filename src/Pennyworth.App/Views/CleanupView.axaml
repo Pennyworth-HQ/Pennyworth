@@ -27,10 +27,35 @@
     <Style Selector="TextBlock.glyph.think">
       <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}" />
     </Style>
+
+    <!-- What will be deleted: hairline rows, no selection highlight, virtualized for long lists. -->
+    <Style Selector="ListBox.files ListBoxItem">
+      <Setter Property="Padding" Value="0,9" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
+      <Setter Property="BorderThickness" Value="0,1,0,0" />
+      <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+    <Style Selector="ListBox.files ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="TextBox.search">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderStrong}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+      <Setter Property="Padding" Value="10,7" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="CaretBrush" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="TextBox.search:focus /template/ Border">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
   </UserControl.Styles>
 
   <Grid RowDefinitions="*,Auto">
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding !IsPreviewing}">
       <StackPanel Margin="36,28,36,24" Spacing="18">
         <StackPanel Spacing="8">
           <TextBlock Classes="label">
@@ -60,6 +85,7 @@
                 <ItemsControl ItemsSource="{Binding Items}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:CleanupItemViewModel">
+                      <StackPanel>
                       <Button Classes="row" Padding="10,14" IsEnabled="{Binding IsAvailable}"
                               Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).ToggleCommand}"
                               CommandParameter="{Binding}">
@@ -82,6 +108,16 @@
                           <TextBlock Grid.Column="2" FontSize="15" TextAlignment="Right" Text="{Binding SizeText}" />
                         </Grid>
                       </Button>
+                      <!-- Outside the row so it works even for items that can't be cleaned yet. -->
+                      <Button Classes="link" Margin="40,-10,0,10" HorizontalAlignment="Left" Foreground="{DynamicResource Brush.Accent}"
+                              Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).OpenPreviewCommand}"
+                              CommandParameter="{Binding}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Text="{Binding PreviewText}" />
+                          <TextBlock Text="→" />
+                        </StackPanel>
+                      </Button>
+                      </StackPanel>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
@@ -140,6 +176,98 @@
         </StackPanel>
       </StackPanel>
     </ScrollViewer>
+
+    <!-- What will be deleted: one item's folders and every file, before anything is touched. -->
+    <ContentControl Content="{Binding Preview}" IsVisible="{Binding IsPreviewing}">
+      <ContentControl.ContentTemplate>
+        <DataTemplate x:DataType="vm:CleanupPreviewViewModel">
+          <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="36,20,36,0">
+            <StackPanel Spacing="8">
+              <Button Classes="ghost" HorizontalAlignment="Left" Margin="-10,0,0,4" Command="{Binding BackCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="←" />
+                  <TextBlock Text="{l:Tr PreviewBack, Upper=True}" />
+                </StackPanel>
+              </Button>
+              <TextBlock Classes="label">
+                <Run Text="03 / " />
+                <Run Text="{l:Tr PreviewLabel, Upper=True}" />
+              </TextBlock>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+                <TextBlock Classes="title" TextWrapping="Wrap" Text="{Binding Item.Title}" />
+                <Button Grid.Column="1" Classes="small" VerticalAlignment="Center" IsEnabled="{Binding Item.IsAvailable}" Command="{Binding ToggleIncludeCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Border Classes="check" Classes.on="{Binding Item.IsSelected}" Width="14" Height="14" Margin="0" VerticalAlignment="Center">
+                      <TextBlock Text="✓" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 Foreground="{DynamicResource Brush.Background}" IsVisible="{Binding Item.IsSelected}" />
+                    </Border>
+                    <TextBlock VerticalAlignment="Center" Text="{l:Tr PreviewInclude, Upper=True}" />
+                  </StackPanel>
+                </Button>
+              </Grid>
+              <TextBlock Classes="secondary" TextWrapping="Wrap" Text="{Binding Summary}" />
+              <TextBlock FontSize="13" TextWrapping="Wrap">
+                <Run Text="{l:Tr IfRemoved, Upper=True}" FontFamily="{StaticResource FontFamily.Mono}" FontSize="10" Foreground="{DynamicResource Brush.TextSecondary}" />
+                <Run Text=" " />
+                <Run Text="{Binding Item.Consequence}" />
+              </TextBlock>
+            </StackPanel>
+
+            <!-- The folders it cleans inside; the folders themselves are kept. -->
+            <StackPanel Grid.Row="1" Spacing="6" Margin="0,18,0,0" IsVisible="{Binding HasFolders}">
+              <TextBlock Classes="label" Text="{l:Tr PreviewFolders, Upper=True}" />
+              <ScrollViewer MaxHeight="150" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Folders}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CleanupFolderRow">
+                      <Border Classes="rule" Padding="0,7">
+                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="14">
+                          <TextBlock Classes="mono" FontSize="12" VerticalAlignment="Center" TextTrimming="LeadingCharacterEllipsis"
+                                     Text="{Binding Path}" ToolTip.Tip="{Binding Path}" />
+                          <TextBlock Grid.Column="1" Classes="secondary" FontSize="12.5" VerticalAlignment="Center" Text="{Binding Detail}" />
+                          <Button Grid.Column="2" Classes="small" Content="{l:Tr ShowInExplorer, Upper=True}"
+                                  Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).Preview.ShowInExplorerCommand}"
+                                  CommandParameter="{Binding Path}" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </StackPanel>
+
+            <Grid Grid.Row="2" ColumnDefinitions="*,240" ColumnSpacing="14" Margin="0,18,0,8">
+              <StackPanel VerticalAlignment="Center" Spacing="2">
+                <TextBlock Classes="label" Text="{Binding ListLabel, Converter={x:Static controls:TextCase.Upper}}" />
+                <TextBlock Classes="caption" Text="{Binding MatchText}" />
+              </StackPanel>
+              <TextBox Grid.Column="1" Classes="search" PlaceholderText="{l:Tr PreviewSearch}" Text="{Binding Search}" />
+            </Grid>
+
+            <Panel Grid.Row="3" Margin="0,0,0,12">
+              <ListBox Classes="files" ItemsSource="{Binding Files}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:CleanupFileRow">
+                    <Grid ColumnDefinitions="*,84,Auto" ColumnSpacing="14">
+                      <StackPanel VerticalAlignment="Center" Spacing="2">
+                        <TextBlock FontSize="13.5" TextTrimming="CharacterEllipsis" Text="{Binding Name}" ToolTip.Tip="{Binding Path}" />
+                        <TextBlock Classes="tertiary" FontSize="11.5" TextTrimming="LeadingCharacterEllipsis" Text="{Binding Location}" />
+                      </StackPanel>
+                      <TextBlock Grid.Column="1" FontSize="13.5" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding SizeText}" />
+                      <Button Grid.Column="2" Classes="small" VerticalAlignment="Center" IsVisible="{Binding CanShow}"
+                              Content="{l:Tr ShowInExplorer, Upper=True}"
+                              Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).Preview.ShowInExplorerCommand}"
+                              CommandParameter="{Binding Path}" />
+                    </Grid>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <TextBlock Classes="secondary" Margin="0,20" HorizontalAlignment="Center" Text="{Binding NoMatchText}" IsVisible="{Binding HasNoMatch}" />
+            </Panel>
+          </Grid>
+        </DataTemplate>
+      </ContentControl.ContentTemplate>
+    </ContentControl>
 
     <!-- Sticky footer: running total and the Clean button. -->
     <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="0,1,0,0" Padding="36,14,36,18" IsVisible="{Binding IsSelecting}">

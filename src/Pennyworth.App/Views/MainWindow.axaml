@@ -101,18 +101,30 @@
       <StackPanel Spacing="18">
         <TextBlock FontSize="24" FontWeight="Medium" Text="{Binding Title}" />
         <TextBlock Classes="secondary" TextWrapping="Wrap" Text="{l:Tr ConfirmSub}" />
-        <ItemsControl ItemsSource="{Binding Rows}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:CleanupItemViewModel">
-              <Border Classes="rule" Padding="0,8">
-                <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock FontSize="13.5" Text="{Binding Title}" />
-                  <TextBlock Grid.Column="1" Classes="secondary" FontSize="13.5" Text="{Binding SizeText}" />
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
+        <ScrollViewer MaxHeight="260" HorizontalScrollBarVisibility="Disabled">
+          <ItemsControl ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:CleanupItemViewModel">
+                <Border Classes="rule" Padding="0,8">
+                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                    <StackPanel Spacing="1">
+                      <TextBlock FontSize="13.5" Text="{Binding Title}" />
+                      <TextBlock Classes="caption" Text="{Binding CountText}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="secondary" FontSize="13.5" VerticalAlignment="Center" Text="{Binding SizeText}" />
+                    <Button Grid.Column="2" Classes="small" VerticalAlignment="Center" Content="{l:Tr ConfirmReview, Upper=True}"
+                            Command="{Binding $parent[ItemsControl].((vm:CleanConfirmDialogViewModel)DataContext).ReviewCommand}"
+                            CommandParameter="{Binding}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+        <StackPanel Spacing="6">
+          <TextBlock FontSize="13" Text="{Binding CountLine}" />
+          <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{l:Tr ConfirmOnlyListed}" />
+        </StackPanel>
         <Border BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" Padding="14,12" IsVisible="{Binding ShowBinNote}">
           <TextBlock FontSize="13" TextWrapping="Wrap" Text="{Binding BinNote}" />
         </Border>
