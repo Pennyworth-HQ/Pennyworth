@@ -18,12 +18,28 @@
     <StyleInclude Source="avares://Pennyworth/Theme/Styles.axaml" />
   </Application.Styles>
 
+  <!-- One view per page; dialogs are templated in MainWindow. -->
   <Application.DataTemplates>
+    <DataTemplate DataType="vm:WelcomeViewModel">
+      <views:WelcomeView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:HomeViewModel">
+      <views:HomeView />
+    </DataTemplate>
     <DataTemplate DataType="vm:StorageSummaryViewModel">
       <views:StorageSummaryView />
     </DataTemplate>
+    <DataTemplate DataType="vm:CleanupViewModel">
+      <views:CleanupView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:MemoryViewModel">
+      <views:MemoryView />
+    </DataTemplate>
     <DataTemplate DataType="vm:FolderBrowserViewModel">
       <views:FolderBrowserView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:PcViewModel">
+      <views:PcView />
     </DataTemplate>
   </Application.DataTemplates>
 </Application>

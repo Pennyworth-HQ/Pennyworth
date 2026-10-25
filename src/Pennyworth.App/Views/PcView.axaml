@@ -1,0 +1,321 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:l="using:Pennyworth.App.Localization"
+             xmlns:controls="using:Pennyworth.App.Controls"
+             x:Class="Pennyworth.App.Views.PcView"
+             x:DataType="vm:PcViewModel">
+  <UserControl.Styles>
+    <!-- The six part chips under the PC: the selected one inverted. -->
+    <Style Selector="Button.chip">
+      <Setter Property="BorderThickness" Value="0,0,1,0" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
+      <Setter Property="Height" Value="52" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
+      <Setter Property="FontSize" Value="10.5" />
+      <Setter Property="LetterSpacing" Value="1.3" />
+      <Setter Property="Padding" Value="4,0" />
+    </Style>
+    <Style Selector="Button.chip:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="Button.chip.selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Background}" />
+    </Style>
+    <Style Selector="Button.zoom">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Width" Value="34" />
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="FontSize" Value="15" />
+    </Style>
+    <Style Selector="Button.zoom:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="StackPanel.panel > Border.top">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
+      <Setter Property="BorderThickness" Value="0,1,0,0" />
+      <Setter Property="Padding" Value="0,14,0,0" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="*,340">
+    <!-- The PC -->
+    <Grid RowDefinitions="*,52">
+      <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0">
+        <Panel>
+          <controls:AsciiPcView Margin="16,40,16,16" SelectedPart="{Binding Part}" Zoom="{Binding Zoom}" Labels="{Binding PartLabels}" />
+          <Grid ColumnDefinitions="*,Auto" Margin="20,16,20,0" VerticalAlignment="Top" IsHitTestVisible="False">
+            <TextBlock Classes="label" Text="{l:Tr Hint3d, Upper=True}" />
+            <TextBlock Grid.Column="1" Classes="label" Text="{Binding MachineText, Converter={x:Static controls:TextCase.Upper}}" />
+          </Grid>
+
+          <!-- Zoom: +, current, − -->
+          <Border Classes="group" Background="{DynamicResource Brush.Background}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,20,20">
+            <StackPanel>
+              <Button Classes="zoom" Content="+" Command="{Binding ZoomInCommand}" />
+              <Border Height="1" Background="{DynamicResource Brush.BorderStrong}" />
+              <Button Classes="zoom" MinHeight="26" FontSize="9" Foreground="{DynamicResource Brush.TextSecondary}" Content="{Binding ZoomText}" Command="{Binding ZoomResetCommand}" />
+              <Border Height="1" Background="{DynamicResource Brush.BorderStrong}" />
+              <Button Classes="zoom" Content="−" Command="{Binding ZoomOutCommand}" />
+            </StackPanel>
+          </Border>
+
+          <!-- First visit: how to use it. -->
+          <Border Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+                  Padding="18,16" MaxWidth="320" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="20,0,0,20" IsVisible="{Binding ShowHint}">
+            <StackPanel Spacing="8">
+              <TextBlock FontSize="15" Text="{l:Tr HintTitle}" />
+              <TextBlock Classes="secondary" FontSize="13" LineHeight="19" TextWrapping="Wrap" Text="{l:Tr HintBody}" />
+              <Button HorizontalAlignment="Left" Margin="0,4,0,0" MinHeight="30" Padding="14,0" FontSize="10.5"
+                      Background="{DynamicResource Brush.TextPrimary}" Foreground="{DynamicResource Brush.Background}" Command="{Binding DismissHintCommand}">
+                <TextBlock>
+                  <Run Text="{l:Tr GotIt, Upper=True}" />
+                  <Run Text=" ↓" />
+                </TextBlock>
+              </Button>
+            </StackPanel>
+          </Border>
+        </Panel>
+      </Border>
+
+      <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,1,0">
+        <ItemsControl ItemsSource="{Binding Chips}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Columns="6" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:PartChipViewModel">
+              <Button Classes="chip" Classes.selected="{Binding IsSelected}"
+                      Command="{Binding $parent[UserControl].((vm:PcViewModel)DataContext).SelectPartCommand}" CommandParameter="{Binding Part}">
+                <StackPanel Spacing="3">
+                  <TextBlock FontSize="9" Opacity="0.7" HorizontalAlignment="Center" Text="{Binding Index}" />
+                  <TextBlock HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding Label}" />
+                </StackPanel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Border>
+    </Grid>
+
+    <!-- What the selected part is doing -->
+    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="24,24,24,28" Spacing="20">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="label" Foreground="{DynamicResource Brush.Accent}" Text="{Binding PartIndexText}" />
+          <TextBlock FontSize="24" FontWeight="Medium" TextWrapping="Wrap" Text="{Binding PartName}" />
+          <TextBlock Classes="secondary" FontSize="13.5" LineHeight="20" TextWrapping="Wrap" Text="{Binding PartHint}" />
+        </StackPanel>
+
+        <!-- Drive -->
+        <StackPanel Classes="panel" Spacing="16" IsVisible="{Binding IsDrive}">
+          <Border Classes="top">
+            <Grid ColumnDefinitions="Auto,*">
+              <TextBlock Classes="number" FontSize="28" Text="{Binding DriveUsedText}" />
+              <TextBlock Grid.Column="1" Classes="secondary" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,4" Text="{Binding DriveFreeText}" />
+            </Grid>
+          </Border>
+          <TextBlock Classes="mono" FontSize="10.5" LineHeight="12.5" Text="{Binding DriveArt}" />
+          <ItemsControl ItemsSource="{Binding DriveLegend}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:LegendLine">
+                <Grid ColumnDefinitions="18,*,Auto" ColumnSpacing="10" Margin="0,2">
+                  <TextBlock Classes="mono" Text="{Binding Mark}" />
+                  <TextBlock Grid.Column="1" FontSize="12.5" Text="{Binding Name}" />
+                  <TextBlock Grid.Column="2" Classes="secondary" FontSize="12.5" Text="{Binding Value}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Border Classes="top">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="label" FontSize="10" Text="{l:Tr TopFolders, Upper=True}" />
+              <ItemsControl ItemsSource="{Binding TopFolders}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:BarLine">
+                    <StackPanel Spacing="2" Margin="0,3">
+                      <TextBlock FontSize="12.5" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="mono secondary" FontSize="10.5" Text="{Binding Bar}" />
+                        <TextBlock Grid.Column="1" Classes="mono secondary" FontSize="10.5" Text="{Binding Value}" />
+                      </Grid>
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+          <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" MinHeight="38" Command="{Binding OpenStorageCommand}">
+            <TextBlock>
+              <Run Text="{l:Tr OpenStorage, Upper=True}" />
+              <Run Text=" →" />
+            </TextBlock>
+          </Button>
+        </StackPanel>
+
+        <!-- Memory -->
+        <StackPanel Classes="panel" Spacing="16" IsVisible="{Binding IsMemory}">
+          <Border Classes="top">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Classes="number" FontSize="28" Text="{Binding Live.MemoryUsedText}" />
+              <TextBlock Classes="secondary" VerticalAlignment="Bottom" Margin="0,0,0,4" Text="{Binding Live.MemoryTotalText, StringFormat='/ {0}'}" />
+            </StackPanel>
+          </Border>
+          <TextBlock Classes="mono" FontSize="12" LineHeight="14" Text="{Binding MemoryAscii}" />
+          <ItemsControl ItemsSource="{Binding MemoryLegend}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:LegendLine">
+                <Grid ColumnDefinitions="18,*,Auto" ColumnSpacing="10" Margin="0,2">
+                  <TextBlock Classes="mono" Text="{Binding Mark}" />
+                  <TextBlock Grid.Column="1" FontSize="12.5" Text="{Binding Name}" />
+                  <TextBlock Grid.Column="2" Classes="secondary" FontSize="12.5" Text="{Binding Value}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Border Classes="top">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="label" FontSize="10" Text="{l:Tr TopMemory, Upper=True}" />
+              <ItemsControl ItemsSource="{Binding TopMemory}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LegendLine">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,2">
+                      <TextBlock FontSize="13" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                      <TextBlock Grid.Column="1" FontSize="13" Text="{Binding Value}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+          <TextBlock Classes="secondary" FontSize="12.5" LineHeight="18" TextWrapping="Wrap" Text="{l:Tr CachedNote}" />
+          <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" MinHeight="38" Command="{Binding OpenMemoryCommand}">
+            <TextBlock>
+              <Run Text="{l:Tr OpenMemory, Upper=True}" />
+              <Run Text=" →" />
+            </TextBlock>
+          </Button>
+        </StackPanel>
+
+        <!-- Processor -->
+        <StackPanel Classes="panel" Spacing="16" IsVisible="{Binding IsProcessor}">
+          <Border Classes="top">
+            <TextBlock Classes="number" FontSize="28" Text="{Binding Live.CpuText}" />
+          </Border>
+          <TextBlock Classes="mono" FontSize="14" LineHeight="16" Text="{Binding CpuSpark}" />
+          <TextBlock Classes="label" FontSize="10" Text="{l:Tr Last60, Upper=True}" />
+          <Border Classes="top">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="label" FontSize="10" Text="{l:Tr TopCpu, Upper=True}" />
+              <ItemsControl ItemsSource="{Binding TopCpu}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LegendLine">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,2">
+                      <TextBlock FontSize="13" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                      <TextBlock Grid.Column="1" Classes="mono" FontSize="12" Text="{Binding Value}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+          <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" MinHeight="38" Command="{Binding OpenMemoryCommand}">
+            <TextBlock>
+              <Run Text="{l:Tr OpenMemory, Upper=True}" />
+              <Run Text=" →" />
+            </TextBlock>
+          </Button>
+        </StackPanel>
+
+        <!-- Graphics card -->
+        <StackPanel Classes="panel" Spacing="16" IsVisible="{Binding IsGraphics}">
+          <Border Classes="top">
+            <Grid ColumnDefinitions="Auto,*">
+              <TextBlock Classes="number" FontSize="28" Text="{Binding Live.GpuText}" />
+              <TextBlock Grid.Column="1" Classes="secondary" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,4" Text="{l:Tr GpuNow}" />
+            </Grid>
+          </Border>
+          <TextBlock Classes="mono" FontSize="14" LineHeight="16" Text="{Binding GpuSpark}" IsVisible="{Binding IsGpuAvailable}" />
+          <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{l:Tr GpuUnavailable}" IsVisible="{Binding !IsGpuAvailable}" />
+          <Border Classes="top">
+            <StackPanel Spacing="10">
+              <Border Classes="badge" HorizontalAlignment="Left" Padding="8,3">
+                <TextBlock>
+                  <Run Text="● " />
+                  <Run Text="{l:Tr Safety_Safe, Upper=True}" />
+                </TextBlock>
+              </Border>
+              <TextBlock FontSize="13.5" LineHeight="20" TextWrapping="Wrap" Text="{Binding ShaderNote}" />
+            </StackPanel>
+          </Border>
+          <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" MinHeight="38" Command="{Binding OpenCleanupCommand}">
+            <TextBlock>
+              <Run Text="{l:Tr OpenCleanup, Upper=True}" />
+              <Run Text=" →" />
+            </TextBlock>
+          </Button>
+        </StackPanel>
+
+        <!-- Power supply: hibernation -->
+        <StackPanel Classes="panel" Spacing="16" IsVisible="{Binding IsPower}">
+          <Border Classes="top">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="number" FontSize="28" Text="{Binding HibernationText}" />
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock FontSize="14" Text="{l:Tr PsuHiber}" />
+                <TextBlock Classes="mono secondary" FontSize="11" VerticalAlignment="Center" Text="hiberfil.sys" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+          <TextBlock Classes="mono secondary" FontSize="11" LineHeight="13" Text="{Binding PowerDiagram}" />
+          <TextBlock FontSize="13.5" LineHeight="20" TextWrapping="Wrap" Text="{l:Tr PsuHiberNote}" IsVisible="{Binding HasHibernation}" />
+          <TextBlock FontSize="13.5" LineHeight="20" TextWrapping="Wrap" Text="{l:Tr PsuNoHiber}" IsVisible="{Binding !HasHibernation}" />
+          <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" MinHeight="38" Command="{Binding OpenHiddenCommand}">
+            <TextBlock>
+              <Run Text="{l:Tr OpenStorage, Upper=True}" />
+              <Run Text=" →" />
+            </TextBlock>
+          </Button>
+        </StackPanel>
+
+        <!-- Recycle Bin and cleanup -->
+        <StackPanel Classes="panel" Spacing="14" IsVisible="{Binding IsTrash}">
+          <Border Classes="top">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="number" FontSize="28" Text="{Binding CleanupTotalText}" />
+              <TextBlock Classes="secondary" FontSize="13" Text="{l:Tr CanFreeShort}" />
+            </StackPanel>
+          </Border>
+          <ItemsControl ItemsSource="{Binding TrashItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:CleanupItemViewModel">
+                <Border Classes="rule" Padding="0,7">
+                  <Grid ColumnDefinitions="16,*,Auto" ColumnSpacing="10">
+                    <TextBlock Classes="mono" Text="{Binding Glyph}" Foreground="{DynamicResource Brush.TextPrimary}" />
+                    <TextBlock Grid.Column="1" FontSize="13" TextTrimming="CharacterEllipsis" Text="{Binding Title}" />
+                    <TextBlock Grid.Column="2" Classes="secondary" FontSize="13" Text="{Binding SizeText}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" MinHeight="38" Command="{Binding OpenCleanupCommand}">
+            <TextBlock>
+              <Run Text="{l:Tr ReviewCleanup, Upper=True}" />
+              <Run Text=" →" />
+            </TextBlock>
+          </Button>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>
