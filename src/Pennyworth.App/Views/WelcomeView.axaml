@@ -1,0 +1,72 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:l="using:Pennyworth.App.Localization"
+             x:Class="Pennyworth.App.Views.WelcomeView"
+             x:DataType="vm:WelcomeViewModel">
+  <Grid ColumnDefinitions="*,*">
+    <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="56,40,48,32" Spacing="18">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Image Source="/Assets/logo.png" Width="40" Height="40" RenderOptions.BitmapInterpolationMode="HighQuality" />
+            <TextBlock Text="PENNYWORTH" FontSize="22" FontWeight="SemiBold" LetterSpacing="4" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Spacing="14">
+            <TextBlock FontSize="36" FontWeight="Medium" LetterSpacing="-0.9" LineHeight="38" TextWrapping="Wrap" Text="{Binding Title}" />
+            <TextBlock Classes="secondary" FontSize="16" LineHeight="24" MaxWidth="420" HorizontalAlignment="Left" TextWrapping="Wrap" Text="{l:Tr WelcomeSub}" />
+          </StackPanel>
+          <ItemsControl ItemsSource="{Binding Points}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:WelcomePoint">
+                <Border Classes="rule" Padding="0,9">
+                  <Grid ColumnDefinitions="36,*">
+                    <TextBlock Classes="mono secondary" FontSize="11" VerticalAlignment="Center" Text="{Binding Index}" />
+                    <TextBlock Grid.Column="1" FontSize="15" TextWrapping="Wrap" Text="{Binding Text}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+            <TextBlock Classes="mono" Text="■" />
+            <TextBlock Grid.Column="1" Classes="secondary" FontSize="13" LineHeight="19" TextWrapping="Wrap" Text="{l:Tr Privacy}" />
+          </Grid>
+          <StackPanel Spacing="8">
+            <TextBlock Classes="label" FontSize="10" Text="{l:Tr Language, Upper=True}" />
+            <Border Classes="group" HorizontalAlignment="Left">
+              <ItemsControl ItemsSource="{Binding Languages}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LanguageOptionViewModel">
+                    <Button Classes="segment" Classes.selected="{Binding IsSelected}" MinHeight="34" Padding="14,0"
+                            FontFamily="{StaticResource FontFamily.Base}" FontSize="13" LetterSpacing="0"
+                            Content="{Binding Label}"
+                            Command="{Binding $parent[UserControl].((vm:WelcomeViewModel)DataContext).SelectLanguageCommand}"
+                            CommandParameter="{Binding}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Border>
+          </StackPanel>
+          <Button Classes="primary" HorizontalAlignment="Left" MinHeight="48" Padding="22,0" FontSize="12" Command="{Binding AnalyzeCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="14">
+              <TextBlock Text="{l:Tr Analyze, Upper=True}" />
+              <TextBlock Text="→" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <!-- A little computer booting up, with bits underneath. -->
+    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="22" Margin="40">
+      <TextBlock Classes="mono" FontSize="12" LineHeight="15" Text="{Binding BootScreen}" />
+      <TextBlock Classes="mono tertiary" FontSize="11" LineHeight="14" LetterSpacing="1.1" HorizontalAlignment="Center" Text="{Binding BitsBlock}" />
+    </StackPanel>
+  </Grid>
+</UserControl>

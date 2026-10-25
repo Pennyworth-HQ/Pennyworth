@@ -1,0 +1,158 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:l="using:Pennyworth.App.Localization"
+             xmlns:controls="using:Pennyworth.App.Controls"
+             x:Class="Pennyworth.App.Views.HomeView"
+             x:DataType="vm:HomeViewModel">
+  <UserControl.Styles>
+    <!-- Tiles of the overview grid: whole tile is the button, hover lights it up. -->
+    <Style Selector="Button.tile">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Background}" />
+      <Setter Property="Padding" Value="22,20" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Stretch" />
+      <Setter Property="FontFamily" Value="{StaticResource FontFamily.Base}" />
+      <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+      <Setter Property="LetterSpacing" Value="0" />
+    </Style>
+    <Style Selector="Button.tile:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="ProgressBar.warn">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="36,30,36,28" Spacing="22">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="label">
+          <Run Text="01 / " />
+          <Run Text="{l:Tr NavHome, Upper=True}" />
+        </TextBlock>
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+          <TextBlock Classes="title" TextWrapping="Wrap" Text="{l:Tr HomeTitle}" />
+          <TextBlock Grid.Column="1" Classes="secondary" VerticalAlignment="Bottom" Margin="0,0,0,6" Text="{Binding Greeting}" />
+        </Grid>
+        <TextBlock Classes="secondary" FontSize="15" LineHeight="22" MaxWidth="640" HorizontalAlignment="Left" TextWrapping="Wrap" Text="{Binding StatusLine}" />
+      </StackPanel>
+
+      <!-- 1 px gaps on a line-coloured background draw the grid lines between tiles. -->
+      <Border Background="{DynamicResource Brush.Border}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+        <Grid ColumnDefinitions="1.2*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="1" RowSpacing="1">
+          <!-- Drives -->
+          <StackPanel Grid.RowSpan="2" Background="{DynamicResource Brush.Background}">
+            <TextBlock Classes="label" FontSize="10" Margin="22,20,22,12" Text="{l:Tr Drives, Upper=True}" />
+            <ItemsControl ItemsSource="{Binding DriveCards}" Margin="10,0,10,8">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:DriveCardViewModel">
+                  <Button Classes="row" Padding="12,18"
+                          Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).OpenDriveCommand}"
+                          CommandParameter="{Binding}">
+                    <StackPanel Spacing="12">
+                      <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="12">
+                        <TextBlock Classes="number" FontSize="32" Text="{Binding Letter}" />
+                        <TextBlock Grid.Column="1" FontSize="14" VerticalAlignment="Bottom" Margin="0,0,0,4" Text="{Binding Label}" />
+                        <TextBlock Grid.Column="3" Classes="label" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Bottom" Margin="0,0,0,4" Text="{Binding WarningText}" />
+                      </Grid>
+                      <ProgressBar Classes.warn="{Binding IsAlmostFull}" Minimum="0" Maximum="1" Value="{Binding Fraction}" />
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Classes="secondary" FontSize="13" Text="{Binding UsedLine}" />
+                        <TextBlock Grid.Column="1" Classes="mono secondary" FontSize="12" Text="{Binding PercentText}" />
+                      </Grid>
+                    </StackPanel>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <!-- Storage teaser -->
+          <Button Grid.Column="1" Classes="tile" Command="{Binding GoStorageCommand}">
+            <StackPanel Spacing="14">
+              <TextBlock Classes="label" FontSize="10" Text="{Binding StorageLabel, Converter={x:Static controls:TextCase.Upper}}" />
+              <TextBlock FontSize="22" LetterSpacing="-0.2" TextWrapping="Wrap" Text="{Binding TeaserLine}" />
+              <controls:SegmentedBar Height="14" Gap="2" Segments="{Binding TeaserSegments}" HighlightKey="{Binding TeaserHighlight}"
+                                     TrackBrush="{DynamicResource Brush.Track}" />
+              <TextBlock Classes="label" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="11">
+                <Run Text="{l:Tr SeeStorage, Upper=True}" />
+                <Run Text=" →" />
+              </TextBlock>
+            </StackPanel>
+          </Button>
+
+          <!-- "I can safely free 23 GB for you." -->
+          <Border Grid.Row="1" Grid.Column="1" Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.Accent}" BorderThickness="1" Padding="22,20">
+            <StackPanel Spacing="12">
+              <TextBlock Classes="label" FontSize="10" Foreground="{DynamicResource Brush.Accent}">
+                <Run Text="● " />
+                <Run Text="{l:Tr NavCleanup, Upper=True}" />
+              </TextBlock>
+              <WrapPanel>
+                <TextBlock FontSize="22" Margin="0,0,7,0" Text="{l:Tr CanFree}" />
+                <TextBlock FontSize="22" Margin="0,0,7,0" Foreground="{DynamicResource Brush.Accent}" Text="{Binding SafeText}" />
+                <TextBlock FontSize="22" Text="{l:Tr Safely}" />
+              </WrapPanel>
+              <TextBlock Classes="secondary" FontSize="13" LineHeight="19" TextWrapping="Wrap" Text="{l:Tr FreeSafelySub}" />
+              <Button Classes="primary" HorizontalAlignment="Left" MinHeight="36" Padding="16,0" Command="{Binding GoCleanupCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="{l:Tr ReviewCleanup, Upper=True}" />
+                  <TextBlock Text="→" />
+                </StackPanel>
+              </Button>
+            </StackPanel>
+          </Border>
+
+          <!-- Memory and CPU teaser -->
+          <Button Grid.Row="2" Grid.ColumnSpan="2" Classes="tile" Padding="22,18" Command="{Binding GoMemoryCommand}">
+            <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="28">
+              <StackPanel Spacing="10" VerticalAlignment="Bottom">
+                <TextBlock Classes="label" FontSize="10" Text="{l:Tr Memory, Upper=True}" />
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Classes="number" FontSize="22" Text="{Binding Live.MemoryUsedText}" />
+                  <TextBlock Classes="secondary" VerticalAlignment="Bottom" Margin="0,0,0,3" Text="{Binding Live.MemoryTotalText, StringFormat='/ {0}'}" />
+                </StackPanel>
+                <controls:SegmentedBar Height="8" Gap="2" Segments="{Binding Live.MemorySegments}" TrackBrush="{DynamicResource Brush.Track}" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Bottom">
+                <TextBlock Classes="label" FontSize="10" TextTrimming="CharacterEllipsis">
+                  <Run Text="CPU · " />
+                  <Run Text="{l:Tr TopApp, Upper=True}" />
+                  <Run Text=": " />
+                  <Run Text="{Binding TopAppLine}" />
+                </TextBlock>
+                <Grid ColumnDefinitions="56,*" ColumnSpacing="12">
+                  <TextBlock Classes="number" FontSize="22" VerticalAlignment="Bottom" Text="{Binding Live.CpuText}" />
+                  <controls:BarChart Grid.Column="1" Height="26" Maximum="25" Values="{Binding CpuMini}"
+                                     BarBrush="{DynamicResource Brush.TextSecondary}" HighlightBrush="{DynamicResource Brush.Accent}" />
+                </Grid>
+              </StackPanel>
+              <TextBlock Grid.Column="2" Classes="label" Foreground="{DynamicResource Brush.TextPrimary}" FontSize="11" VerticalAlignment="Bottom">
+                <Run Text="{l:Tr SeeMemory, Upper=True}" />
+                <Run Text=" →" />
+              </TextBlock>
+            </Grid>
+          </Button>
+        </Grid>
+      </Border>
+
+      <Border BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" Padding="18,14" IsVisible="{Binding ShowUnlockBanner}">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+          <TextBlock Classes="mono secondary" Text="[ ]" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" TextWrapping="Wrap" VerticalAlignment="Center" Text="{l:Tr UnlockBanner}" />
+          <Button Grid.Column="2" Command="{Binding UnlockCommand}">
+            <TextBlock>
+              <Run Text="{l:Tr UnlockCta, Upper=True}" />
+              <Run Text=" →" />
+            </TextBlock>
+          </Button>
+        </Grid>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
