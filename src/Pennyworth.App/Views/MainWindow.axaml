@@ -149,7 +149,9 @@
           <Image Source="/Assets/logo.png" Width="26" Height="26" RenderOptions.BitmapInterpolationMode="HighQuality" />
           <TextBlock Text="PENNYWORTH" FontWeight="SemiBold" FontSize="12" LetterSpacing="2.4" VerticalAlignment="Center" />
         </StackPanel>
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+        <!-- "User" lets these buttons receive clicks; the rest of the bar drags the window. -->
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center"
+                    WindowDecorationProperties.ElementRole="User">
           <Border Classes="group" ToolTip.Tip="{l:Tr ModeTip}">
             <StackPanel Orientation="Horizontal">
               <Button Classes="segment" Classes.selected="{Binding !Is3d}" Content="{l:Tr ModeSimple, Upper=True}" Command="{Binding SetSimpleModeCommand}" />
