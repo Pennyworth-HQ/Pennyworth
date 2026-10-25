@@ -38,6 +38,9 @@
     <DataTemplate DataType="vm:FolderBrowserViewModel">
       <views:FolderBrowserView />
     </DataTemplate>
+    <DataTemplate DataType="vm:SpecsViewModel">
+      <views:SpecsView />
+    </DataTemplate>
     <DataTemplate DataType="vm:PcViewModel">
       <views:PcView />
     </DataTemplate>

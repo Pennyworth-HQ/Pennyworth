@@ -315,6 +315,15 @@
             </TextBlock>
           </Button>
         </StackPanel>
+
+        <!-- Every part, in detail. -->
+        <Button Classes="link" HorizontalAlignment="Left" FontFamily="{StaticResource FontFamily.Mono}" FontSize="11" LetterSpacing="1.1"
+                Command="{Binding OpenSpecsCommand}">
+          <TextBlock>
+            <Run Text="{l:Tr SeeSpecs, Upper=True}" />
+            <Run Text=" →" />
+          </TextBlock>
+        </Button>
       </StackPanel>
     </ScrollViewer>
   </Grid>

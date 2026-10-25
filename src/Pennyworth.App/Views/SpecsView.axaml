@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:l="using:Pennyworth.App.Localization"
+             xmlns:controls="using:Pennyworth.App.Controls"
+             x:Class="Pennyworth.App.Views.SpecsView"
+             x:DataType="vm:SpecsViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="36,28,36,28" Spacing="20">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="label">
+            <Run Text="06 / " />
+            <Run Text="{l:Tr NavSpecs, Upper=True}" />
+          </TextBlock>
+          <TextBlock Classes="title" TextWrapping="Wrap" Text="{l:Tr SpecsTitle}" />
+          <TextBlock Classes="secondary" FontSize="13.5" TextWrapping="Wrap" Text="{l:Tr SpecsSub}" />
+        </StackPanel>
+        <Button Grid.Column="1" VerticalAlignment="Bottom" Command="{Binding CopyCommand}" IsEnabled="{Binding IsLoaded}">
+          <TextBlock>
+            <Run Text="⧉ " />
+            <Run Text="{l:Tr CopyAll, Upper=True}" />
+          </TextBlock>
+        </Button>
+      </Grid>
+
+      <StackPanel Spacing="14" IsVisible="{Binding IsLoading}">
+        <ProgressBar Classes="sweep" />
+        <TextBlock Classes="secondary" FontSize="13" Text="{l:Tr SpecsLoading}" />
+      </StackPanel>
+
+      <!-- Two columns of equal tiles; 1 px gaps on a line-coloured background draw the grid lines. -->
+      <Border Background="{DynamicResource Brush.Border}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1"
+              IsVisible="{Binding IsLoaded}">
+        <ItemsControl ItemsSource="{Binding Sections}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Columns="2" ColumnSpacing="1" RowSpacing="1" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:SpecSection">
+              <Border Background="{DynamicResource Brush.Background}" Padding="22,20">
+                <StackPanel Spacing="10">
+                  <TextBlock Classes="label" FontSize="10">
+                    <Run Text="{Binding Index}" Foreground="{DynamicResource Brush.Accent}" />
+                    <Run Text=" · " />
+                    <Run Text="{Binding Title, Converter={x:Static controls:TextCase.Upper}}" />
+                  </TextBlock>
+                  <TextBlock FontSize="19" FontWeight="Medium" LineHeight="24" TextWrapping="Wrap" Text="{Binding Headline}" />
+                  <ItemsControl ItemsSource="{Binding Rows}" Margin="0,4,0,0">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:SpecRow">
+                        <Border Classes="rule" Padding="0,7">
+                          <Grid ColumnDefinitions="130,*" ColumnSpacing="12">
+                            <TextBlock Classes="secondary" FontSize="12.5" TextWrapping="Wrap" Text="{Binding Label}" />
+                            <SelectableTextBlock Grid.Column="1" FontSize="13" TextWrapping="Wrap" Text="{Binding Value}" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
