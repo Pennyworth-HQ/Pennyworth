@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 using Pennyworth.App.ViewModels;
 
@@ -75,10 +76,37 @@ public sealed class SegmentedBar : Control
         set => SetValue(IsHighlightedProperty, value);
     }
 
+    /// <summary>Raised with the colour key of the segment that was clicked.</summary>
+    public event EventHandler<string>? SegmentPressed;
+
     public SegmentedBar()
     {
         // Brushes are looked up while rendering, so redraw when Windows switches light/dark.
         ActualThemeVariantChanged += (_, _) => InvalidateVisual();
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+        if (SegmentPressed is null)
+        {
+            return;
+        }
+
+        var visible = (Segments ?? []).Where(segment => segment.Fraction > 0).ToArray();
+        double available = Math.Max(Bounds.Width - (Gap * Math.Max(visible.Length - 1, 0)), 0);
+        double x = e.GetPosition(this).X, start = 0;
+        foreach (BarSegment segment in visible)
+        {
+            double end = start + (segment.Fraction * available);
+            if (x >= start && x <= end + Gap)
+            {
+                SegmentPressed(this, segment.ColorKey);
+                return;
+            }
+
+            start = end + Gap;
+        }
     }
 
     public override void Render(DrawingContext context)

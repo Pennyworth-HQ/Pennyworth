@@ -175,6 +175,52 @@
     <Setter Property="Opacity" Value="1" />
   </Style>
 
+  <!-- Segmented choices (Simple / 3D, PT / EN, languages, drives): the chosen one is inverted. -->
+  <Style Selector="Border.group">
+    <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderStrong}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+  <Style Selector="Button.segment">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="MinHeight" Value="26" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
+    <Setter Property="LetterSpacing" Value="1.3" />
+  </Style>
+  <Style Selector="Button.segment:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}" />
+    <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+  </Style>
+  <Style Selector="Button.segment.selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource Brush.TextPrimary}" />
+    <Setter Property="Foreground" Value="{DynamicResource Brush.Background}" />
+  </Style>
+
+  <!-- A pulsing dot for "Live" and running scans. -->
+  <Style Selector="TextBlock.blink">
+    <Style.Animations>
+      <Animation Duration="0:0:2" IterationCount="Infinite">
+        <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+        <KeyFrame Cue="49%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+        <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0" /></KeyFrame>
+        <KeyFrame Cue="100%"><Setter Property="Opacity" Value="0" /></KeyFrame>
+      </Animation>
+    </Style.Animations>
+  </Style>
+
+  <!-- The design's thin sweeping line for "working on it". -->
+  <Style Selector="ProgressBar.sweep">
+    <Setter Property="MinHeight" Value="2" />
+    <Setter Property="Height" Value="2" />
+    <Setter Property="IsIndeterminate" Value="True" />
+  </Style>
+
+  <!-- Large monospace numbers ("11.2 / 16 GB"). -->
+  <Style Selector="TextBlock.number">
+    <Setter Property="FontFamily" Value="{StaticResource FontFamily.Mono}" />
+    <Setter Property="FontWeight" Value="Light" />
+  </Style>
+
   <!-- Lists -->
   <Style Selector="ListBox">
     <Setter Property="Background" Value="Transparent" />
