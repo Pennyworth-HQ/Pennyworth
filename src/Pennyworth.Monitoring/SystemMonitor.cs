@@ -22,6 +22,7 @@ public sealed class SystemMonitor : ISystemMonitor, IDisposable
     private readonly CpuTracker _cpu = new();
     private readonly AppGrouper _grouper;
     private readonly GpuMeter _gpu = new();
+    private readonly MemoryCounters _memory = new();
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private TimeSpan _lastSample;
 
@@ -46,10 +47,14 @@ public sealed class SystemMonitor : ISystemMonitor, IDisposable
         double total = _cpu.UpdateSystem(idle, kernel, user);
 
         long compressed = processes.FirstOrDefault(p => p.Name == "Memory Compression").WorkingSet;
-        return new MonitorSample(ProcessReader.ReadMemory(compressed), total, _gpu.Sample(), _grouper.Group(processes, cpuByPid));
+        return new MonitorSample(ProcessReader.ReadMemory(compressed, _memory.ReadFree()), total, _gpu.Sample(), _grouper.Group(processes, cpuByPid));
     }
 
-    public void Dispose() => _gpu.Dispose();
+    public void Dispose()
+    {
+        _gpu.Dispose();
+        _memory.Dispose();
+    }
 
     /// <summary>Caches what doesn't change while a process lives.</summary>
     private sealed class WindowsProcessDetails : IProcessDetails

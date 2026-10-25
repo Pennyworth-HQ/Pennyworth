@@ -162,7 +162,31 @@ public class SystemMonitorTests
         Assert.True(sample.Memory.Total > 512L * 1024 * 1024);
         Assert.InRange(sample.Memory.Available, 1, sample.Memory.Total);
         Assert.InRange(sample.CpuPercent, 0, 100);
+        Assert.True(sample.Memory.Free > 0, "Some memory is always free.");
+        Assert.True(sample.Memory.Cached > 0);
         Assert.Contains(sample.Apps, app => app.Processes.Any(p => p.Pid == Environment.ProcessId));
         Assert.Contains(sample.Apps, app => app.Explanation?.Id == "windows-services" && app.Processes.Any(p => p.Services.Count > 0));
+    }
+
+    [Fact]
+    public void Measures_cpu_per_process()
+    {
+        using var monitor = new SystemMonitor(KnowledgeBaseLoader.LoadProcesses().Processes);
+        using var stop = new CancellationTokenSource();
+        var busy = Task.Run(() =>
+        {
+            while (!stop.IsCancellationRequested)
+            {
+                Thread.SpinWait(1000);
+            }
+        }, TestContext.Current.CancellationToken);
+
+        monitor.Sample();
+        Thread.Sleep(600);
+        MonitorSample sample = monitor.Sample();
+        stop.Cancel();
+
+        double mine = sample.Apps.SelectMany(app => app.Processes).Single(p => p.Pid == Environment.ProcessId).Cpu;
+        Assert.True(mine > 100.0 / Environment.ProcessorCount / 2, $"Expected about one busy core, got {mine:0.00}%.");
     }
 }

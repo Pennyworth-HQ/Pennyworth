@@ -113,7 +113,8 @@ internal static unsafe class ProcessReader
         }
     }
 
-    public static MemoryStatus ReadMemory(long compressed)
+    /// <param name="free">Free and zeroed bytes from the performance counter, when available.</param>
+    public static MemoryStatus ReadMemory(long compressed, long? free)
     {
         var status = new MonitorNative.MemoryStatusEx { Length = (uint)sizeof(MonitorNative.MemoryStatusEx) };
         MonitorNative.GlobalMemoryStatusEx(ref status);
@@ -124,6 +125,7 @@ internal static unsafe class ProcessReader
             : 0;
 
         long available = (long)status.AvailPhys;
-        return new MemoryStatus((long)status.TotalPhys, available, Math.Min(cache, available), compressed);
+        long cached = free is { } freeBytes ? available - Math.Min(freeBytes, available) : Math.Min(cache, available);
+        return new MemoryStatus((long)status.TotalPhys, available, cached, compressed);
     }
 }
