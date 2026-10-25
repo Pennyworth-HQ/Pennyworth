@@ -148,7 +148,10 @@
   <data name="PreviewSubBin" xml:space="preserve"><value>{0} em {1:N0} itens. Esvaziar a Lixeira os apaga de vez, então vale dar uma olhada antes.</value></data>
   <data name="PreviewFolders" xml:space="preserve"><value>Limpo dentro destas pastas (as pastas em si ficam)</value></data>
   <data name="PreviewFolderLine" xml:space="preserve"><value>{0} · {1:N0} arquivos</value></data>
-  <data name="PreviewFiles" xml:space="preserve"><value>Arquivos, dos maiores para os menores</value></data>
+  <data name="PreviewFolderLineBin" xml:space="preserve"><value>{0} · {1:N0} itens</value></data>
+  <data name="PreviewAllFolders" xml:space="preserve"><value>Todas as pastas</value></data>
+  <data name="PreviewShowFolder" xml:space="preserve"><value>Mostrar esta pasta no Explorador</value></data>
+  <data name="PreviewFiles" xml:space="preserve"><value>Pastas e arquivos, dos maiores para os menores</value></data>
   <data name="PreviewItemsBin" xml:space="preserve"><value>Itens na Lixeira, dos maiores para os menores</value></data>
   <data name="PreviewSearch" xml:space="preserve"><value>Buscar pelo nome</value></data>
   <data name="PreviewMatches" xml:space="preserve"><value>{0:N0} encontrados</value></data>

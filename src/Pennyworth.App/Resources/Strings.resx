@@ -148,7 +148,10 @@
   <data name="PreviewSubBin" xml:space="preserve"><value>{0} in {1:N0} items. Emptying the Recycle Bin deletes them for good, so it's worth a look first.</value></data>
   <data name="PreviewFolders" xml:space="preserve"><value>Cleaned inside these folders (the folders themselves stay)</value></data>
   <data name="PreviewFolderLine" xml:space="preserve"><value>{0} · {1:N0} files</value></data>
-  <data name="PreviewFiles" xml:space="preserve"><value>Files, largest first</value></data>
+  <data name="PreviewFolderLineBin" xml:space="preserve"><value>{0} · {1:N0} items</value></data>
+  <data name="PreviewAllFolders" xml:space="preserve"><value>All folders</value></data>
+  <data name="PreviewShowFolder" xml:space="preserve"><value>Show this folder in Explorer</value></data>
+  <data name="PreviewFiles" xml:space="preserve"><value>Folders and files, largest first</value></data>
   <data name="PreviewItemsBin" xml:space="preserve"><value>Items in the Recycle Bin, largest first</value></data>
   <data name="PreviewSearch" xml:space="preserve"><value>Search by name</value></data>
   <data name="PreviewMatches" xml:space="preserve"><value>{0:N0} matching</value></data>
