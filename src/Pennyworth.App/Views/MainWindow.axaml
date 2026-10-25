@@ -1,11 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Pennyworth.App.ViewModels"
-        xmlns:res="using:Pennyworth.App.Resources"
+        xmlns:l="using:Pennyworth.App.Localization"
         xmlns:controls="using:Pennyworth.App.Controls"
         x:Class="Pennyworth.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="{x:Static res:Strings.AppTitle}"
+        Title="Pennyworth"
         Icon="/Assets/pennyworth.ico"
         Width="1100" Height="760" MinWidth="720" MinHeight="520"
         WindowStartupLocation="CenterScreen"
@@ -36,23 +36,20 @@
     <Style Selector="Button.nav.selected TextBlock.index">
       <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}" />
     </Style>
-    <Style Selector="Button.nav:disabled">
-      <Setter Property="Opacity" Value="0.5" />
-    </Style>
 
-    <!-- The status dot blinks while a scan runs. -->
     <Style Selector="TextBlock.dot">
       <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
     </Style>
     <Style Selector="TextBlock.dot.active">
       <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}" />
-      <Style.Animations>
-        <Animation Duration="0:0:1" IterationCount="Infinite">
-          <KeyFrame Cue="0%"><Setter Property="Opacity" Value="1" /></KeyFrame>
-          <KeyFrame Cue="50%"><Setter Property="Opacity" Value="0" /></KeyFrame>
-          <KeyFrame Cue="100%"><Setter Property="Opacity" Value="1" /></KeyFrame>
-        </Animation>
-      </Style.Animations>
+    </Style>
+
+    <Style Selector="TextBlock.status">
+      <Setter Property="FontFamily" Value="{StaticResource FontFamily.Mono}" />
+      <Setter Property="FontSize" Value="10.5" />
+      <Setter Property="LetterSpacing" Value="0.6" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <!-- At narrow widths the content gets the whole window. -->
@@ -61,67 +58,215 @@
     </Style>
   </Window.Styles>
 
+  <Window.DataTemplates>
+    <!-- "May I see the rest of the drive?" -->
+    <DataTemplate DataType="vm:UnlockDialogViewModel">
+      <StackPanel Spacing="18">
+        <StackPanel Spacing="18" IsVisible="{Binding IsAsking}">
+          <TextBlock Classes="label" Foreground="{DynamicResource Brush.Accent}" Text="[ ] → [■]" />
+          <TextBlock FontSize="24" FontWeight="Medium" TextWrapping="Wrap" Text="{l:Tr UnlockTitle}" />
+          <TextBlock Classes="secondary" LineHeight="21" TextWrapping="Wrap" Text="{l:Tr UnlockWhy}" />
+          <Border Background="{DynamicResource Brush.Border}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="1">
+              <StackPanel Background="{DynamicResource Brush.Surface}" Spacing="6" Margin="0">
+                <TextBlock Classes="label" Margin="14,14,14,0" Text="{l:Tr CanSee, Upper=True}" />
+                <TextBlock FontSize="13" TextWrapping="Wrap" Margin="14,0,14,14" Text="{l:Tr SeeList}" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Background="{DynamicResource Brush.Surface}" Spacing="6">
+                <TextBlock Classes="label" Margin="14,14,14,0" Text="{l:Tr Wont, Upper=True}" />
+                <TextBlock FontSize="13" TextWrapping="Wrap" Margin="14,0,14,14" Text="{l:Tr WontList}" />
+              </StackPanel>
+            </Grid>
+          </Border>
+          <StackPanel Spacing="10" IsVisible="{Binding IsWaiting}">
+            <ProgressBar Classes="sweep" Foreground="{DynamicResource Brush.Accent}" />
+            <TextBlock Classes="label" LetterSpacing="0" FontSize="11" Text="{l:Tr Waiting}" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+            <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="40" Content="{l:Tr NotNow, Upper=True}" Command="{Binding NotNowCommand}" />
+            <Button Classes="primary" MinHeight="40" Padding="18,0" Content="{l:Tr Unlock, Upper=True}" Command="{Binding UnlockCommand}" />
+          </StackPanel>
+        </StackPanel>
+        <StackPanel Spacing="18" IsVisible="{Binding IsDeclined}">
+          <TextBlock FontSize="24" FontWeight="Medium" Text="{l:Tr DeclinedTitle}" />
+          <TextBlock Classes="secondary" LineHeight="21" TextWrapping="Wrap" Text="{l:Tr DeclinedSub}" />
+          <Button HorizontalAlignment="Right" MinHeight="40" Padding="20,0" Background="{DynamicResource Brush.TextPrimary}"
+                  Foreground="{DynamicResource Brush.Background}" Content="{l:Tr Ok}" Command="{Binding CloseCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </DataTemplate>
+
+    <!-- "Clean 18.2 GB?" -->
+    <DataTemplate DataType="vm:CleanConfirmDialogViewModel">
+      <StackPanel Spacing="18">
+        <TextBlock FontSize="24" FontWeight="Medium" Text="{Binding Title}" />
+        <TextBlock Classes="secondary" TextWrapping="Wrap" Text="{l:Tr ConfirmSub}" />
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CleanupItemViewModel">
+              <Border Classes="rule" Padding="0,8">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock FontSize="13.5" Text="{Binding Title}" />
+                  <TextBlock Grid.Column="1" Classes="secondary" FontSize="13.5" Text="{Binding SizeText}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Border BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" Padding="14,12" IsVisible="{Binding ShowBinNote}">
+          <TextBlock FontSize="13" TextWrapping="Wrap" Text="{Binding BinNote}" />
+        </Border>
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+          <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="40" Content="{l:Tr Cancel, Upper=True}" Command="{Binding CancelCommand}" />
+          <Button Classes="primary" MinHeight="40" Padding="18,0" Content="{l:Tr ConfirmClean, Upper=True}" Command="{Binding ConfirmCommand}" />
+        </StackPanel>
+      </StackPanel>
+    </DataTemplate>
+
+    <!-- "Close Google Chrome?" and, if it refuses, "Force close". -->
+    <DataTemplate DataType="vm:CloseAppDialogViewModel">
+      <StackPanel Spacing="18">
+        <TextBlock FontSize="24" FontWeight="Medium" TextWrapping="Wrap" Text="{Binding Title}" />
+        <TextBlock Classes="secondary" TextWrapping="Wrap" Text="{Binding Subtitle}" />
+        <ProgressBar Classes="sweep" IsVisible="{Binding IsClosing}" />
+        <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+          <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="40" Content="{l:Tr Cancel, Upper=True}" Command="{Binding CancelCommand}" />
+          <Button MinHeight="40" Padding="18,0" Background="{DynamicResource Brush.TextPrimary}" Foreground="{DynamicResource Brush.Background}"
+                  Content="{l:Tr CloseApp, Upper=True}" Command="{Binding CloseCommand}" IsVisible="{Binding IsAsking}" />
+          <Button Classes="primary" MinHeight="40" Padding="18,0" Content="{l:Tr ForceClose, Upper=True}"
+                  Command="{Binding ForceCloseCommand}" IsVisible="{Binding IsRefused}" />
+        </StackPanel>
+      </StackPanel>
+    </DataTemplate>
+  </Window.DataTemplates>
+
   <Grid RowDefinitions="44,*,28">
-    <!-- Title bar: drag area; Windows draws the caption buttons on the right. -->
+    <!-- Title bar: drag area; Windows' caption buttons sit on the right. -->
     <Border Classes="rule" BorderThickness="0,0,0,1" Background="{DynamicResource Brush.Background}"
             WindowDecorationProperties.ElementRole="TitleBar">
       <Grid ColumnDefinitions="Auto,*,Auto" Margin="16,0,148,0">
         <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
           <Image Source="/Assets/logo.png" Width="26" Height="26" RenderOptions.BitmapInterpolationMode="HighQuality" />
-          <TextBlock Text="{controls:Upper {x:Static res:Strings.AppTitle}}" FontWeight="SemiBold" FontSize="12" LetterSpacing="2.4" />
+          <TextBlock Text="PENNYWORTH" FontWeight="SemiBold" FontSize="12" LetterSpacing="2.4" VerticalAlignment="Center" />
         </StackPanel>
-        <Button Grid.Column="2" Click="OnToggleTheme"
-                BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="28" Padding="12,0"
-                Foreground="{DynamicResource Brush.TextSecondary}" VerticalAlignment="Center"
-                ToolTip.Tip="Light / Dark">
-          <TextBlock Text="◐" />
-        </Button>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+          <Border Classes="group" ToolTip.Tip="{l:Tr ModeTip}">
+            <StackPanel Orientation="Horizontal">
+              <Button Classes="segment" Classes.selected="{Binding !Is3d}" Content="{l:Tr ModeSimple, Upper=True}" Command="{Binding SetSimpleModeCommand}" />
+              <Border Width="1" Background="{DynamicResource Brush.BorderStrong}" />
+              <Button Classes="segment" Classes.selected="{Binding Is3d}" Content="{l:Tr Mode3d, Upper=True}" Command="{Binding Set3dModeCommand}" />
+            </StackPanel>
+          </Border>
+          <Border Classes="group">
+            <StackPanel Orientation="Horizontal">
+              <Button Classes="segment" Padding="10,0" Classes.selected="{Binding IsPortuguese}" Content="PT" Command="{Binding SetPortugueseCommand}" />
+              <Border Width="1" Background="{DynamicResource Brush.BorderStrong}" />
+              <Button Classes="segment" Padding="10,0" Classes.selected="{Binding IsEnglish}" Content="EN" Command="{Binding SetEnglishCommand}" />
+            </StackPanel>
+          </Border>
+          <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="28" Padding="12,0"
+                  Foreground="{DynamicResource Brush.TextSecondary}" Command="{Binding ToggleThemeCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="◐" />
+              <TextBlock Text="{Binding ThemeLabel, Converter={x:Static controls:TextCase.Upper}}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
       </Grid>
     </Border>
 
     <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
-      <Border Name="Sidebar" Width="{StaticResource Width.Sidebar}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0">
-        <Grid RowDefinitions="Auto,*,Auto" Margin="0,18,0,16">
-          <StackPanel>
-            <Button Classes="nav" Classes.selected="{Binding IsStoragePage}" Command="{Binding ShowStorageCommand}">
-              <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
-                <TextBlock Classes="label index" Text="01" Margin="0,3,0,0" />
-                <StackPanel Grid.Column="1" Spacing="2">
-                  <TextBlock Text="{x:Static res:Strings.NavStorage}" />
-                  <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{x:Static res:Strings.NavStorageHint}" />
-                </StackPanel>
-              </Grid>
-            </Button>
-            <Button Classes="nav" Classes.selected="{Binding IsFoldersPage}" Command="{Binding ShowFoldersCommand}">
-              <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
-                <TextBlock Classes="label index" Text="02" Margin="0,3,0,0" />
-                <StackPanel Grid.Column="1" Spacing="2">
-                  <TextBlock Text="{x:Static res:Strings.NavFolders}" />
-                  <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{x:Static res:Strings.NavFoldersHint}" />
-                </StackPanel>
-              </Grid>
-            </Button>
-          </StackPanel>
-          <TextBlock Grid.Row="2" Classes="label" LetterSpacing="0.8" Margin="18,0" Text="{x:Static res:Strings.Version}" />
-        </Grid>
-      </Border>
+      <Panel IsVisible="{Binding ShowSidebar}">
+        <Border Name="Sidebar" Width="{StaticResource Width.Sidebar}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0">
+          <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="0,18,0,16">
+            <StackPanel>
+              <Button Classes="nav" Classes.selected="{Binding IsHomePage}" Command="{Binding GoHomeCommand}">
+                <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                  <TextBlock Classes="label index" Text="01" Margin="0,3,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{l:Tr NavHome}" />
+                    <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavHomeHint}" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.selected="{Binding IsStoragePage}" Command="{Binding ShowStorageCommand}">
+                <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                  <TextBlock Classes="label index" Text="02" Margin="0,3,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{l:Tr NavStorage}" />
+                    <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavStorageHint}" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.selected="{Binding IsCleanupPage}" Command="{Binding GoCleanupCommand}">
+                <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                  <TextBlock Classes="label index" Text="03" Margin="0,3,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{l:Tr NavCleanup}" />
+                    <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavCleanupHint}" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.selected="{Binding IsMemoryPage}" Command="{Binding GoMemoryCommand}">
+                <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                  <TextBlock Classes="label index" Text="04" Margin="0,3,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{l:Tr NavMemory}" />
+                    <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavMemoryHint}" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.selected="{Binding IsFoldersPage}" Command="{Binding ShowFoldersCommand}">
+                <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                  <TextBlock Classes="label index" Text="05" Margin="0,3,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{l:Tr NavFolders}" />
+                    <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavFoldersHint}" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+            </StackPanel>
+            <TextBlock Grid.Row="2" Classes="mono tertiary" FontSize="10" LineHeight="12" Margin="18,0,18,12" Text="{Binding ChipArt}" />
+            <TextBlock Grid.Row="3" Classes="label" LetterSpacing="0.8" FontSize="10" Margin="18,0" Text="{l:Tr Version}" />
+          </Grid>
+        </Border>
+      </Panel>
 
-      <ContentControl Grid.Column="1" Content="{Binding CurrentPage}" />
+      <ContentControl Grid.Column="1" Content="{Binding MainContent}" />
     </Grid>
 
     <!-- Status bar -->
     <Border Grid.Row="2" Classes="rule">
-      <StackPanel Orientation="Horizontal" Spacing="18" Margin="16,0" VerticalAlignment="Center">
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <TextBlock Classes="dot" Classes.active="{Binding IsScanning}" Text="●" FontSize="10" VerticalAlignment="Center" />
-          <TextBlock Classes="label" LetterSpacing="0.6" Text="{Binding StatusText}" VerticalAlignment="Center" />
+      <Grid ColumnDefinitions="Auto,*,Auto" Margin="16,0">
+        <StackPanel Orientation="Horizontal" Spacing="18">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Classes="dot" Classes.active="{Binding IsScanning}" Classes.blink="{Binding IsScanning}" Text="●" FontSize="10" VerticalAlignment="Center" />
+            <TextBlock Classes="status" Text="{Binding StatusShort}" />
+          </StackPanel>
+          <TextBlock Classes="status" Text="{Binding SystemDriveStatus}" />
+          <TextBlock Classes="status" Text="{Binding RamStatus}" />
+          <TextBlock Classes="status" Text="{Binding CpuStatus}" />
         </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
-                    IsVisible="{Binding SelectedDrive, Converter={x:Static ObjectConverters.IsNotNull}}">
-          <TextBlock Classes="label" LetterSpacing="0.6" Text="{Binding SelectedDrive.Letter}" />
-          <TextBlock Classes="label" LetterSpacing="0.6" Text="{Binding SelectedDrive.UsedPercentText}" />
-        </StackPanel>
-      </StackPanel>
+        <TextBlock Grid.Column="2" Classes="status" Foreground="{DynamicResource Brush.TextTertiary}" LetterSpacing="1.4" Text="{Binding BitsLine}" />
+      </Grid>
+    </Border>
+
+    <!-- Dialogs dim everything behind them. -->
+    <Border Grid.RowSpan="3" Background="{DynamicResource Brush.Scrim}" IsVisible="{Binding HasDialog}">
+      <Border Width="500" MaxWidth="{Binding $parent[Window].Bounds.Width}" HorizontalAlignment="Center" VerticalAlignment="Center"
+              Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+              Padding="28" BoxShadow="{StaticResource Shadow.Dialog}" Margin="24">
+        <ContentControl Content="{Binding Dialog}" />
+      </Border>
+    </Border>
+
+    <!-- Toast: short confirmations, bottom right. -->
+    <Border Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="20,0,20,16" MaxWidth="420"
+            Background="{DynamicResource Brush.TextPrimary}" Padding="16,12" IsVisible="{Binding HasToast}">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+        <TextBlock Classes="mono" Foreground="{DynamicResource Brush.Background}" Text="■" />
+        <TextBlock Grid.Column="1" FontSize="13" TextWrapping="Wrap" Foreground="{DynamicResource Brush.Background}" Text="{Binding Toast}" />
+      </Grid>
     </Border>
   </Grid>
 </Window>
