@@ -6,6 +6,7 @@ using Pennyworth.Cleanup;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
 using Pennyworth.Monitoring;
+using Pennyworth.Monitoring.Hardware;
 using Pennyworth.Scanning;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -25,7 +26,9 @@ public sealed record AppServices(
     ISystemMonitor? Monitor = null,
     IProcessCloser? Closer = null,
     CleanupHistory? CleanupHistory = null,
-    Func<DateTimeOffset>? Clock = null);
+    Func<DateTimeOffset>? Clock = null,
+    ISpecsReader? Specs = null,
+    IClipboardService? Clipboard = null);
 
 public enum Page
 {
@@ -35,6 +38,7 @@ public enum Page
     Cleanup,
     Memory,
     Folders,
+    Specs,
 }
 
 /// <summary>
@@ -74,6 +78,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Memory = new MemoryViewModel(Live, this, services.Closer ?? new ProcessCloser());
         Folders = new FolderBrowserViewModel(this);
         Pc = new PcViewModel(this);
+        Specs = new SpecsViewModel(services.Specs ?? new WindowsSpecsReader(), this, services.Clipboard);
         Page = _settings.WelcomeSeen ? Page.Home : Page.Welcome;
         Localizer.Instance.LanguageChanged += (_, _) => RefreshTexts();
     }
@@ -91,6 +96,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public FolderBrowserViewModel Folders { get; }
 
     public PcViewModel Pc { get; }
+
+    public SpecsViewModel Specs { get; }
 
     public ObservableCollection<DriveViewModel> Drives { get; } = [];
 
@@ -131,7 +138,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentPage), nameof(MainContent), nameof(ShowSidebar),
-        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage))]
+        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage))]
     public partial Page Page { get; private set; }
 
     /// <summary>3D mode replaces the pages with the ASCII PC.</summary>
@@ -147,6 +154,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Page.Storage => CurrentSummary,
         Page.Cleanup => Cleanup,
         Page.Memory => Memory,
+        Page.Specs => Specs,
         _ => Folders,
     };
 
@@ -164,6 +172,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public bool IsMemoryPage => Page == Page.Memory;
 
     public bool IsFoldersPage => Page == Page.Folders;
+
+    public bool IsSpecsPage => Page == Page.Specs;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RescanCommand))]
@@ -440,6 +450,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     }
 
     [RelayCommand]
+    private void GoSpecs()
+    {
+        Navigate(Page.Specs);
+        _ = Specs.EnsureLoaded();
+    }
+
+    [RelayCommand]
     private void SetSimpleMode() => Is3d = false;
 
     [RelayCommand]
@@ -577,6 +594,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
         Cleanup.RefreshTexts();
         Memory.RefreshTexts();
+        Specs.RefreshTexts();
         Welcome.Refresh();
         RefreshPages();
         OnPropertyChanged(nameof(IsPortuguese));

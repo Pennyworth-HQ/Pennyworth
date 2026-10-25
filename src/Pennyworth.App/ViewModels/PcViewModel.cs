@@ -250,6 +250,9 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
     [RelayCommand]
     private void OpenCleanup() => shell.GoCleanupCommand.Execute(null);
 
+    [RelayCommand]
+    private void OpenSpecs() => shell.GoSpecsCommand.Execute(null);
+
     private static string Label(PcPart part) =>
         (Strings.ResourceManager.GetString($"PartLabel_{part}", Strings.Culture) ?? part.ToString()).ToUpper(CultureInfo.CurrentCulture);
 }

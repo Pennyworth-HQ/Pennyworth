@@ -9,6 +9,7 @@ using Pennyworth.Cleanup;
 using Pennyworth.Insights.Classification;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
+using Pennyworth.Monitoring.Hardware;
 using Pennyworth.Scanning;
 
 namespace Pennyworth.App;
@@ -35,7 +36,9 @@ public sealed partial class App : Application
                 new FileSettingsStore(FileSettingsStore.DefaultPath),
                 monitor,
                 new ProcessCloser(),
-                new CleanupHistory(CleanupHistory.DefaultPath)));
+                new CleanupHistory(CleanupHistory.DefaultPath),
+                Specs: new WindowsSpecsReader(),
+                Clipboard: new AvaloniaClipboardService(() => desktop.MainWindow)));
 
             desktop.MainWindow = new MainWindow { DataContext = viewModel };
             desktop.Exit += (_, _) => monitor.Dispose();
