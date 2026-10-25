@@ -106,13 +106,15 @@ internal sealed class FakeCleanup(params (CleanupRule Rule, long Bytes)[] items)
     {
         long bytes = Cleaned.Contains(rule.Id) ? 0 : items.Single(i => i.Rule == rule).Bytes;
         string folder = $@"C:\fake\{rule.Id}";
+        bool bin = rule.Kind == CleanupKind.RecycleBin;
         CleanupFile[] files = bytes == 0 ? [] :
         [
-            new($@"{folder}\big.tmp", bytes / 2, DateTime.UnixEpoch, rule.Kind == CleanupKind.RecycleBin ? @"C:\Users\Bob\big.doc" : null),
-            new($@"{folder}\sub\notes.log", bytes / 4, DateTime.UnixEpoch),
-            new($@"{folder}\small.tmp", bytes - (bytes / 2) - (bytes / 4), DateTime.UnixEpoch),
+            new($@"{folder}\big.tmp", bytes / 2, DateTime.UnixEpoch, bin ? @"C:\Users\Bob\big.doc" : null),
+            new($@"{folder}\sub\notes.log", bytes / 4, DateTime.UnixEpoch, bin ? @"C:\Users\Bob\notes.log" : null),
+            new($@"{folder}\small.tmp", bytes - (bytes / 2) - (bytes / 4), DateTime.UnixEpoch, bin ? @"D:\small.txt" : null),
         ];
-        return Task.FromResult(new CleanupEstimate(rule, bytes, files.Length, !rule.RequiresAdmin, [new(folder, bytes, files.Length)], files));
+        CleanupFolder[] folders = bin ? [] : [new(folder, bytes, files.Length)];
+        return Task.FromResult(new CleanupEstimate(rule, bytes, files.Length, !rule.RequiresAdmin, folders, files));
     }
 
     public Task<CleanupResult> CleanAsync(CleanupEstimate estimate, IProgress<double>? progress, CancellationToken cancellationToken)

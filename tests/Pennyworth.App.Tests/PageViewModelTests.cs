@@ -84,23 +84,66 @@ public sealed class CleanupViewModelTests : IDisposable
 
         Assert.True(cleanup.IsPreviewing);
         Assert.Equal("See what will be deleted (3 files)", temp.PreviewText);
-        Assert.Equal(["big.tmp", "notes.log", "small.tmp"], preview.Files.Select(f => f.Name));
-        Assert.Equal(@"temp\sub", preview.Files[1].Folder);
-        Assert.Equal([@"C:\fake\temp"], preview.Folders.Select(f => f.Path));
+        Assert.Equal(["temp"], preview.Breadcrumbs.Select(c => c.Name));
+        Assert.Equal(["sub", "big.tmp", "small.tmp"], preview.Entries.Select(e => e.Name)); // folders first, then largest
+        Assert.Equal("1 files", preview.Entries[0].Detail);
+        Assert.False(preview.UpCommand.CanExecute(null));
 
         preview.Search = "LOG";
-        Assert.Equal(["notes.log"], preview.Files.Select(f => f.Name));
+        Assert.Equal(["notes.log"], preview.Entries.Select(f => f.Name));
+        Assert.Equal(@"temp\sub", preview.Entries[0].Detail);
         Assert.Equal("1 matching", preview.MatchText);
 
-        preview.ShowInExplorerCommand.Execute(preview.Files[0].Path);
+        preview.ShowInExplorerCommand.Execute(preview.Entries[0].Path);
         Assert.Equal([@"C:\fake\temp\sub\notes.log"], explorer.Shown);
 
         preview.ToggleIncludeCommand.Execute(null);
         Assert.False(temp.IsSelected);
         Assert.Equal(0, cleanup.SelectedBytes);
 
-        preview.BackCommand.Execute(null);
+        preview.CloseCommand.Execute(null);
         Assert.False(cleanup.IsPreviewing);
+    }
+
+    [Fact]
+    public async Task Browses_what_will_be_deleted_like_explorer()
+    {
+        var (cleanup, _) = Create();
+        await cleanup.MeasureAsync();
+        cleanup.OpenPreviewCommand.Execute(cleanup.Items.Single(i => i.Rule == Temp));
+        var preview = cleanup.Preview!;
+
+        preview.OpenCommand.Execute(preview.Entries[0]);
+
+        Assert.Equal(["temp", "sub"], preview.Breadcrumbs.Select(c => c.Name));
+        Assert.Equal(["notes.log"], preview.Entries.Select(e => e.Name));
+        Assert.Equal(1, preview.Entries[0].Fraction);
+        Assert.Equal(@"C:\fake\temp\sub", preview.Current.Path);
+
+        preview.UpCommand.Execute(null);
+        Assert.Equal(@"C:\fake\temp", preview.Current.Path);
+
+        preview.BackCommand.Execute(null);
+        Assert.Equal(@"C:\fake\temp\sub", preview.Current.Path);
+
+        preview.NavigateToCommand.Execute(preview.Breadcrumbs[0]);
+        Assert.Equal(@"C:\fake\temp", preview.Current.Path);
+        Assert.True(cleanup.IsPreviewing);
+    }
+
+    [Fact]
+    public void Several_cleaned_folders_sit_side_by_side()
+    {
+        var estimate = new CleanupEstimate(Temp, 30, 3, true,
+            [new(@"C:\a\Cache", 20, 2), new(@"C:\b\Cache", 10, 1)],
+            [new(@"C:\a\Cache\x\1.bin", 15, default), new(@"C:\a\Cache\2.bin", 5, default), new(@"C:\b\Cache\3.bin", 10, default)]);
+
+        var top = PreviewFolder.Build(estimate);
+
+        Assert.True(top.IsAll);
+        Assert.Equal((30L, 3L), (top.Bytes, top.Count));
+        Assert.Equal([@"C:\a\Cache", @"C:\b\Cache"], top.Folders.Keys);
+        Assert.Equal((15L, 1L), (top.Folders[@"C:\a\Cache"].Folders["x"].Bytes, top.Folders[@"C:\a\Cache"].Folders["x"].Count));
     }
 
     [Fact]
@@ -110,10 +153,11 @@ public sealed class CleanupViewModelTests : IDisposable
         await cleanup.MeasureAsync();
 
         cleanup.OpenPreviewCommand.Execute(cleanup.Items.Single(i => i.Rule == Bin));
-        var big = cleanup.Preview!.Files[0];
+        var big = cleanup.Preview!.Entries[0];
 
+        Assert.False(cleanup.Preview.CanNavigate);
         Assert.Equal("big.doc", big.Name);
-        Assert.StartsWith(@"C:\Users\Bob · deleted ", big.Location);
+        Assert.StartsWith(@"C:\Users\Bob · deleted ", big.Detail);
         Assert.False(big.CanShow);
     }
 
