@@ -1,0 +1,175 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:l="using:Pennyworth.App.Localization"
+             xmlns:controls="using:Pennyworth.App.Controls"
+             x:Class="Pennyworth.App.Views.MemoryView"
+             x:DataType="vm:MemoryViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.column">
+      <Setter Property="FontFamily" Value="{StaticResource FontFamily.Mono}" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="LetterSpacing" Value="1.4" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
+    </Style>
+    <Style Selector="Border.app:pointerover">
+      <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}" />
+    </Style>
+    <Style Selector="Button.plain">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="FontFamily" Value="{StaticResource FontFamily.Base}" />
+      <Setter Property="LetterSpacing" Value="0" />
+      <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+    </Style>
+    <Style Selector="Button.plain:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="Button.plain:disabled">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="36,28,36,28" Spacing="20">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="label">
+            <Run Text="04 / " />
+            <Run Text="{l:Tr NavMemory, Upper=True}" />
+          </TextBlock>
+          <TextBlock Classes="title" Text="{l:Tr NavMemory}" />
+          <TextBlock FontSize="15" TextWrapping="Wrap" Text="{Binding CalmLine}" />
+          <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{l:Tr MemHelp}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+          <TextBlock Classes="blink" Foreground="{DynamicResource Brush.Accent}" FontSize="11" Text="●" />
+          <TextBlock Classes="label" FontSize="11" Text="{l:Tr Live, Upper=True}" />
+        </StackPanel>
+      </Grid>
+
+      <Border Background="{DynamicResource Brush.Border}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+        <Grid ColumnDefinitions="1.15*,*" ColumnSpacing="1">
+          <!-- Memory -->
+          <StackPanel Background="{DynamicResource Brush.Background}" Spacing="14">
+            <TextBlock Classes="label" FontSize="10" Margin="22,20,22,0" Text="{l:Tr Memory, Upper=True}" />
+            <StackPanel Orientation="Horizontal" Spacing="6" Margin="22,0">
+              <TextBlock Classes="number" FontSize="40" Text="{Binding Live.MemoryUsedText}" />
+              <TextBlock Classes="secondary" FontSize="16" VerticalAlignment="Bottom" Margin="0,0,0,5" Text="{Binding Live.MemoryTotalText, StringFormat='/ {0}'}" />
+            </StackPanel>
+            <controls:SegmentedBar Height="22" Gap="2" Margin="22,0" Segments="{Binding Live.MemorySegments}" TrackBrush="{DynamicResource Brush.Track}" />
+            <WrapPanel Margin="22,0" ItemSpacing="18" LineSpacing="6">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Border Width="14" Height="10" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"><controls:SegmentedBar Segments="{Binding Live.InUseSwatch}" /></Border>
+                <TextBlock FontSize="12" Text="{l:Tr InUse}" />
+                <TextBlock Classes="mono secondary" FontSize="12" Text="{Binding Live.InUseText}" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Border Width="14" Height="10" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"><controls:SegmentedBar Segments="{Binding Live.CompressedSwatch}" /></Border>
+                <TextBlock FontSize="12" Text="{l:Tr Compressed}" />
+                <TextBlock Classes="mono secondary" FontSize="12" Text="{Binding Live.CompressedText}" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Border Width="14" Height="10" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"><controls:SegmentedBar Segments="{Binding Live.CachedSwatch}" /></Border>
+                <TextBlock FontSize="12" Text="{l:Tr Cached}" />
+                <TextBlock Classes="mono secondary" FontSize="12" Text="{Binding Live.CachedText}" />
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Border Width="14" Height="10" Background="{DynamicResource Brush.Track}" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" />
+                <TextBlock FontSize="12" Text="{l:Tr MemFree}" />
+                <TextBlock Classes="mono secondary" FontSize="12" Text="{Binding Live.FreeText}" />
+              </StackPanel>
+            </WrapPanel>
+            <TextBlock Classes="secondary" FontSize="12.5" LineHeight="18" TextWrapping="Wrap" Margin="22,0,22,20" Text="{l:Tr CachedNote}" />
+          </StackPanel>
+
+          <!-- CPU, last 60 seconds -->
+          <StackPanel Grid.Column="1" Background="{DynamicResource Brush.Background}" Spacing="14">
+            <TextBlock Classes="label" FontSize="10" Margin="22,20,22,0" Text="CPU" />
+            <TextBlock Classes="number" FontSize="40" Margin="22,0" Text="{Binding Live.CpuText}" />
+            <Grid Height="72" Margin="22,10,22,0">
+              <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+              <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0" VerticalAlignment="Center" />
+              <Border BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="0,0,0,1" VerticalAlignment="Bottom" />
+              <TextBlock Classes="mono tertiary" FontSize="9.5" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-14,0,0" Text="25%" />
+              <controls:BarChart Maximum="25" Values="{Binding Live.CpuHistory}"
+                                 BarBrush="{DynamicResource Brush.TextPrimary}" HighlightBrush="{DynamicResource Brush.Accent}" />
+            </Grid>
+            <TextBlock Classes="label" FontSize="10" Margin="22,0,22,20" Text="{l:Tr Last60, Upper=True}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Running apps, grouped -->
+      <StackPanel>
+        <Grid ColumnDefinitions="34,*,100,88,168" ColumnSpacing="14" Margin="10,0,10,8">
+          <TextBlock Grid.Column="1" Classes="column" Text="{l:Tr AppsColumn, Upper=True}" />
+          <TextBlock Grid.Column="2" Classes="column" TextAlignment="Right" Text="{l:Tr MemoryColumn, Upper=True}" />
+          <TextBlock Grid.Column="3" Classes="column" TextAlignment="Right" Text="{l:Tr CpuColumn, Upper=True}" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Apps}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:AppRowViewModel">
+              <Border Classes="rule">
+                <StackPanel>
+                  <Border Classes="app" Padding="10">
+                    <Grid ColumnDefinitions="34,*,100,88,168" ColumnSpacing="14">
+                      <Border Width="30" Height="30" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1">
+                        <TextBlock Classes="mono secondary" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding Initials}" />
+                      </Border>
+                      <Button Grid.Column="1" Classes="plain" IsEnabled="{Binding CanExpand}"
+                              Command="{Binding $parent[UserControl].((vm:MemoryViewModel)DataContext).ToggleCommand}"
+                              CommandParameter="{Binding}">
+                        <StackPanel Spacing="2">
+                          <Grid ColumnDefinitions="18,*">
+                            <TextBlock Classes="mono secondary" FontSize="11" VerticalAlignment="Center" Text="{Binding Sign}" />
+                            <TextBlock Grid.Column="1" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                          </Grid>
+                          <TextBlock Classes="caption" Margin="18,0,0,0" TextTrimming="CharacterEllipsis" Text="{Binding Subtitle}" />
+                        </StackPanel>
+                      </Button>
+                      <TextBlock Grid.Column="2" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding MemoryText}" />
+                      <TextBlock Grid.Column="3" Classes="mono" FontSize="12.5" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding CpuText}" />
+                      <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Classes="small" Content="{l:Tr StorageShort, Upper=True}" IsVisible="{Binding HasStorage}"
+                                Command="{Binding $parent[UserControl].((vm:MemoryViewModel)DataContext).OpenStorageCommand}" CommandParameter="{Binding}" />
+                        <Button Classes="small" Foreground="{DynamicResource Brush.TextPrimary}" Content="{l:Tr CloseApp, Upper=True}" IsVisible="{Binding CanClose}"
+                                Command="{Binding $parent[UserControl].((vm:MemoryViewModel)DataContext).CloseCommand}" CommandParameter="{Binding}" />
+                        <Border Classes="badge" IsVisible="{Binding IsProtected}" ToolTip.Tip="{l:Tr ProtectedTip}">
+                          <TextBlock>
+                            <Run Text="■ " />
+                            <Run Text="{l:Tr Protected, Upper=True}" />
+                          </TextBlock>
+                        </Border>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                  <StackPanel Margin="58,0,10,10" IsVisible="{Binding IsExpanded}">
+                    <TextBlock Classes="secondary" FontSize="12.5" LineHeight="18" MaxWidth="520" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Margin="0,2,0,8" Text="{Binding Note}" IsVisible="{Binding HasNote}" />
+                    <ItemsControl ItemsSource="{Binding Children}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:AppChildViewModel">
+                          <Border Classes="rule" Padding="0,6">
+                            <Grid ColumnDefinitions="*,100,88,168" ColumnSpacing="14">
+                              <TextBlock Classes="mono secondary" FontSize="11.5" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                              <TextBlock Grid.Column="1" Classes="secondary" FontSize="13" TextAlignment="Right" Text="{Binding MemoryText}" />
+                              <TextBlock Grid.Column="2" Classes="mono secondary" FontSize="11.5" TextAlignment="Right" Text="{Binding CpuText}" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

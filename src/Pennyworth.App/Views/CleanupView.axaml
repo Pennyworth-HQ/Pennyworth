@@ -1,0 +1,160 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:l="using:Pennyworth.App.Localization"
+             xmlns:controls="using:Pennyworth.App.Controls"
+             x:Class="Pennyworth.App.Views.CleanupView"
+             x:DataType="vm:CleanupViewModel">
+  <UserControl.Styles>
+    <!-- The check box from the design: a square that fills with ink and shows ✓. -->
+    <Style Selector="Border.check">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="18" />
+      <Setter Property="Margin" Value="0,2,0,0" />
+      <Setter Property="BorderThickness" Value="1.5" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+    <Style Selector="Border.check.on">
+      <Setter Property="Background" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="Border.check.unavailable">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.TextTertiary}" />
+    </Style>
+    <Style Selector="Border.badge.think">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+    </Style>
+    <Style Selector="TextBlock.glyph.think">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="*,Auto">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="36,28,36,24" Spacing="18">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="label">
+            <Run Text="03 / " />
+            <Run Text="{l:Tr NavCleanup, Upper=True}" />
+          </TextBlock>
+          <TextBlock Classes="title" TextWrapping="Wrap" Text="{Binding Title}" />
+          <TextBlock Classes="secondary" Text="{Binding Subtitle}" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <ProgressBar Classes="sweep" IsVisible="{Binding IsMeasuring}" />
+
+        <!-- Choose: grouped by safety, Safe items already ticked. -->
+        <ItemsControl ItemsSource="{Binding Groups}" IsVisible="{Binding IsSelecting}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CleanupGroupViewModel">
+              <StackPanel Margin="0,0,0,8">
+                <WrapPanel Margin="0,12,0,8">
+                  <Border Classes="badge" Classes.think="{Binding IsThinkFirst}" Padding="8,3" Margin="0,0,12,0">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Classes="glyph" Classes.think="{Binding IsThinkFirst}" Foreground="{DynamicResource Brush.TextPrimary}" Text="{Binding Glyph}" />
+                      <TextBlock Text="{Binding Label, Converter={x:Static controls:TextCase.Upper}}" />
+                    </StackPanel>
+                  </Border>
+                  <TextBlock Classes="caption" VerticalAlignment="Center" Text="{Binding Hint}" />
+                </WrapPanel>
+                <ItemsControl ItemsSource="{Binding Items}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CleanupItemViewModel">
+                      <Button Classes="row" Padding="10,14" IsEnabled="{Binding IsAvailable}"
+                              Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).ToggleCommand}"
+                              CommandParameter="{Binding}">
+                        <Grid ColumnDefinitions="20,*,90" ColumnSpacing="16">
+                          <Border Classes="check" Classes.on="{Binding IsSelected}" Classes.unavailable="{Binding NeedsFullScan}">
+                            <TextBlock Text="✓" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Brush.Background}" IsVisible="{Binding IsSelected}" />
+                          </Border>
+                          <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock FontSize="15" Text="{Binding Title}" />
+                            <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{Binding Description}" />
+                            <TextBlock FontSize="13" TextWrapping="Wrap">
+                              <Run Text="{l:Tr IfRemoved, Upper=True}" FontFamily="{StaticResource FontFamily.Mono}" FontSize="10" Foreground="{DynamicResource Brush.TextSecondary}" />
+                              <Run Text=" " />
+                              <Run Text="{Binding Consequence}" />
+                            </TextBlock>
+                            <TextBlock FontSize="12" Foreground="{DynamicResource Brush.Accent}" TextWrapping="Wrap"
+                                       Text="{l:Tr NeedsFullScan}" IsVisible="{Binding NeedsFullScan}" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" FontSize="15" TextAlignment="Right" Text="{Binding SizeText}" />
+                        </Grid>
+                      </Button>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Cleaning: one item at a time, with text progress bars. -->
+        <ItemsControl ItemsSource="{Binding RunItems}" IsVisible="{Binding IsCleaning}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CleanupItemViewModel">
+              <Border Classes="rule" Padding="0,14">
+                <Grid ColumnDefinitions="*,220,64" ColumnSpacing="18">
+                  <TextBlock FontSize="15" VerticalAlignment="Center" Text="{Binding Title}" />
+                  <TextBlock Grid.Column="1" Classes="mono" FontSize="12" VerticalAlignment="Center" Text="{Binding ProgressBar}" />
+                  <TextBlock Grid.Column="2" Classes="mono secondary" FontSize="12" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding ProgressText}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Done: what was removed and what was left alone. -->
+        <StackPanel Spacing="18" IsVisible="{Binding IsDone}">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+            <TextBlock Classes="mono" Foreground="{DynamicResource Brush.Accent}" Text="■" />
+            <TextBlock Grid.Column="1" Classes="secondary" TextWrapping="Wrap" Text="{Binding SkippedText}" />
+          </Grid>
+          <ItemsControl ItemsSource="{Binding RunItems}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:CleanupItemViewModel">
+                <Border Classes="rule" Padding="0,11">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding Title}" />
+                    <TextBlock Grid.Column="1" Classes="secondary" Text="{Binding FreedText}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button MinHeight="40" Padding="18,0" Background="{DynamicResource Brush.TextPrimary}" Foreground="{DynamicResource Brush.Background}"
+                    Content="{l:Tr Done, Upper=True}" Command="{Binding FinishCommand}" />
+            <Button MinHeight="40" Padding="18,0" BorderBrush="{DynamicResource Brush.BorderStrong}"
+                    Content="{l:Tr BackHome, Upper=True}" Command="{Binding BackHomeCommand}" />
+          </StackPanel>
+        </StackPanel>
+
+        <!-- Nothing to clean. -->
+        <StackPanel Spacing="14" HorizontalAlignment="Center" Margin="0,40" IsVisible="{Binding IsEmpty}">
+          <TextBlock Classes="mono secondary" FontSize="12" LineHeight="15" HorizontalAlignment="Center"
+                     Text="+-----------+&#10;| 0000 0000 |&#10;| 0000 0000 |&#10;+-----------+" />
+          <TextBlock FontSize="18" HorizontalAlignment="Center" Text="{l:Tr NothingTitle}" />
+          <TextBlock Classes="secondary" FontSize="13" HorizontalAlignment="Center" Text="{l:Tr NothingSub}" />
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Sticky footer: running total and the Clean button. -->
+    <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="0,1,0,0" Padding="36,14,36,18" IsVisible="{Binding IsSelecting}">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+        <StackPanel Spacing="6" VerticalAlignment="Center">
+          <TextBlock Classes="secondary" FontSize="13" Text="{Binding SelectedLine}" />
+          <ProgressBar MinHeight="4" Height="4" Minimum="0" Maximum="1" Value="{Binding SelectedFraction}" Foreground="{DynamicResource Brush.Accent}" />
+        </StackPanel>
+        <Button Grid.Column="1" Classes="primary" MinHeight="44" Padding="20,0" FontSize="12" Command="{Binding AskCleanCommand}" IsEnabled="{Binding CanClean}">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <TextBlock Text="{Binding CleanButtonText, Converter={x:Static controls:TextCase.Upper}}" />
+            <TextBlock Text="→" />
+          </StackPanel>
+        </Button>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>
