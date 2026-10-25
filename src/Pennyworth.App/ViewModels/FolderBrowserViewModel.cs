@@ -1,4 +1,4 @@
-using Pennyworth.App.Services;
+using Pennyworth.App.Resources;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -6,26 +6,58 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace Pennyworth.App.ViewModels;
 
-/// <summary>Drill-down through folders, largest first.</summary>
+/// <summary>What the folder browser needs from the rest of the app.</summary>
+public interface IFolderHost
+{
+    IReadOnlyList<DriveViewModel> Drives { get; }
+
+    /// <summary>The finished scan of a drive, or null when it hasn't been scanned yet.</summary>
+    StorageTree? TreeFor(DriveViewModel drive);
+
+    /// <summary>Opening a drive that hasn't been scanned starts its scan.</summary>
+    void ScanDrive(DriveViewModel drive);
+
+    void ShowInExplorer(string path);
+
+    void RequestUnlock();
+}
+
+/// <summary>Drill-down like Explorer, from "This PC" through drives and folders, largest first.</summary>
 public sealed partial class FolderBrowserViewModel : ObservableObject
 {
-    private readonly IExplorerLauncher _explorer;
-    private readonly Action _back;
+    private readonly IFolderHost _host;
+    private readonly Stack<StorageNode?> _history = new();
 
-    public FolderBrowserViewModel(StorageNode start, IExplorerLauncher explorer, Action back)
+    public FolderBrowserViewModel(IFolderHost host)
     {
-        _explorer = explorer;
-        _back = back;
-        Current = start;
+        _host = host;
     }
 
+    /// <summary>The open folder; null means "This PC" (the list of drives).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Items), nameof(Breadcrumbs), nameof(Title), nameof(SizeText), nameof(IsEmpty), nameof(IsLockedFolder), nameof(HasItems))]
+    [NotifyPropertyChangedFor(nameof(Items), nameof(Breadcrumbs), nameof(Title), nameof(SummaryText), nameof(IsEmpty), nameof(IsLockedFolder), nameof(HasItems), nameof(IsThisPc))]
     [NotifyCanExecuteChangedFor(nameof(UpCommand))]
-    public partial StorageNode Current { get; private set; }
+    public partial StorageNode? Current { get; private set; }
 
-    public IReadOnlyList<FolderItemViewModel> Items =>
-        Current.GetChildren().Select(child => new FolderItemViewModel(child, Current.SizeOnDisk)).ToArray();
+    public bool IsThisPc => Current is null;
+
+    public IReadOnlyList<FolderItemViewModel> Items
+    {
+        get
+        {
+            if (Current is not { } folder)
+            {
+                return _host.Drives.Select(FolderItemViewModel.ForDrive).ToArray();
+            }
+
+            var children = folder.GetChildren();
+            long largest = Math.Max(children.Where(child => !child.IsLocked).Select(child => child.SizeOnDisk).DefaultIfEmpty(0).Max(), 1);
+            return children
+                .OrderBy(child => child.IsLocked) // Locked folders have no size; they go last.
+                .Select(child => FolderItemViewModel.ForNode(child, largest))
+                .ToArray();
+        }
+    }
 
     public IReadOnlyList<BreadcrumbViewModel> Breadcrumbs
     {
@@ -34,63 +66,156 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
             var crumbs = new List<BreadcrumbViewModel>();
             for (StorageNode? node = Current; node is { } current; node = current.Parent)
             {
-                crumbs.Insert(0, new BreadcrumbViewModel(current));
+                string label = current.Parent is null ? DriveLabel(current) : current.Name;
+                crumbs.Insert(0, new BreadcrumbViewModel(current, label));
             }
 
-            return crumbs;
+            crumbs.Insert(0, new BreadcrumbViewModel(null, Strings.ThisPc));
+            return crumbs.Select((crumb, i) => crumb with { IsLast = i == crumbs.Count - 1 }).ToArray();
         }
     }
 
-    public string Title => Current.Name;
+    public string Title => Breadcrumbs[^1].Name;
 
-    public string SizeText => ByteSize.Format(Current.SizeOnDisk);
+    public string SummaryText => Current is { } folder
+        ? string.Format(Strings.FolderSummary, ByteSize.Format(folder.SizeOnDisk), folder.GetChildren().Count)
+        : string.Format(Strings.DriveCount, _host.Drives.Count);
+
+    public bool HasItems => Current is not { } folder || folder.HasChildren;
 
     /// <summary>Nothing inside, and not because Windows refused to list it.</summary>
-    public bool IsEmpty => !Current.HasChildren && !Current.IsLocked;
+    public bool IsEmpty => Current is { } folder && !folder.HasChildren && !folder.IsLocked;
 
-    public bool IsLockedFolder => Current.IsLocked;
+    public bool IsLockedFolder => Current is { IsLocked: true };
 
-    public bool HasItems => Current.HasChildren;
+    public bool CanGoBack => _history.Count > 0;
+
+    /// <summary>Opens a folder (or "This PC" for null). Opening from elsewhere in the app starts a fresh history.</summary>
+    public void Show(StorageNode? location, bool resetHistory)
+    {
+        if (resetHistory)
+        {
+            _history.Clear();
+        }
+        else if (!Equals(location, Current))
+        {
+            _history.Push(Current);
+        }
+
+        Current = location;
+        BackCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanGoBack));
+    }
+
+    /// <summary>Re-reads every text after a language switch or a finished scan.</summary>
+    public void Refresh() => OnPropertyChanged(string.Empty);
 
     [RelayCommand]
     private void Open(FolderItemViewModel item)
     {
-        if (item.Node.IsDirectory)
+        if (item.Drive is { } drive)
         {
-            Current = item.Node;
+            if (_host.TreeFor(drive) is { } tree)
+            {
+                Show(tree.Root, resetHistory: false);
+            }
+            else
+            {
+                _host.ScanDrive(drive);
+            }
+        }
+        else if (item.Node is { IsDirectory: true } node)
+        {
+            Show(node, resetHistory: false);
         }
     }
 
     [RelayCommand]
-    private void NavigateTo(BreadcrumbViewModel crumb) => Current = crumb.Node;
+    private void NavigateTo(BreadcrumbViewModel crumb)
+    {
+        if (!crumb.IsLast)
+        {
+            Show(crumb.Node, resetHistory: false);
+        }
+    }
 
     [RelayCommand(CanExecute = nameof(CanGoUp))]
-    private void Up() => Current = Current.Parent!.Value;
+    private void Up() => Show(Current!.Value.Parent, resetHistory: false);
+
+    private bool CanGoUp() => Current is not null;
+
+    [RelayCommand(CanExecute = nameof(CanGoBack))]
+    private void Back()
+    {
+        if (_history.TryPop(out StorageNode? previous))
+        {
+            Current = previous;
+            BackCommand.NotifyCanExecuteChanged();
+            OnPropertyChanged(nameof(CanGoBack));
+        }
+    }
 
     [RelayCommand]
-    private void ShowInExplorer(FolderItemViewModel item) => _explorer.ShowInExplorer(item.Node.FullPath);
+    private void ShowInExplorer(FolderItemViewModel item) => _host.ShowInExplorer(item.Path);
 
     [RelayCommand]
-    private void Back() => _back();
+    private void Unlock() => _host.RequestUnlock();
 
-    private bool CanGoUp() => Current.Parent is not null;
+    private string DriveLabel(StorageNode root)
+    {
+        var drive = _host.Drives.FirstOrDefault(d => string.Equals(d.Summary.RootPath, root.Tree.RootPath, StringComparison.OrdinalIgnoreCase));
+        return drive?.Name ?? root.Name;
+    }
 }
 
-public sealed record FolderItemViewModel(StorageNode Node, long ParentSize)
+public enum FolderItemKind
 {
-    public string Name => Node.Name;
-
-    public bool IsDirectory => Node.IsDirectory;
-
-    public bool IsLocked => Node.IsLocked;
-
-    public string SizeText => ByteSize.Format(Node.SizeOnDisk);
-
-    /// <summary>Share of the parent folder, 0 to 1, for the size bar.</summary>
-    public double Fraction => ParentSize == 0 ? 0 : (double)Node.SizeOnDisk / ParentSize;
+    Folder,
+    File,
+    Drive,
 }
 
-public sealed record BreadcrumbViewModel(StorageNode Node)
+/// <summary>One row of the folder browser: a drive (on "This PC"), a folder or a file.</summary>
+public sealed record FolderItemViewModel(
+    string Name,
+    string Path,
+    FolderItemKind Kind,
+    bool IsLocked,
+    string SizeText,
+    double Fraction,
+    StorageNode? Node,
+    DriveViewModel? Drive)
 {
-    public string Name => Node.Name;
+    public bool IsFolder => Kind == FolderItemKind.Folder;
+
+    public bool IsFile => Kind == FolderItemKind.File;
+
+    public bool IsDrive => Kind == FolderItemKind.Drive;
+
+    public bool CanOpen => Kind != FolderItemKind.File;
+
+    /// <param name="largest">The largest sibling: the design scales share bars to it.</param>
+    public static FolderItemViewModel ForNode(StorageNode node, long largest) => new(
+        node.Name,
+        node.FullPath,
+        node.IsDirectory ? FolderItemKind.Folder : FolderItemKind.File,
+        node.IsLocked,
+        node.IsLocked ? "—" : ByteSize.Format(node.SizeOnDisk),
+        node.IsLocked ? 0 : (double)node.SizeOnDisk / largest,
+        node,
+        null);
+
+    /// <summary>Drives show their used space as Windows reports it, scanned or not.</summary>
+    public static FolderItemViewModel ForDrive(DriveViewModel drive) => new(
+        drive.Name,
+        drive.Summary.RootPath,
+        FolderItemKind.Drive,
+        IsLocked: false,
+        ByteSize.Format(drive.Summary.UsedBytes),
+        drive.UsedFraction,
+        null,
+        drive);
 }
+
+/// <param name="Node">Null for "This PC".</param>
+public sealed record BreadcrumbViewModel(StorageNode? Node, string Name, bool IsLast = false);
