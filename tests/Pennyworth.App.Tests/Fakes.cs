@@ -1,5 +1,10 @@
 using Pennyworth.App.Services;
+using Pennyworth.App.ViewModels;
+using Pennyworth.Cleanup;
 using Pennyworth.Core.Storage;
+using Pennyworth.KnowledgeBase;
+using Pennyworth.Monitoring;
+using Pennyworth.Scanning;
 
 namespace Pennyworth.App.Tests;
 
@@ -50,7 +55,8 @@ internal sealed class FakeScanner(Func<string, StorageTree> result) : IStorageSc
 
 internal sealed class NullClassifier : IPathClassifier
 {
-    public StorageCategory Classify(string fullPath, StorageCategory inherited) => inherited;
+    public StorageCategory Classify(string fullPath, StorageCategory inherited) =>
+        fullPath.Contains("Games", StringComparison.OrdinalIgnoreCase) ? StorageCategory.Games : inherited;
 }
 
 internal sealed class FakeLocations(Dictionary<string, (string Title, string Description)>? known = null) : ILocationInfo
@@ -64,4 +70,95 @@ internal sealed class FakeExplorer : IExplorerLauncher
     public List<string> Shown { get; } = [];
 
     public void ShowInExplorer(string path) => Shown.Add(path);
+}
+
+internal sealed class MemorySettings(AppSettings? initial = null) : ISettingsStore
+{
+    public AppSettings Current { get; private set; } = initial ?? new AppSettings { WelcomeSeen = true, Language = Localization.LanguagePreference.English };
+
+    public AppSettings Load() => Current;
+
+    public void Save(AppSettings settings) => Current = settings;
+}
+
+internal sealed class FakeHiddenSpace(UnlockResult result) : IHiddenSpaceService
+{
+    public int Calls { get; private set; }
+
+    public Task<UnlockResult> MeasureAsync(string driveRoot, CancellationToken cancellationToken)
+    {
+        Calls++;
+        return Task.FromResult(result);
+    }
+}
+
+/// <summary>Cleanup without touching the disk: fixed sizes, records what was cleaned.</summary>
+internal sealed class FakeCleanup(params (CleanupRule Rule, long Bytes)[] items) : ICleanupService
+{
+    public List<string> Cleaned { get; } = [];
+
+    public IReadOnlyList<CleanupRule> Rules { get; } = items.Select(i => i.Rule).ToArray();
+
+    public Task<CleanupEstimate> MeasureAsync(CleanupRule rule, CancellationToken cancellationToken)
+    {
+        long bytes = Cleaned.Contains(rule.Id) ? 0 : items.Single(i => i.Rule == rule).Bytes;
+        return Task.FromResult(new CleanupEstimate(rule, bytes, bytes == 0 ? 0 : 3, !rule.RequiresAdmin));
+    }
+
+    public Task<CleanupResult> CleanAsync(CleanupRule rule, IProgress<double>? progress, CancellationToken cancellationToken)
+    {
+        Cleaned.Add(rule.Id);
+        progress?.Report(1);
+        return Task.FromResult(new CleanupResult(rule, items.Single(i => i.Rule == rule).Bytes, 3, rule.Id == "temp" ? 2 : 0));
+    }
+
+    public static CleanupRule Rule(string id, SafetyLevel safety, bool admin = false, CleanupKind kind = CleanupKind.FolderContents) =>
+        new(id, safety, kind, [], admin, new(id, id), new("", ""), new("", ""));
+}
+
+internal sealed class FakeMonitor(MonitorSample sample) : ISystemMonitor
+{
+    public MonitorSample Sample() => sample;
+}
+
+internal sealed class FakeCloser(bool closes) : IProcessCloser
+{
+    public List<int> Closed { get; } = [];
+
+    public List<int> Forced { get; } = [];
+
+    public Task<bool> CloseAsync(IReadOnlyList<int> pids, TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        Closed.AddRange(pids);
+        return Task.FromResult(closes);
+    }
+
+    public void ForceClose(IReadOnlyList<int> pids) => Forced.AddRange(pids);
+}
+
+/// <summary>A shell wired to fakes; pieces can be replaced per test.</summary>
+internal static class TestApp
+{
+    public static readonly DriveSummary DriveC = new(@"C:\", "", 200 * SampleTrees.Gb, 100 * SampleTrees.Gb);
+    public static readonly DriveSummary DriveD = new(@"D:\", "Games", 500 * SampleTrees.Gb, 400 * SampleTrees.Gb);
+
+    public static AppServices Services(
+        FakeScanner? scanner = null,
+        ICleanupService? cleanup = null,
+        IHiddenSpaceService? hidden = null,
+        ISettingsStore? settings = null,
+        ISystemMonitor? monitor = null,
+        IProcessCloser? closer = null,
+        FakeExplorer? explorer = null) => new(
+        new FakeDriveService(DriveD, DriveC),
+        scanner ?? new FakeScanner(_ => SampleTrees.Build()),
+        new NullClassifier(),
+        new FakeLocations(),
+        explorer ?? new FakeExplorer(),
+        cleanup ?? new FakeCleanup(),
+        hidden ?? new FakeHiddenSpace(new UnlockResult(UnlockOutcome.Declined)),
+        settings ?? new MemorySettings(),
+        monitor,
+        closer ?? new FakeCloser(closes: true),
+        Clock: () => new DateTimeOffset(2026, 10, 24, 20, 0, 0, TimeSpan.Zero));
 }

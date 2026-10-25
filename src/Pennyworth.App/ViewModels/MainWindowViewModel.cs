@@ -1,38 +1,106 @@
 using System.Collections.ObjectModel;
+using Pennyworth.App.Localization;
 using Pennyworth.App.Resources;
 using Pennyworth.App.Services;
+using Pennyworth.Cleanup;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
+using Pennyworth.Monitoring;
+using Pennyworth.Scanning;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 namespace Pennyworth.App.ViewModels;
 
-public sealed partial class MainWindowViewModel : ObservableObject
-{
-    private readonly IDriveService _drives;
-    private readonly IStorageScanner _scanner;
-    private readonly IPathClassifier _classifier;
-    private readonly ILocationInfo _locations;
-    private readonly IExplorerLauncher _explorer;
-    private readonly Dictionary<string, StorageSummaryViewModel> _summaries = new(StringComparer.OrdinalIgnoreCase);
-    private CancellationTokenSource? _scanCancellation;
+/// <summary>Everything the app talks to; tests pass fakes.</summary>
+public sealed record AppServices(
+    IDriveService Drives,
+    IStorageScanner Scanner,
+    IPathClassifier Classifier,
+    ILocationInfo Locations,
+    IExplorerLauncher Explorer,
+    ICleanupService Cleanup,
+    IHiddenSpaceService HiddenSpace,
+    ISettingsStore Settings,
+    ISystemMonitor? Monitor = null,
+    IProcessCloser? Closer = null,
+    CleanupHistory? CleanupHistory = null,
+    Func<DateTimeOffset>? Clock = null);
 
-    public MainWindowViewModel(
-        IDriveService drives,
-        IStorageScanner scanner,
-        IPathClassifier classifier,
-        ILocationInfo locations,
-        IExplorerLauncher explorer)
+public enum Page
+{
+    Welcome,
+    Home,
+    Storage,
+    Cleanup,
+    Memory,
+    Folders,
+}
+
+/// <summary>
+/// The app shell: pages, Simple/3D mode, scans per drive, live monitoring, dialogs, toasts,
+/// language and theme. Pages call back into it through small host interfaces.
+/// </summary>
+public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost, IMemoryHost
+{
+    private static readonly TimeSpan ToastDuration = TimeSpan.FromSeconds(3.4);
+
+    private readonly AppServices _services;
+    private readonly Func<DateTimeOffset> _clock;
+    private readonly Dictionary<string, StorageSummaryViewModel> _summaries = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, HiddenSpaceReport> _hidden = new(StringComparer.OrdinalIgnoreCase);
+    private AppSettings _settings;
+    private CancellationTokenSource? _scanCancellation;
+    private int _toastVersion;
+
+    public MainWindowViewModel(AppServices services)
     {
-        _drives = drives;
-        _scanner = scanner;
-        _classifier = classifier;
-        _locations = locations;
-        _explorer = explorer;
+        _services = services;
+        _clock = services.Clock ?? (() => DateTimeOffset.Now);
+        _settings = services.Settings.Load();
+        Language = _settings.Language;
+        Localizer.Instance.SetLanguage(Language);
+        IsDarkTheme = _settings.Theme switch
+        {
+            ThemePreference.Dark => true,
+            ThemePreference.Light => false,
+            _ => null,
+        };
+
+        Live = new LiveViewModel();
+        Welcome = new WelcomeViewModel(this);
+        Home = new HomeViewModel(this);
+        Cleanup = new CleanupViewModel(services.Cleanup, this, () => Page = Page.Home, services.CleanupHistory);
+        Memory = new MemoryViewModel(Live, this, services.Closer ?? new ProcessCloser());
+        Folders = new FolderBrowserViewModel(this);
+        Pc = new PcViewModel(this);
+        Page = _settings.WelcomeSeen ? Page.Home : Page.Welcome;
+        Localizer.Instance.LanguageChanged += (_, _) => RefreshTexts();
     }
 
+    public LiveViewModel Live { get; }
+
+    public WelcomeViewModel Welcome { get; }
+
+    public HomeViewModel Home { get; }
+
+    public CleanupViewModel Cleanup { get; }
+
+    public MemoryViewModel Memory { get; }
+
+    public FolderBrowserViewModel Folders { get; }
+
+    public PcViewModel Pc { get; }
+
     public ObservableCollection<DriveViewModel> Drives { get; } = [];
+
+    IReadOnlyList<DriveViewModel> IFolderHost.Drives => Drives;
+
+    /// <summary>The drive Windows runs from.</summary>
+    public DriveViewModel? SystemDrive => Drives.FirstOrDefault(d => string.Equals(d.Summary.RootPath, _services.Drives.SystemDriveRoot, StringComparison.OrdinalIgnoreCase))
+        ?? Drives.FirstOrDefault();
+
+    public StorageSummaryViewModel? SystemSummary => SystemDrive is { } drive ? _summaries.GetValueOrDefault(drive.Summary.RootPath) : null;
 
     /// <summary>
     /// The drive shown. Clearing it is ignored: a drive list clears its selection when its
@@ -49,55 +117,354 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 return;
             }
 
-            if (SetProperty(ref field, value))
+            if (SetProperty(ref field, value) && value is not null)
             {
-                OnSelectedDriveChanged(value);
+                CurrentScan = ShowDriveAsync(value, forceRescan: false);
             }
         }
     }
 
-    /// <summary>A <see cref="StorageSummaryViewModel"/> or a <see cref="FolderBrowserViewModel"/>.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsStoragePage), nameof(IsFoldersPage))]
-    [NotifyCanExecuteChangedFor(nameof(ShowFoldersCommand))]
-    public partial object? CurrentPage { get; private set; }
-
-    public bool IsStoragePage => CurrentPage is StorageSummaryViewModel;
-
-    public bool IsFoldersPage => CurrentPage is FolderBrowserViewModel;
-
     /// <summary>The summary of the selected drive, shown by the Storage page.</summary>
-    private StorageSummaryViewModel? CurrentSummary { get; set; }
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CurrentPage), nameof(MainContent), nameof(StatusText))]
+    public partial StorageSummaryViewModel? CurrentSummary { get; private set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CurrentPage), nameof(MainContent), nameof(ShowSidebar),
+        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage))]
+    public partial Page Page { get; private set; }
+
+    /// <summary>3D mode replaces the pages with the ASCII PC.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MainContent), nameof(ShowSidebar))]
+    public partial bool Is3d { get; private set; }
+
+    /// <summary>The page view model for <see cref="Page"/>.</summary>
+    public object? CurrentPage => Page switch
+    {
+        Page.Welcome => Welcome,
+        Page.Home => Home,
+        Page.Storage => CurrentSummary,
+        Page.Cleanup => Cleanup,
+        Page.Memory => Memory,
+        _ => Folders,
+    };
+
+    /// <summary>What fills the window: the welcome screen, the 3D PC, or the current page.</summary>
+    public object? MainContent => Page == Page.Welcome ? Welcome : Is3d ? Pc : CurrentPage;
+
+    public bool ShowSidebar => Page != Page.Welcome && !Is3d;
+
+    public bool IsHomePage => Page == Page.Home;
+
+    public bool IsStoragePage => Page == Page.Storage;
+
+    public bool IsCleanupPage => Page == Page.Cleanup;
+
+    public bool IsMemoryPage => Page == Page.Memory;
+
+    public bool IsFoldersPage => Page == Page.Folders;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RescanCommand))]
+    [NotifyPropertyChangedFor(nameof(StatusText), nameof(StatusShort))]
     public partial bool IsScanning { get; private set; }
 
+    /// <summary>A dialog over the window: unlock, clean confirmation or closing an app.</summary>
     [ObservableProperty]
-    public partial string StatusText { get; private set; } = "";
+    [NotifyPropertyChangedFor(nameof(HasDialog))]
+    public partial object? Dialog { get; private set; }
+
+    public bool HasDialog => Dialog is not null;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasToast))]
+    public partial string? Toast { get; private set; }
+
+    public bool HasToast => Toast is not null;
+
+    /// <summary>True once the hidden system space of the Windows drive has been measured.</summary>
+    [ObservableProperty]
+    public partial bool IsUnlocked { get; private set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEnglish), nameof(IsPortuguese))]
+    public partial LanguagePreference Language { get; private set; }
+
+    public bool IsPortuguese => Localizer.Instance.IsPortuguese;
+
+    public bool IsEnglish => !IsPortuguese;
+
+    /// <summary>Null until the view reports the system theme.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ThemeLabel))]
+    public partial bool? IsDarkTheme { get; private set; }
+
+    public string ThemeLabel => IsDarkTheme == false ? Strings.ThemeLight : Strings.ThemeDark;
+
+    public string Greeting => _clock().Hour switch
+    {
+        < 12 => Strings.GreetMorning,
+        < 18 => Strings.GreetAfternoon,
+        _ => Strings.GreetEvening,
+    };
+
+    /// <summary>"Scanning… 1,552 files found" or "Scanned 2 min ago · 1,747,000 files".</summary>
+    public string StatusText => IsScanning
+        ? string.Format(Strings.ScanningFiles, CurrentSummary?.FileCount ?? 0)
+        : CurrentSummary is { IsComplete: true, CompletedAt: { } at } summary
+            ? string.Format(Strings.ScannedAgo, Ago(at), summary.FileCount)
+            : "";
+
+    public string StatusShort => IsScanning ? Strings.StatusScanning : Strings.StatusReady;
+
+    public string SystemDriveStatus => SystemDrive is { } d ? $"{d.Letter} {d.UsedPercentText}" : "";
+
+    public string RamStatus => Live.HasSample ? $"RAM {Live.MemoryUsedText}/{Live.MemoryTotalText}" : "";
+
+    public string CpuStatus => Live.HasSample ? $"CPU {Live.CpuText}" : "";
+
+    public string BitsLine => Ascii.BitsLine(Live.Bits);
+
+    public string ChipArt => Ascii.ChipArt(Live.Bits);
 
     /// <summary>The scan started by the latest drive selection; lets tests await it.</summary>
     public Task CurrentScan { get; private set; } = Task.CompletedTask;
 
-    /// <summary>Loads the drives and starts scanning the Windows drive.</summary>
+    /// <summary>Loads the drives, starts scanning the Windows drive and measuring what can be cleaned.</summary>
     public void Initialize()
     {
         Drives.Clear();
-        foreach (DriveSummary drive in _drives.GetDrives())
+        foreach (DriveSummary drive in _services.Drives.GetDrives())
         {
             Drives.Add(new DriveViewModel(drive));
         }
 
-        SelectedDrive = Drives.FirstOrDefault(d => string.Equals(d.Summary.RootPath, _drives.SystemDriveRoot, StringComparison.OrdinalIgnoreCase))
-            ?? Drives.FirstOrDefault();
+        SelectedDrive = SystemDrive;
+        _ = MeasureCleanupAsync();
+        RefreshPages();
     }
 
-    private void OnSelectedDriveChanged(DriveViewModel? value)
+    private async Task MeasureCleanupAsync()
     {
-        if (value is not null)
+        await Cleanup.MeasureAsync();
+        RefreshPages();
+    }
+
+    /// <summary>Once per second: live numbers, and the bits that flicker.</summary>
+    public async Task TickAsync()
+    {
+        if (_services.Monitor is { } monitor)
         {
-            CurrentScan = ShowDriveAsync(value, forceRescan: false);
+            try
+            {
+                Live.Apply(await Task.Run(monitor.Sample));
+            }
+            catch (InvalidOperationException)
+            {
+                Live.Flicker(); // Sampling failed this time; keep the last numbers.
+            }
         }
+        else
+        {
+            Live.Flicker();
+        }
+
+        Memory.Update();
+        Home.RefreshLive();
+        Pc.RefreshLive();
+        OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(RamStatus));
+        OnPropertyChanged(nameof(CpuStatus));
+        OnPropertyChanged(nameof(BitsLine));
+        OnPropertyChanged(nameof(ChipArt));
+    }
+
+    /// <summary>Opens a drive's storage summary (scanning it if needed).</summary>
+    public void ShowDrive(DriveViewModel drive)
+    {
+        SelectedDrive = drive;
+        Navigate(Page.Storage);
+    }
+
+    /// <summary>Storage for the Windows drive, with a category selected (null keeps the current one).</summary>
+    public void ShowStorageCategory(StorageCategory? category)
+    {
+        if (SystemDrive is { } system)
+        {
+            ShowDrive(system);
+        }
+
+        if (category is { } wanted && CurrentSummary is { } summary)
+        {
+            summary.SelectedCategory = summary.Categories.First(row => row.Category == wanted);
+        }
+    }
+
+    /// <summary>"Analyze my PC" on the welcome screen.</summary>
+    public void Analyze()
+    {
+        SaveSettings(_settings with { WelcomeSeen = true });
+        if (SystemDrive is { } system)
+        {
+            ShowDrive(system);
+        }
+        else
+        {
+            Navigate(Page.Home);
+        }
+    }
+
+    public void SetLanguage(LanguagePreference language)
+    {
+        Language = language;
+        Localizer.Instance.SetLanguage(language);
+        SaveSettings(_settings with { Language = language });
+        Welcome.Refresh();
+    }
+
+    /// <summary>The view reports the Windows theme until the user picks one.</summary>
+    public void SyncSystemTheme(bool isDark) => IsDarkTheme ??= isDark;
+
+    public void ShowDialog(object dialog) => Dialog = dialog;
+
+    public void CloseDialog() => Dialog = null;
+
+    public void ShowToast(string message)
+    {
+        Toast = message;
+        int version = ++_toastVersion;
+        _ = HideToastAsync(version);
+    }
+
+    public void RequestUnlock()
+    {
+        if (!IsUnlocked)
+        {
+            Dialog = new UnlockDialogViewModel(this);
+        }
+    }
+
+    /// <summary>Asks Windows for permission and measures the hidden system space (called by the dialog).</summary>
+    public async Task UnlockAsync(UnlockDialogViewModel dialog)
+    {
+        if (SystemDrive is not { } system)
+        {
+            CloseDialog();
+            return;
+        }
+
+        UnlockResult result = await _services.HiddenSpace.MeasureAsync(system.Summary.RootPath, CancellationToken.None);
+        switch (result.Outcome)
+        {
+            case UnlockOutcome.Measured when result.Report is { } report:
+                _hidden[system.Summary.RootPath] = report;
+                SystemSummary?.ApplyHiddenSpace(report);
+                IsUnlocked = true;
+                CloseDialog();
+                ShowToast(Strings.UnlockedToast);
+                ShowStorageCategory(StorageCategory.HiddenSystem);
+                RefreshPages();
+                break;
+            case UnlockOutcome.Declined:
+                dialog.Declined();
+                break;
+            default:
+                CloseDialog();
+                ShowToast(Strings.UnlockFailed);
+                break;
+        }
+    }
+
+    StorageTree? IFolderHost.TreeFor(DriveViewModel drive) =>
+        _summaries.GetValueOrDefault(drive.Summary.RootPath) is { IsComplete: true } summary ? summary.Tree : null;
+
+    void IFolderHost.ScanDrive(DriveViewModel drive) => ShowDrive(drive);
+
+    void IFolderHost.ShowInExplorer(string path)
+    {
+        _services.Explorer.ShowInExplorer(path);
+        ShowToast(string.Format(Strings.ExplorerToast, path));
+    }
+
+    /// <summary>The storage category of the folder an executable lives in.</summary>
+    StorageCategory? IMemoryHost.CategoryOf(string imagePath)
+    {
+        string? folder = Path.GetDirectoryName(imagePath);
+        if (folder is null || Path.GetPathRoot(folder) is not { Length: > 0 } root)
+        {
+            return null;
+        }
+
+        StorageCategory category = _services.Classifier.Classify(root, StorageCategory.Other);
+        string path = root;
+        foreach (string segment in folder[root.Length..].Split('\\', StringSplitOptions.RemoveEmptyEntries))
+        {
+            path = Path.Join(path, segment);
+            category = _services.Classifier.Classify(path, category);
+        }
+
+        return category;
+    }
+
+    [RelayCommand]
+    private void GoHome() => Navigate(Page.Home);
+
+    [RelayCommand]
+    private void ShowStorage()
+    {
+        if (CurrentSummary is null && SystemDrive is { } system)
+        {
+            SelectedDrive = system;
+        }
+
+        Navigate(Page.Storage);
+    }
+
+    [RelayCommand]
+    private void GoCleanup() => Navigate(Page.Cleanup);
+
+    [RelayCommand]
+    private void GoMemory() => Navigate(Page.Memory);
+
+    /// <summary>Folders opens the selected drive when its scan is done, otherwise "This PC".</summary>
+    [RelayCommand]
+    private void ShowFolders()
+    {
+        if (Page != Page.Folders)
+        {
+            Folders.Show(CurrentSummary is { IsComplete: true, Tree: { } tree } ? tree.Root : null, resetHistory: true);
+        }
+
+        Navigate(Page.Folders);
+    }
+
+    [RelayCommand]
+    private void SetSimpleMode() => Is3d = false;
+
+    [RelayCommand]
+    private void Set3dMode()
+    {
+        if (Page == Page.Welcome)
+        {
+            Navigate(Page.Home);
+        }
+
+        Is3d = true;
+        Pc.Refresh();
+    }
+
+    [RelayCommand]
+    private void SetEnglish() => SetLanguage(LanguagePreference.English);
+
+    [RelayCommand]
+    private void SetPortuguese() => SetLanguage(LanguagePreference.Portuguese);
+
+    [RelayCommand]
+    private void ToggleTheme()
+    {
+        IsDarkTheme = IsDarkTheme == false;
+        SaveSettings(_settings with { Theme = IsDarkTheme == true ? ThemePreference.Dark : ThemePreference.Light });
     }
 
     [RelayCommand(CanExecute = nameof(CanRescan))]
@@ -112,72 +479,62 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private bool CanRescan() => !IsScanning;
 
     [RelayCommand]
-    private void ShowStorage()
+    private void Unlock() => RequestUnlock();
+
+    private void Navigate(Page page)
     {
-        if (CurrentSummary is { } summary)
+        Is3d = false;
+        Page = page;
+        if (page == Page.Home)
         {
-            CurrentPage = summary;
+            Home.Refresh();
         }
     }
-
-    [RelayCommand(CanExecute = nameof(CanShowFolders))]
-    private void ShowFolders()
-    {
-        if (!IsFoldersPage)
-        {
-            CurrentSummary!.BrowseAllCommand.Execute(null);
-        }
-    }
-
-    private bool CanShowFolders() => CurrentSummary?.IsComplete == true;
 
     private async Task ShowDriveAsync(DriveViewModel drive, bool forceRescan)
     {
         _scanCancellation?.Cancel();
+        string root = drive.Summary.RootPath;
 
-        if (!forceRescan && _summaries.TryGetValue(drive.Summary.RootPath, out var existing))
+        if (!forceRescan && _summaries.TryGetValue(root, out var existing))
         {
             CurrentSummary = existing;
-            CurrentPage = existing;
-            StatusText = string.Format(Strings.ScanComplete, existing.FileCount);
             return;
         }
 
         var cancellation = new CancellationTokenSource();
         _scanCancellation = cancellation;
-        StorageSummaryViewModel summary = null!;
-        summary = new StorageSummaryViewModel(drive.Summary, _locations, node => OpenFolder(node, summary));
-        _summaries[drive.Summary.RootPath] = summary;
+        var summary = new StorageSummaryViewModel(drive.Summary, _services.Locations, OpenFolder, RequestUnlock, isSystemDrive: drive == SystemDrive);
+        if (_hidden.TryGetValue(root, out var hidden))
+        {
+            summary.ApplyHiddenSpace(hidden);
+        }
+
+        _summaries[root] = summary;
         CurrentSummary = summary;
-        CurrentPage = summary;
         IsScanning = true;
-        StatusText = string.Format(Strings.ScanningFiles, 0);
 
         var progress = new Progress<ScanProgress>(p =>
         {
             summary.ApplyProgress(p);
             if (_scanCancellation == cancellation)
             {
-                StatusText = string.Format(Strings.ScanningFiles, p.FileCount);
+                OnPropertyChanged(nameof(StatusText));
             }
         });
 
         try
         {
-            StorageTree tree = await _scanner.ScanAsync(drive.Summary.RootPath, _classifier, progress, cancellation.Token);
-            summary.ApplyResult(tree);
-            ShowFoldersCommand.NotifyCanExecuteChanged();
-            if (_scanCancellation == cancellation)
-            {
-                StatusText = string.Format(Strings.ScanComplete, tree.FileCount);
-            }
+            StorageTree tree = await _services.Scanner.ScanAsync(root, _services.Classifier, progress, cancellation.Token);
+            summary.ApplyResult(tree, _clock());
+            RefreshPages();
         }
         catch (OperationCanceledException)
         {
             // Forget the partial result so the drive is scanned again next time.
-            if (_summaries.GetValueOrDefault(drive.Summary.RootPath) == summary)
+            if (_summaries.GetValueOrDefault(root) == summary)
             {
-                _summaries.Remove(drive.Summary.RootPath);
+                _summaries.Remove(root);
             }
         }
         finally
@@ -189,11 +546,70 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private void OpenFolder(StorageNode node, StorageSummaryViewModel returnTo) =>
-        CurrentPage = new FolderBrowserViewModel(node, _explorer, () => CurrentPage = returnTo);
+    private void OpenFolder(StorageNode node)
+    {
+        Folders.Show(node, resetHistory: true);
+        Navigate(Page.Folders);
+    }
+
+    private void RefreshPages()
+    {
+        Home.Refresh();
+        Pc.Refresh();
+        Folders.Refresh();
+        OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(SystemDriveStatus));
+        OnPropertyChanged(nameof(RamStatus));
+        OnPropertyChanged(nameof(CpuStatus));
+    }
+
+    private void RefreshTexts()
+    {
+        foreach (DriveViewModel drive in Drives)
+        {
+            drive.Refresh();
+        }
+
+        foreach (StorageSummaryViewModel summary in _summaries.Values)
+        {
+            summary.RefreshTexts();
+        }
+
+        Cleanup.RefreshTexts();
+        Memory.RefreshTexts();
+        Welcome.Refresh();
+        RefreshPages();
+        OnPropertyChanged(nameof(IsPortuguese));
+        OnPropertyChanged(nameof(IsEnglish));
+        OnPropertyChanged(nameof(ThemeLabel));
+        OnPropertyChanged(nameof(StatusShort));
+    }
+
+    private void SaveSettings(AppSettings settings)
+    {
+        _settings = settings;
+        _services.Settings.Save(settings);
+    }
+
+    private async Task HideToastAsync(int version)
+    {
+        await Task.Delay(ToastDuration);
+        if (version == _toastVersion)
+        {
+            Toast = null;
+        }
+    }
+
+    private string Ago(DateTimeOffset at)
+    {
+        TimeSpan elapsed = _clock() - at;
+        return elapsed.TotalMinutes < 1 ? Strings.JustNow
+            : elapsed.TotalHours < 1 ? string.Format(Strings.MinutesAgo, (int)elapsed.TotalMinutes)
+            : string.Format(Strings.HoursAgo, (int)elapsed.TotalHours);
+    }
 }
 
-public sealed class DriveViewModel(DriveSummary summary)
+public sealed partial class DriveViewModel(DriveSummary summary) : ObservableObject
 {
     public DriveSummary Summary { get; } = summary;
 
@@ -210,4 +626,6 @@ public sealed class DriveViewModel(DriveSummary summary)
     public string UsedText => string.Format(Strings.DriveUsed, ByteSize.Format(Summary.UsedBytes), ByteSize.Format(Summary.TotalBytes));
 
     public double UsedFraction => Summary.TotalBytes == 0 ? 0 : (double)Summary.UsedBytes / Summary.TotalBytes;
+
+    public void Refresh() => OnPropertyChanged(string.Empty);
 }
