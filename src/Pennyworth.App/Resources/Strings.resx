@@ -182,6 +182,57 @@
   <data name="DeclinedSub" xml:space="preserve"><value>I'll carry on in normal mode. Should you change your mind, it's in Storage.</value></data>
   <data name="UnlockedToast" xml:space="preserve"><value>Thank you. I can now see everything, hidden system space included.</value></data>
   <data name="UnlockFailed" xml:space="preserve"><value>I couldn't measure the hidden space this time. Normal mode carries on.</value></data>
+  <data name="NavSpecs" xml:space="preserve"><value>Specs</value></data>
+  <data name="NavSpecsHint" xml:space="preserve"><value>Every part of your PC</value></data>
+  <data name="SpecsTitle" xml:space="preserve"><value>Your PC, in detail</value></data>
+  <data name="SpecsSub" xml:space="preserve"><value>Everything inside, read from the PC itself. Nothing leaves it.</value></data>
+  <data name="SpecsLoading" xml:space="preserve"><value>Taking a look inside…</value></data>
+  <data name="CopyAll" xml:space="preserve"><value>Copy all</value></data>
+  <data name="CopiedToast" xml:space="preserve"><value>Specs copied. Paste them wherever you need.</value></data>
+  <data name="SeeSpecs" xml:space="preserve"><value>See full specs</value></data>
+  <data name="Spec_System" xml:space="preserve"><value>System</value></data>
+  <data name="Spec_Processor" xml:space="preserve"><value>Processor</value></data>
+  <data name="Spec_Memory" xml:space="preserve"><value>Memory</value></data>
+  <data name="Spec_Graphics" xml:space="preserve"><value>Graphics</value></data>
+  <data name="Spec_Storage" xml:space="preserve"><value>Storage</value></data>
+  <data name="Spec_Board" xml:space="preserve"><value>Motherboard</value></data>
+  <data name="Spec_Network" xml:space="preserve"><value>Network</value></data>
+  <data name="Spec_Power" xml:space="preserve"><value>Power</value></data>
+  <data name="SpecComputer" xml:space="preserve"><value>Computer name</value></data>
+  <data name="SpecUser" xml:space="preserve"><value>User</value></data>
+  <data name="SpecMaker" xml:space="preserve"><value>Manufacturer</value></data>
+  <data name="SpecModel" xml:space="preserve"><value>Model</value></data>
+  <data name="SpecVersion" xml:space="preserve"><value>Version</value></data>
+  <data name="SpecBuild" xml:space="preserve"><value>Build</value></data>
+  <data name="SpecInstalled" xml:space="preserve"><value>Installed on</value></data>
+  <data name="SpecUptime" xml:space="preserve"><value>On for</value></data>
+  <data name="SpecCores" xml:space="preserve"><value>Cores</value></data>
+  <data name="SpecCoresValue" xml:space="preserve"><value>{0} cores · {1:N0} threads</value></data>
+  <data name="SpecBaseSpeed" xml:space="preserve"><value>Base speed</value></data>
+  <data name="SpecCache" xml:space="preserve"><value>Cache</value></data>
+  <data name="SpecSocket" xml:space="preserve"><value>Socket</value></data>
+  <data name="SpecArchitecture" xml:space="preserve"><value>Architecture</value></data>
+  <data name="SpecSlots" xml:space="preserve"><value>Slots</value></data>
+  <data name="SpecSlotsValue" xml:space="preserve"><value>{0} of {1:N0} in use</value></data>
+  <data name="SpecRunningAt" xml:space="preserve"><value>running at {0}</value></data>
+  <data name="SpecVideoMemory" xml:space="preserve"><value>Video memory</value></data>
+  <data name="SpecDriver" xml:space="preserve"><value>Driver</value></data>
+  <data name="SpecDisplay" xml:space="preserve"><value>Display {0}</value></data>
+  <data name="SpecMainDisplay" xml:space="preserve"><value>main</value></data>
+  <data name="SpecDisk" xml:space="preserve"><value>Disk {0}</value></data>
+  <data name="SpecDisksHeadline" xml:space="preserve"><value>{0} · {1:N0} disks</value></data>
+  <data name="SpecNoLetter" xml:space="preserve"><value>no drive letter</value></data>
+  <data name="SpecBios" xml:space="preserve"><value>BIOS</value></data>
+  <data name="SpecBiosDate" xml:space="preserve"><value>BIOS date</value></data>
+  <data name="SpecNoNetwork" xml:space="preserve"><value>Not connected right now.</value></data>
+  <data name="SpecBattery" xml:space="preserve"><value>Battery</value></data>
+  <data name="SpecCharging" xml:space="preserve"><value>charging</value></data>
+  <data name="SpecPluggedIn" xml:space="preserve"><value>plugged in</value></data>
+  <data name="SpecOnBattery" xml:space="preserve"><value>on battery</value></data>
+  <data name="SpecDesktop" xml:space="preserve"><value>Desktop</value></data>
+  <data name="SpecNoBattery" xml:space="preserve"><value>No battery: it runs on mains power.</value></data>
+  <data name="UptimeDays" xml:space="preserve"><value>{0} d {1} h</value></data>
+  <data name="UptimeHours" xml:space="preserve"><value>{0} h {1} min</value></data>
   <data name="Hint3d" xml:space="preserve"><value>Drag to rotate · scroll to zoom · click a part</value></data>
   <data name="Machine" xml:space="preserve"><value>{0} · {1} · 6 parts</value></data>
   <data name="HintTitle" xml:space="preserve"><value>Your PC, from the inside.</value></data>
