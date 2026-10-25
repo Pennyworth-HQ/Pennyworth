@@ -141,17 +141,20 @@
   </Window.DataTemplates>
 
   <Grid RowDefinitions="44,*,28">
-    <!-- Title bar: drag area; Windows' caption buttons sit on the right. -->
-    <Border Classes="rule" BorderThickness="0,0,0,1" Background="{DynamicResource Brush.Background}"
-            WindowDecorationProperties.ElementRole="TitleBar">
-      <Grid ColumnDefinitions="Auto,*,Auto" Margin="16,0,148,0">
-        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-          <Image Source="/Assets/logo.png" Width="26" Height="26" RenderOptions.BitmapInterpolationMode="HighQuality" />
-          <TextBlock Text="PENNYWORTH" FontWeight="SemiBold" FontSize="12" LetterSpacing="2.4" VerticalAlignment="Center" />
-        </StackPanel>
-        <!-- "User" lets these buttons receive clicks; the rest of the bar drags the window. -->
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center"
-                    WindowDecorationProperties.ElementRole="User">
+    <!--
+      Title bar. Only the left part (logo and empty space) is the drag area: buttons inside a
+      TitleBar element don't reliably get clicks on Windows, so they sit beside it, not in it.
+      Windows' caption buttons are drawn over the right 148 px.
+    -->
+    <Border Classes="rule" BorderThickness="0,0,0,1" Background="{DynamicResource Brush.Background}">
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,148,0">
+        <Border Background="Transparent" WindowDecorationProperties.ElementRole="TitleBar">
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="16,0,0,0">
+            <Image Source="/Assets/logo.png" Width="26" Height="26" RenderOptions.BitmapInterpolationMode="HighQuality" />
+            <TextBlock Text="PENNYWORTH" FontWeight="SemiBold" FontSize="12" LetterSpacing="2.4" VerticalAlignment="Center" />
+          </StackPanel>
+        </Border>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" Margin="16,0,0,0">
           <Border Classes="group" ToolTip.Tip="{l:Tr ModeTip}">
             <StackPanel Orientation="Horizontal">
               <Button Classes="segment" Classes.selected="{Binding !Is3d}" Content="{l:Tr ModeSimple, Upper=True}" Command="{Binding SetSimpleModeCommand}" />
