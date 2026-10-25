@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Pennyworth.App.ViewModels"
-             xmlns:res="using:Pennyworth.App.Resources"
+             xmlns:l="using:Pennyworth.App.Localization"
              xmlns:controls="using:Pennyworth.App.Controls"
              x:Class="Pennyworth.App.Views.StorageSummaryView"
              x:DataType="vm:StorageSummaryViewModel">
@@ -38,13 +38,13 @@
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
         <StackPanel Spacing="8">
           <TextBlock Classes="label">
-            <Run Text="01 / " />
-            <Run Text="{controls:Upper {x:Static res:Strings.NavStorage}}" />
+            <Run Text="02 / " />
+            <Run Text="{l:Tr NavStorage, Upper=True}" />
           </TextBlock>
-          <TextBlock Classes="title" Text="{x:Static res:Strings.StorageTitle}" TextWrapping="Wrap" />
+          <TextBlock Classes="title" Text="{l:Tr StorageTitle}" TextWrapping="Wrap" />
           <TextBlock FontSize="15" Text="{Binding UsedText}" />
           <TextBlock Classes="secondary" FontSize="13.5" MaxWidth="520" HorizontalAlignment="Left" TextWrapping="Wrap"
-                     Text="{x:Static res:Strings.StorageHelp}" />
+                     Text="{l:Tr StorageHelp}" />
         </StackPanel>
         <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Bottom" HorizontalAlignment="Right">
           <ListBox Classes="segmented" HorizontalAlignment="Right"
@@ -65,21 +65,23 @@
             </ListBox.ItemTemplate>
           </ListBox>
           <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+            <TextBlock Text="●" FontSize="10" VerticalAlignment="Center" Classes.blink="{Binding !IsComplete}"
+                       Foreground="{DynamicResource Brush.Accent}" />
             <TextBlock Classes="label" LetterSpacing="0" FontSize="11" VerticalAlignment="Center"
                        Text="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).StatusText}" />
             <Button Classes="link" FontFamily="{StaticResource FontFamily.Mono}" FontSize="11"
-                    Content="{x:Static res:Strings.Rescan}"
+                    Content="{l:Tr Rescan}"
                     Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).RescanCommand}"
                     IsVisible="{Binding IsComplete}" />
           </StackPanel>
         </StackPanel>
       </Grid>
 
-      <!-- The hero bar: every category plus "not measured yet" fills exactly 100%. -->
+      <!-- The hero bar: every category plus "not measured yet" fills exactly 100%. Click a block to select it. -->
       <StackPanel Spacing="8">
-        <controls:SegmentedBar Height="{StaticResource Height.StorageBar}" Gap="2"
+        <controls:SegmentedBar Name="Bar" Height="{StaticResource Height.StorageBar}" Gap="2" Cursor="Hand"
                                Segments="{Binding Segments}"
-                               HighlightKey="{Binding SelectedCategory.ColorKey}"
+                               HighlightKey="{Binding SelectedColorKey}"
                                TrackBrush="{DynamicResource Brush.Track}" />
         <Grid ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*,Auto">
           <Grid.Styles>
@@ -94,26 +96,39 @@
           <TextBlock Grid.Column="2" Text="25%" />
           <TextBlock Grid.Column="4" Text="50%" />
           <TextBlock Grid.Column="6" Text="75%" />
-          <TextBlock Grid.Column="8" Text="100%" />
+          <TextBlock Grid.Column="8" Text="{Binding FreeText, StringFormat='100% · {0}'}" />
         </Grid>
       </StackPanel>
 
       <Border Classes="card" Padding="16,12" IsVisible="{Binding HasOvercount}">
         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
           <TextBlock Classes="mono" Text="i" />
-          <TextBlock Grid.Column="1" Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{x:Static res:Strings.OvercountHint}" />
+          <TextBlock Grid.Column="1" Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{l:Tr OvercountHint}" />
+        </Grid>
+      </Border>
+
+      <Border BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" Padding="16,12" IsVisible="{Binding ShowUnlockBanner}">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+          <TextBlock Classes="mono secondary" Text="[ ]" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center" Text="{l:Tr UnlockBanner}" />
+          <Button Grid.Column="2" MinHeight="30" Padding="12,0" FontSize="10.5" Command="{Binding UnlockCommand}">
+            <TextBlock>
+              <Run Text="{l:Tr UnlockCta, Upper=True}" />
+              <Run Text=" →" />
+            </TextBlock>
+          </Button>
         </Grid>
       </Border>
 
       <Grid ColumnDefinitions="1.1*,*" ColumnSpacing="32">
         <!-- Category legend -->
         <StackPanel>
-          <TextBlock Classes="label" Margin="0,0,0,10" Text="{controls:Upper {x:Static res:Strings.Categories}}" />
-          <ListBox Classes="legend" ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}"
+          <TextBlock Classes="label" Margin="0,0,0,10" Text="{l:Tr Categories, Upper=True}" />
+          <ListBox Classes="legend" ItemsSource="{Binding Legend}" SelectedItem="{Binding SelectedCategory}"
                    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="vm:CategoryRowViewModel">
-                <Grid ColumnDefinitions="34,*,52,74,12" ColumnSpacing="12">
+                <Grid ColumnDefinitions="34,*,58,74,12" ColumnSpacing="12">
                   <Border BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" Height="16" VerticalAlignment="Center">
                     <controls:SegmentedBar Segments="{Binding Swatch}" />
                   </Border>
@@ -129,28 +144,12 @@
             </ListBox.ItemTemplate>
           </ListBox>
 
-          <!-- "Not measured yet" is part of the bar but has nothing to drill into. -->
-          <Border Classes="rule" Padding="{StaticResource Padding.Row}">
-            <Grid ColumnDefinitions="34,*,52,74,12" ColumnSpacing="12" RowDefinitions="Auto,Auto" RowSpacing="8">
-              <Border BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" Height="16" VerticalAlignment="Center">
-                <controls:SegmentedBar Segments="{Binding Unaccounted.Swatch}" />
-              </Border>
-              <StackPanel Grid.Column="1" Spacing="2">
-                <TextBlock Text="{Binding Unaccounted.Name}" />
-                <TextBlock Classes="caption" Text="{Binding Unaccounted.Hint}" TextTrimming="CharacterEllipsis" />
-              </StackPanel>
-              <TextBlock Grid.Column="2" Classes="label" LetterSpacing="0" FontSize="11.5" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding Unaccounted.PercentText}" />
-              <TextBlock Grid.Column="3" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding Unaccounted.SizeText}" />
-              <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" Classes="caption" TextWrapping="Wrap" Text="{x:Static res:Strings.UnaccountedHint}" />
-            </Grid>
-          </Border>
-
           <Border Classes="rule" Padding="0,14,0,0">
             <Button HorizontalAlignment="Left" Command="{Binding BrowseAllCommand}">
-              <StackPanel Orientation="Horizontal" Spacing="10">
-                <TextBlock Text="{controls:Upper {x:Static res:Strings.BrowseAllFolders}}" />
-                <TextBlock Text="→" />
-              </StackPanel>
+              <TextBlock>
+                <Run Text="{l:Tr BrowseAllFolders, Upper=True}" />
+                <Run Text=" →" />
+              </TextBlock>
             </Button>
           </Border>
         </StackPanel>
@@ -158,16 +157,28 @@
         <!-- Biggest places of the selected category -->
         <StackPanel Grid.Column="1">
           <TextBlock Classes="label" Margin="0,0,0,10" Text="{Binding PlacesTitle, Converter={x:Static controls:TextCase.Upper}}" />
-          <Border Classes="rule" Padding="0,22" IsVisible="{Binding !IsComplete}">
+          <Border Classes="rule" Padding="0,22" IsVisible="{Binding ShowPlacesPending}">
             <StackPanel Spacing="14">
-              <ProgressBar IsIndeterminate="True" MinHeight="2" Height="2" />
-              <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{x:Static res:Strings.BiggestPlacesPending}" />
+              <ProgressBar Classes="sweep" />
+              <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{l:Tr BiggestPlacesPending}" />
             </StackPanel>
           </Border>
-          <ItemsControl ItemsSource="{Binding SelectedCategory.Areas}">
+          <Border Classes="rule" Padding="0,18" IsVisible="{Binding ShowUnaccountedExplanation}">
+            <StackPanel Spacing="14">
+              <TextBlock LineHeight="21" TextWrapping="Wrap" Text="{l:Tr UnaccountedHint}" IsVisible="{Binding !IsUnlocked}" />
+              <TextBlock LineHeight="21" TextWrapping="Wrap" Text="{Binding Unaccounted.Hint}" IsVisible="{Binding IsUnlocked}" />
+              <Button HorizontalAlignment="Left" MinHeight="32" Padding="12,0" FontSize="10.5" Command="{Binding UnlockCommand}" IsVisible="{Binding ShowUnlockBanner}">
+                <TextBlock>
+                  <Run Text="{l:Tr UnlockCta, Upper=True}" />
+                  <Run Text=" →" />
+                </TextBlock>
+              </Button>
+            </StackPanel>
+          </Border>
+          <ItemsControl ItemsSource="{Binding SelectedCategory.Areas}" IsVisible="{Binding ShowPlaces}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:CategoryAreaViewModel">
-                <Button Classes="row" Padding="8,12"
+                <Button Classes="row" Padding="8,12" IsEnabled="{Binding CanOpen}"
                         Command="{Binding $parent[UserControl].((vm:StorageSummaryViewModel)DataContext).OpenAreaCommand}"
                         CommandParameter="{Binding}">
                   <StackPanel Spacing="5">
@@ -175,7 +186,7 @@
                       <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
                       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
                         <TextBlock Text="{Binding SizeText}" />
-                        <TextBlock Classes="mono secondary" Text="›" />
+                        <TextBlock Classes="mono secondary" Width="8" Text="›" IsVisible="{Binding CanOpen}" />
                       </StackPanel>
                     </Grid>
                     <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding Description}"

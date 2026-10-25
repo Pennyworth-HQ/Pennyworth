@@ -1,8 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Pennyworth.App.ViewModels"
-             xmlns:res="using:Pennyworth.App.Resources"
-             xmlns:controls="using:Pennyworth.App.Controls"
+             xmlns:l="using:Pennyworth.App.Localization"
              x:Class="Pennyworth.App.Views.FolderBrowserView"
              x:DataType="vm:FolderBrowserViewModel">
   <UserControl.Styles>
@@ -21,7 +20,7 @@
       <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}" />
     </Style>
 
-    <!-- The name opens folders; for files it is plain text. -->
+    <!-- The name opens folders and drives; for files it is plain text. -->
     <Style Selector="Button.name">
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="0" />
@@ -40,6 +39,13 @@
       <Setter Property="Opacity" Value="1" />
     </Style>
 
+    <Style Selector="Button.crumb">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
+    </Style>
+    <Style Selector="Button.crumb.last">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+
     <Style Selector="TextBlock.column">
       <Setter Property="FontFamily" Value="{StaticResource FontFamily.Mono}" />
       <Setter Property="FontSize" Value="10" />
@@ -51,28 +57,28 @@
   <Grid RowDefinitions="Auto,Auto,*">
     <StackPanel Margin="36,28,36,14" Spacing="12">
       <TextBlock Classes="label">
-        <Run Text="02 / " />
-        <Run Text="{controls:Upper {x:Static res:Strings.NavFolders}}" />
+        <Run Text="05 / " />
+        <Run Text="{l:Tr NavFolders, Upper=True}" />
       </TextBlock>
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <TextBlock Classes="title" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-        <TextBlock Grid.Column="1" Classes="secondary" VerticalAlignment="Bottom" Margin="0,0,0,4" Text="{Binding SizeText}" />
+        <TextBlock Grid.Column="1" Classes="secondary" VerticalAlignment="Bottom" Margin="0,0,0,4" Text="{Binding SummaryText}" />
       </Grid>
-      <TextBlock Classes="secondary" FontSize="13" Text="{x:Static res:Strings.FoldersHelp}" />
+      <TextBlock Classes="secondary" FontSize="13" Text="{l:Tr FoldersHelp}" />
 
       <!-- Toolbar: Back, Up and breadcrumbs. -->
-      <Border BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" Padding="4">
+      <Border Classes="group" Padding="4">
         <Grid ColumnDefinitions="Auto,Auto,Auto,*">
           <Button Classes="ghost" Command="{Binding BackCommand}">
             <TextBlock>
               <Run Text="← " />
-              <Run Text="{controls:Upper {x:Static res:Strings.Back}}" />
+              <Run Text="{l:Tr Back, Upper=True}" />
             </TextBlock>
           </Button>
           <Button Grid.Column="1" Classes="ghost" Command="{Binding UpCommand}">
             <TextBlock>
               <Run Text="↑ " />
-              <Run Text="{controls:Upper {x:Static res:Strings.Up}}" />
+              <Run Text="{l:Tr Up, Upper=True}" />
             </TextBlock>
           </Button>
           <Border Grid.Column="2" Width="1" Margin="0,2" Background="{DynamicResource Brush.BorderStrong}" />
@@ -86,7 +92,7 @@
               <DataTemplate x:DataType="vm:BreadcrumbViewModel">
                 <StackPanel Orientation="Horizontal" Spacing="2">
                   <TextBlock Classes="mono tertiary" Text="›" VerticalAlignment="Center" Margin="2,0" />
-                  <Button Classes="link" MaxWidth="220" Foreground="{DynamicResource Brush.TextSecondary}"
+                  <Button Classes="link crumb" Classes.last="{Binding IsLast}" MaxWidth="220"
                           Command="{Binding $parent[UserControl].((vm:FolderBrowserViewModel)DataContext).NavigateToCommand}"
                           CommandParameter="{Binding}">
                     <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
@@ -100,11 +106,10 @@
     </StackPanel>
 
     <!-- Column headers, aligned with the row grid below. -->
-    <Grid Grid.Row="1" Margin="46,0,46,8" ColumnDefinitions="22,*,150,84,156" ColumnSpacing="14"
-          IsVisible="{Binding HasItems}">
-      <TextBlock Grid.Column="1" Classes="column" Text="{controls:Upper {x:Static res:Strings.ColumnName}}" />
-      <TextBlock Grid.Column="2" Classes="column" Text="{controls:Upper {x:Static res:Strings.ColumnShare}}" TextTrimming="CharacterEllipsis" />
-      <TextBlock Grid.Column="3" Classes="column" TextAlignment="Right" Text="{controls:Upper {x:Static res:Strings.ColumnSize}}" />
+    <Grid Grid.Row="1" Margin="46,0,46,8" ColumnDefinitions="22,*,150,84,156" ColumnSpacing="14" IsVisible="{Binding HasItems}">
+      <TextBlock Grid.Column="1" Classes="column" Text="{l:Tr ColumnName, Upper=True}" />
+      <TextBlock Grid.Column="2" Classes="column" Text="{l:Tr ColumnShare, Upper=True}" TextTrimming="CharacterEllipsis" />
+      <TextBlock Grid.Column="3" Classes="column" TextAlignment="Right" Text="{l:Tr ColumnSize, Upper=True}" />
     </Grid>
 
     <Panel Grid.Row="2" Margin="36,0,36,24">
@@ -113,36 +118,40 @@
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="vm:FolderItemViewModel">
             <Grid ColumnDefinitions="22,*,150,84,156" ColumnSpacing="14">
-              <!-- Folder: filled tab and body. File: outlined sheet. -->
-              <Panel Width="18" Height="15" VerticalAlignment="Center" IsVisible="{Binding IsDirectory}">
+              <!-- Folder: filled tab and body. File: outlined sheet. Drive: outlined box with a light. -->
+              <Panel Width="18" Height="15" VerticalAlignment="Center" IsVisible="{Binding IsFolder}">
                 <Border Width="8" Height="4" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,1,0,0" Background="{DynamicResource Brush.TextSecondary}" />
                 <Border Height="10" VerticalAlignment="Bottom" Margin="0,0,0,1" Background="{DynamicResource Brush.TextSecondary}" />
               </Panel>
               <Border Width="12" Height="15" VerticalAlignment="Center" BorderThickness="1.5"
-                      BorderBrush="{DynamicResource Brush.TextSecondary}" IsVisible="{Binding !IsDirectory}" />
+                      BorderBrush="{DynamicResource Brush.TextSecondary}" IsVisible="{Binding IsFile}" />
+              <Border Width="18" Height="11" VerticalAlignment="Center" BorderThickness="1.5"
+                      BorderBrush="{DynamicResource Brush.TextPrimary}" IsVisible="{Binding IsDrive}">
+                <Border Width="2" Height="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,2,0" Background="{DynamicResource Brush.TextPrimary}" />
+              </Border>
 
               <Button Grid.Column="1" Classes="name"
                       Command="{Binding $parent[UserControl].((vm:FolderBrowserViewModel)DataContext).OpenCommand}"
                       CommandParameter="{Binding}"
-                      IsEnabled="{Binding IsDirectory}"
+                      IsEnabled="{Binding CanOpen}"
                       ToolTip.Tip="{Binding Name}">
                 <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
                   <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                   <Border Grid.Column="1" Classes="badge" VerticalAlignment="Center" IsVisible="{Binding IsLocked}"
-                          ToolTip.Tip="{x:Static res:Strings.LockedHint}">
+                          ToolTip.Tip="{l:Tr LockedHint}">
                     <TextBlock>
                       <Run Text="■ " />
-                      <Run Text="{controls:Upper {x:Static res:Strings.Locked}}" />
+                      <Run Text="{l:Tr Locked, Upper=True}" />
                     </TextBlock>
                   </Border>
-                  <TextBlock Grid.Column="2" Classes="mono secondary" Text="›" VerticalAlignment="Center" IsVisible="{Binding IsDirectory}" />
+                  <TextBlock Grid.Column="2" Classes="mono secondary" Text="›" VerticalAlignment="Center" IsVisible="{Binding CanOpen}" />
                 </Grid>
               </Button>
 
               <ProgressBar Grid.Column="2" MinHeight="6" Height="6" Minimum="0" Maximum="1" Value="{Binding Fraction}" VerticalAlignment="Center" />
               <TextBlock Grid.Column="3" FontSize="13.5" Text="{Binding SizeText}" TextAlignment="Right" VerticalAlignment="Center" />
               <Button Grid.Column="4" Classes="small" HorizontalAlignment="Right" VerticalAlignment="Center"
-                      Content="{controls:Upper {x:Static res:Strings.ShowInExplorer}}"
+                      Content="{l:Tr ShowInExplorer, Upper=True}"
                       Command="{Binding $parent[UserControl].((vm:FolderBrowserViewModel)DataContext).ShowInExplorerCommand}"
                       CommandParameter="{Binding}" />
             </Grid>
@@ -157,8 +166,8 @@
             <Border Width="15" Height="7" HorizontalAlignment="Left" VerticalAlignment="Top" BorderThickness="1.5,1.5,1.5,0" BorderBrush="{DynamicResource Brush.TextSecondary}" />
             <Border Margin="0,6,0,0" BorderThickness="1.5" BorderBrush="{DynamicResource Brush.TextSecondary}" />
           </Panel>
-          <TextBlock FontSize="17" HorizontalAlignment="Center" Text="{x:Static res:Strings.EmptyFolder}" />
-          <TextBlock Classes="secondary" FontSize="13" HorizontalAlignment="Center" Text="{x:Static res:Strings.EmptyFolderHint}" />
+          <TextBlock FontSize="17" HorizontalAlignment="Center" Text="{l:Tr EmptyFolder}" />
+          <TextBlock Classes="secondary" FontSize="13" HorizontalAlignment="Center" Text="{l:Tr EmptyFolderHint}" />
         </StackPanel>
       </Border>
 
@@ -168,11 +177,17 @@
           <Border Classes="badge" HorizontalAlignment="Center" Padding="10,6">
             <TextBlock FontSize="13">
               <Run Text="■ " />
-              <Run Text="{controls:Upper {x:Static res:Strings.Locked}}" />
+              <Run Text="{l:Tr Locked, Upper=True}" />
             </TextBlock>
           </Border>
-          <TextBlock FontSize="17" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Text="{x:Static res:Strings.LockedTitle}" />
-          <TextBlock Classes="secondary" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Text="{x:Static res:Strings.LockedBody}" />
+          <TextBlock FontSize="17" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Text="{l:Tr LockedTitle}" />
+          <TextBlock Classes="secondary" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Text="{l:Tr LockedBody}" />
+          <Button HorizontalAlignment="Center" Margin="0,6,0,0" FontSize="10.5" Command="{Binding UnlockCommand}">
+            <TextBlock>
+              <Run Text="{l:Tr UnlockCta, Upper=True}" />
+              <Run Text=" →" />
+            </TextBlock>
+          </Button>
         </StackPanel>
       </Border>
     </Panel>
