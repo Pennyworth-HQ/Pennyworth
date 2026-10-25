@@ -139,6 +139,27 @@
   <data name="DoneSub" xml:space="preserve"><value>Eis o que removi:</value></data>
   <data name="Skipped" xml:space="preserve"><value>{0:N0} arquivos estavam em uso, então os deixei em paz.</value></data>
   <data name="SkippedNone" xml:space="preserve"><value>Tudo correu bem.</value></data>
+  <data name="PreviewLink" xml:space="preserve"><value>Ver o que será apagado ({0:N0} arquivos)</value></data>
+  <data name="PreviewLinkBin" xml:space="preserve"><value>Ver o que será apagado ({0:N0} itens)</value></data>
+  <data name="CountFiles" xml:space="preserve"><value>{0:N0} arquivos</value></data>
+  <data name="CountBin" xml:space="preserve"><value>{0:N0} itens</value></data>
+  <data name="PreviewLabel" xml:space="preserve"><value>O que será apagado</value></data>
+  <data name="PreviewSub" xml:space="preserve"><value>{0} em {1:N0} arquivos. Só estes arquivos serão apagados: o que for criado ou alterado depois desta lista fica onde está.</value></data>
+  <data name="PreviewSubBin" xml:space="preserve"><value>{0} em {1:N0} itens. Esvaziar a Lixeira os apaga de vez, então vale dar uma olhada antes.</value></data>
+  <data name="PreviewFolders" xml:space="preserve"><value>Limpo dentro destas pastas (as pastas em si ficam)</value></data>
+  <data name="PreviewFolderLine" xml:space="preserve"><value>{0} · {1:N0} arquivos</value></data>
+  <data name="PreviewFiles" xml:space="preserve"><value>Arquivos, dos maiores para os menores</value></data>
+  <data name="PreviewItemsBin" xml:space="preserve"><value>Itens na Lixeira, dos maiores para os menores</value></data>
+  <data name="PreviewSearch" xml:space="preserve"><value>Buscar pelo nome</value></data>
+  <data name="PreviewMatches" xml:space="preserve"><value>{0:N0} encontrados</value></data>
+  <data name="PreviewNoMatch" xml:space="preserve"><value>Nenhum arquivo tem esse nome.</value></data>
+  <data name="PreviewNothing" xml:space="preserve"><value>Nada listado.</value></data>
+  <data name="PreviewDeletedOn" xml:space="preserve"><value>apagado em {0}</value></data>
+  <data name="PreviewInclude" xml:space="preserve"><value>Incluir na limpeza</value></data>
+  <data name="PreviewBack" xml:space="preserve"><value>Voltar à lista</value></data>
+  <data name="ConfirmCount" xml:space="preserve"><value>{0} em {1:N0} arquivos e itens.</value></data>
+  <data name="ConfirmOnlyListed" xml:space="preserve"><value>Só o que aparece em cada lista será apagado. O que foi criado ou alterado desde então fica.</value></data>
+  <data name="ConfirmReview" xml:space="preserve"><value>Ver lista</value></data>
   <data name="Done" xml:space="preserve"><value>Muito bem</value></data>
   <data name="BackHome" xml:space="preserve"><value>Voltar ao início</value></data>
   <data name="NothingTitle" xml:space="preserve"><value>Nada a arrumar no momento.</value></data>

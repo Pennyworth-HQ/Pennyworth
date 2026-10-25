@@ -139,6 +139,27 @@
   <data name="DoneSub" xml:space="preserve"><value>Here is what I removed:</value></data>
   <data name="Skipped" xml:space="preserve"><value>{0:N0} files were in use, so I left them be.</value></data>
   <data name="SkippedNone" xml:space="preserve"><value>Everything went smoothly.</value></data>
+  <data name="PreviewLink" xml:space="preserve"><value>See what will be deleted ({0:N0} files)</value></data>
+  <data name="PreviewLinkBin" xml:space="preserve"><value>See what will be deleted ({0:N0} items)</value></data>
+  <data name="CountFiles" xml:space="preserve"><value>{0:N0} files</value></data>
+  <data name="CountBin" xml:space="preserve"><value>{0:N0} items</value></data>
+  <data name="PreviewLabel" xml:space="preserve"><value>What will be deleted</value></data>
+  <data name="PreviewSub" xml:space="preserve"><value>{0} in {1:N0} files. Only these files will be deleted: anything created or changed after this list stays where it is.</value></data>
+  <data name="PreviewSubBin" xml:space="preserve"><value>{0} in {1:N0} items. Emptying the Recycle Bin deletes them for good, so it's worth a look first.</value></data>
+  <data name="PreviewFolders" xml:space="preserve"><value>Cleaned inside these folders (the folders themselves stay)</value></data>
+  <data name="PreviewFolderLine" xml:space="preserve"><value>{0} · {1:N0} files</value></data>
+  <data name="PreviewFiles" xml:space="preserve"><value>Files, largest first</value></data>
+  <data name="PreviewItemsBin" xml:space="preserve"><value>Items in the Recycle Bin, largest first</value></data>
+  <data name="PreviewSearch" xml:space="preserve"><value>Search by name</value></data>
+  <data name="PreviewMatches" xml:space="preserve"><value>{0:N0} matching</value></data>
+  <data name="PreviewNoMatch" xml:space="preserve"><value>No file has that name.</value></data>
+  <data name="PreviewNothing" xml:space="preserve"><value>Nothing listed.</value></data>
+  <data name="PreviewDeletedOn" xml:space="preserve"><value>deleted {0}</value></data>
+  <data name="PreviewInclude" xml:space="preserve"><value>Include in the cleanup</value></data>
+  <data name="PreviewBack" xml:space="preserve"><value>Back to the list</value></data>
+  <data name="ConfirmCount" xml:space="preserve"><value>{0} in {1:N0} files and items.</value></data>
+  <data name="ConfirmOnlyListed" xml:space="preserve"><value>Only what you can see in each list will be deleted. Anything created or changed since then stays.</value></data>
+  <data name="ConfirmReview" xml:space="preserve"><value>See list</value></data>
   <data name="Done" xml:space="preserve"><value>Very good</value></data>
   <data name="BackHome" xml:space="preserve"><value>Back to home</value></data>
   <data name="NothingTitle" xml:space="preserve"><value>Nothing to tidy at present.</value></data>
