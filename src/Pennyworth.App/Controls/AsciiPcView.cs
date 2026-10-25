@@ -252,7 +252,8 @@ public sealed class AsciiPcView : Control
     private void DrawLabels(DrawingContext context, IReadOnlyList<AsciiLabel> labels, (double CellWidth, double CellHeight, double Left, double Top) grid)
     {
         var typeface = new Typeface(FontFamilyResource());
-        double size = Math.Max(grid.CellHeight * 2.6, 8);
+        // Labels keep the design's size whatever the grid density.
+        double size = Math.Max(grid.CellHeight * AsciiPcRenderer.Density * 2.6, 8);
         foreach (AsciiLabel label in labels)
         {
             string text = Labels is { } names && (int)label.Part < names.Count ? names[(int)label.Part] : label.Part.ToString();

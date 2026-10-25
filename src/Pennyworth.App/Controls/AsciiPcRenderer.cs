@@ -20,8 +20,14 @@ public sealed record AsciiLabel(PcPart Part, double Column, double Row, bool IsH
 /// </summary>
 public sealed class AsciiPcRenderer
 {
-    public const int Columns = 340;
-    public const int Rows = 156;
+    /// <summary>
+    /// Characters per unit of the design's 340×156 grid. Higher means smaller characters over the
+    /// same area: finer lines and a sharper model. Everything measured in characters scales with it.
+    /// </summary>
+    public const double Density = 1.8;
+
+    public static readonly int Columns = (int)Math.Round(340 * Density);
+    public static readonly int Rows = (int)Math.Round(156 * Density);
 
     /// <summary>Glyph width over line height of the design's monospace grid (7 px font, 7.6 px lines).</summary>
     public const double CellAspect = 0.6 / 1.0857;
@@ -98,7 +104,7 @@ public sealed class AsciiPcRenderer
         double bestArea = double.MaxValue;
         foreach (var hit in _hits)
         {
-            if (column >= hit.X0 - 1 && column <= hit.X1 + 1 && row >= hit.Y0 - 1 && row <= hit.Y1 + 1 && hit.Area < bestArea)
+            if (column >= hit.X0 - Density && column <= hit.X1 + Density && row >= hit.Y0 - Density && row <= hit.Y1 + Density && hit.Area < bestArea)
             {
                 best = hit.Part;
                 bestArea = hit.Area;
@@ -152,10 +158,10 @@ public sealed class AsciiPcRenderer
 
             double[] first = boxes[0];
             var top = view.Project((first[0] + first[1]) / 2, boxes.Max(b => b[3]), (first[4] + first[5]) / 2);
-            double labelRow = Math.Round(y0) - 2;
-            double labelColumn = Math.Round(top.X - 6);
+            double labelRow = Math.Round(y0 - (2 * Density));
+            double labelColumn = Math.Round(top.X - (6 * Density));
             labels.Add(new AsciiLabel(id, top.X, labelRow, layer == 3));
-            _hits.Add((id, Math.Min(x0, labelColumn), Math.Max(x1, labelColumn + 12), Math.Min(y0, labelRow), y1, (x1 - x0) * (y1 - y0)));
+            _hits.Add((id, Math.Min(x0, labelColumn), Math.Max(x1, labelColumn + (12 * Density)), Math.Min(y0, labelRow), y1, (x1 - x0) * (y1 - y0)));
 
             if (id == selected)
             {
@@ -311,23 +317,25 @@ public sealed class AsciiPcRenderer
     private void DrawRain(double seconds)
     {
         int flip = (int)Math.Floor(seconds * 1000 / 380);
+        uint spacing = (uint)Math.Round(7 * Density);
+        double trail = 7 * Density;
         char[] rain = _layers[0];
         for (int c = 0; c < Columns; c++)
         {
             uint h = unchecked((uint)c * 2654435761u);
-            if (h % 7 != 0)
+            if (h % spacing != 0)
             {
                 continue;
             }
 
-            double speed = 2 + ((h >> 4) % 5);
-            double offset = (h >> 8) % 60;
-            double head = ((seconds * speed) + offset) % (Rows + 14);
+            double speed = (2 + ((h >> 4) % 5)) * Density;
+            double offset = ((h >> 8) % 60) * Density;
+            double head = ((seconds * speed) + offset) % (Rows + (14 * Density));
             for (int r = 0; r < Rows; r++)
             {
                 double behind = head - r;
                 int i = (r * Columns) + c;
-                if (behind >= 0 && behind < 7 && _layerOf[i] == 0)
+                if (behind >= 0 && behind < trail && _layerOf[i] == 0)
                 {
                     rain[i] = ((((int)(h >> 3)) + r + flip) & 1) == 1 ? '1' : '0';
                 }
