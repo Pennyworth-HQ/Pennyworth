@@ -30,7 +30,8 @@
 
     <!-- What will be deleted: hairline rows, no selection highlight, virtualized for long lists. -->
     <Style Selector="ListBox.files ListBoxItem">
-      <Setter Property="Padding" Value="0,9" />
+      <Setter Property="Padding" Value="0,0,14,0" />
+      <Setter Property="MinHeight" Value="48" />
       <Setter Property="CornerRadius" Value="0" />
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
       <Setter Property="BorderThickness" Value="0,1,0,0" />
@@ -38,6 +39,40 @@
     </Style>
     <Style Selector="ListBox.files ListBoxItem:selected /template/ ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox.files ListBoxItem:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}" />
+    </Style>
+    <!-- Same look as the Folders screen: names open folders, breadcrumbs, column headers. -->
+    <Style Selector="Button.name">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="FontFamily" Value="{StaticResource FontFamily.Base}" />
+      <Setter Property="FontSize" Value="{StaticResource FontSize.Body}" />
+      <Setter Property="LetterSpacing" Value="0" />
+    </Style>
+    <Style Selector="Button.name:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="Button.name:disabled">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="Cursor" Value="Arrow" />
+    </Style>
+    <Style Selector="Button.crumb">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
+    </Style>
+    <Style Selector="Button.crumb.last">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="TextBlock.column">
+      <Setter Property="FontFamily" Value="{StaticResource FontFamily.Mono}" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="LetterSpacing" Value="1.4" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
     </Style>
     <Style Selector="TextBox.search">
       <Setter Property="Background" Value="Transparent" />
@@ -181,9 +216,9 @@
     <ContentControl Content="{Binding Preview}" IsVisible="{Binding IsPreviewing}">
       <ContentControl.ContentTemplate>
         <DataTemplate x:DataType="vm:CleanupPreviewViewModel">
-          <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="36,20,36,0">
+          <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" Margin="36,20,36,0">
             <StackPanel Spacing="8">
-              <Button Classes="ghost" HorizontalAlignment="Left" Margin="-10,0,0,4" Command="{Binding BackCommand}">
+              <Button Classes="ghost" HorizontalAlignment="Left" Margin="-10,0,0,4" Command="{Binding CloseCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="←" />
                   <TextBlock Text="{l:Tr PreviewBack, Upper=True}" />
@@ -213,30 +248,51 @@
               </TextBlock>
             </StackPanel>
 
-            <!-- The folders it cleans inside; the folders themselves are kept. -->
-            <StackPanel Grid.Row="1" Spacing="6" Margin="0,18,0,0" IsVisible="{Binding HasFolders}">
+            <!-- Toolbar like the Folders screen: Back, Up, breadcrumbs and Explorer. -->
+            <StackPanel Grid.Row="1" Spacing="6" Margin="0,18,0,0" IsVisible="{Binding CanNavigate}">
               <TextBlock Classes="label" Text="{l:Tr PreviewFolders, Upper=True}" />
-              <ScrollViewer MaxHeight="150" HorizontalScrollBarVisibility="Disabled">
-                <ItemsControl ItemsSource="{Binding Folders}">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:CleanupFolderRow">
-                      <Border Classes="rule" Padding="0,7">
-                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="14">
-                          <TextBlock Classes="mono" FontSize="12" VerticalAlignment="Center" TextTrimming="LeadingCharacterEllipsis"
-                                     Text="{Binding Path}" ToolTip.Tip="{Binding Path}" />
-                          <TextBlock Grid.Column="1" Classes="secondary" FontSize="12.5" VerticalAlignment="Center" Text="{Binding Detail}" />
-                          <Button Grid.Column="2" Classes="small" Content="{l:Tr ShowInExplorer, Upper=True}"
-                                  Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).Preview.ShowInExplorerCommand}"
-                                  CommandParameter="{Binding Path}" />
-                        </Grid>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </ScrollViewer>
+              <Border Classes="group" Padding="4">
+                <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+                  <Button Classes="ghost" Command="{Binding BackCommand}">
+                    <TextBlock>
+                      <Run Text="← " />
+                      <Run Text="{l:Tr Back, Upper=True}" />
+                    </TextBlock>
+                  </Button>
+                  <Button Grid.Column="1" Classes="ghost" Command="{Binding UpCommand}">
+                    <TextBlock>
+                      <Run Text="↑ " />
+                      <Run Text="{l:Tr Up, Upper=True}" />
+                    </TextBlock>
+                  </Button>
+                  <Border Grid.Column="2" Width="1" Margin="0,2" Background="{DynamicResource Brush.BorderStrong}" />
+                  <ItemsControl Grid.Column="3" Margin="4,0,0,0" ItemsSource="{Binding Breadcrumbs}" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:PreviewCrumb">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                          <TextBlock Classes="mono tertiary" Text="›" VerticalAlignment="Center" Margin="2,0" />
+                          <Button Classes="link crumb" Classes.last="{Binding IsLast}" MaxWidth="260"
+                                  Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).Preview.NavigateToCommand}"
+                                  CommandParameter="{Binding}">
+                            <TextBlock Text="{Binding Name}" TextTrimming="LeadingCharacterEllipsis" />
+                          </Button>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Button Grid.Column="4" Classes="small" VerticalAlignment="Center" Margin="8,0,4,0"
+                          Content="{l:Tr PreviewShowFolder, Upper=True}" IsVisible="{Binding CanShowCurrent}"
+                          Command="{Binding ShowCurrentInExplorerCommand}" />
+                </Grid>
+              </Border>
             </StackPanel>
 
-            <Grid Grid.Row="2" ColumnDefinitions="*,240" ColumnSpacing="14" Margin="0,18,0,8">
+            <Grid Grid.Row="2" ColumnDefinitions="*,240" ColumnSpacing="14" Margin="0,16,0,8">
               <StackPanel VerticalAlignment="Center" Spacing="2">
                 <TextBlock Classes="label" Text="{Binding ListLabel, Converter={x:Static controls:TextCase.Upper}}" />
                 <TextBlock Classes="caption" Text="{Binding MatchText}" />
@@ -244,17 +300,42 @@
               <TextBox Grid.Column="1" Classes="search" PlaceholderText="{l:Tr PreviewSearch}" Text="{Binding Search}" />
             </Grid>
 
-            <Panel Grid.Row="3" Margin="0,0,0,12">
-              <ListBox Classes="files" ItemsSource="{Binding Files}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <!-- Column headers, aligned with the rows below. -->
+            <Grid Grid.Row="3" Margin="0,4,14,6" ColumnDefinitions="22,*,150,84,156" ColumnSpacing="14" IsVisible="{Binding !HasNoMatch}">
+              <TextBlock Grid.Column="1" Classes="column" Text="{l:Tr ColumnName, Upper=True}" />
+              <TextBlock Grid.Column="2" Classes="column" Text="{l:Tr ColumnShare, Upper=True}" TextTrimming="CharacterEllipsis" />
+              <TextBlock Grid.Column="3" Classes="column" TextAlignment="Right" Text="{l:Tr ColumnSize, Upper=True}" />
+            </Grid>
+
+            <Panel Grid.Row="4" Margin="0,0,0,12">
+              <ListBox Classes="files" ItemsSource="{Binding Entries}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemTemplate>
-                  <DataTemplate x:DataType="vm:CleanupFileRow">
-                    <Grid ColumnDefinitions="*,84,Auto" ColumnSpacing="14">
-                      <StackPanel VerticalAlignment="Center" Spacing="2">
-                        <TextBlock FontSize="13.5" TextTrimming="CharacterEllipsis" Text="{Binding Name}" ToolTip.Tip="{Binding Path}" />
-                        <TextBlock Classes="tertiary" FontSize="11.5" TextTrimming="LeadingCharacterEllipsis" Text="{Binding Location}" />
-                      </StackPanel>
-                      <TextBlock Grid.Column="1" FontSize="13.5" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding SizeText}" />
-                      <Button Grid.Column="2" Classes="small" VerticalAlignment="Center" IsVisible="{Binding CanShow}"
+                  <DataTemplate x:DataType="vm:PreviewEntry">
+                    <Grid ColumnDefinitions="22,*,150,84,156" ColumnSpacing="14">
+                      <!-- Folder: filled tab and body. File: outlined sheet. -->
+                      <Panel Width="18" Height="15" VerticalAlignment="Center" IsVisible="{Binding IsFolder}">
+                        <Border Width="8" Height="4" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,1,0,0" Background="{DynamicResource Brush.TextSecondary}" />
+                        <Border Height="10" VerticalAlignment="Bottom" Margin="0,0,0,1" Background="{DynamicResource Brush.TextSecondary}" />
+                      </Panel>
+                      <Border Width="12" Height="15" VerticalAlignment="Center" BorderThickness="1.5"
+                              BorderBrush="{DynamicResource Brush.TextSecondary}" IsVisible="{Binding IsFile}" />
+
+                      <Button Grid.Column="1" Classes="name" IsEnabled="{Binding IsFolder}" ToolTip.Tip="{Binding Path}"
+                              Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).Preview.OpenCommand}"
+                              CommandParameter="{Binding}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                          <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontSize="13.5" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                            <TextBlock Classes="tertiary" FontSize="11.5" TextTrimming="LeadingCharacterEllipsis"
+                                       Text="{Binding Detail}" IsVisible="{Binding HasDetail}" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="1" Classes="mono secondary" Text="›" VerticalAlignment="Center" IsVisible="{Binding IsFolder}" />
+                        </Grid>
+                      </Button>
+
+                      <ProgressBar Grid.Column="2" MinHeight="6" Height="6" Minimum="0" Maximum="1" Value="{Binding Fraction}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="3" FontSize="13.5" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding SizeText}" />
+                      <Button Grid.Column="4" Classes="small" HorizontalAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding CanShow}"
                               Content="{l:Tr ShowInExplorer, Upper=True}"
                               Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).Preview.ShowInExplorerCommand}"
                               CommandParameter="{Binding Path}" />
