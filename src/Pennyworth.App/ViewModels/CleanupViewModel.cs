@@ -1,5 +1,6 @@
 using System.Globalization;
 using Pennyworth.App.Resources;
+using Pennyworth.App.Services;
 using Pennyworth.Cleanup;
 using Pennyworth.Core.Formatting;
 using Pennyworth.KnowledgeBase;
@@ -36,14 +37,16 @@ public sealed partial class CleanupViewModel : ObservableObject
     private readonly ICleanupService _service;
     private readonly IDialogHost _host;
     private readonly CleanupHistory? _history;
+    private readonly IExplorerLauncher? _explorer;
     private readonly Action _goHome;
 
-    public CleanupViewModel(ICleanupService service, IDialogHost host, Action goHome, CleanupHistory? history = null)
+    public CleanupViewModel(ICleanupService service, IDialogHost host, Action goHome, CleanupHistory? history = null, IExplorerLauncher? explorer = null)
     {
         _service = service;
         _host = host;
         _goHome = goHome;
         _history = history;
+        _explorer = explorer;
     }
 
     [ObservableProperty]
@@ -59,6 +62,13 @@ public sealed partial class CleanupViewModel : ObservableObject
     public bool IsDone => Phase == CleanupPhase.Done;
 
     public bool IsEmpty => Phase == CleanupPhase.Empty;
+
+    /// <summary>The list of everything one item would delete, while the user is looking at it.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsPreviewing))]
+    public partial CleanupPreviewViewModel? Preview { get; private set; }
+
+    public bool IsPreviewing => Preview is not null;
 
     /// <summary>Every rule that has something to clean, in knowledge-base order.</summary>
     [ObservableProperty]
@@ -136,6 +146,8 @@ public sealed partial class CleanupViewModel : ObservableObject
             item.Refresh();
         }
 
+        Preview?.Refresh();
+
         OnPropertyChanged(string.Empty);
     }
 
@@ -148,6 +160,18 @@ public sealed partial class CleanupViewModel : ObservableObject
             OnSelectionChanged();
         }
     }
+
+    /// <summary>Shows every file (or Recycle Bin item) that cleaning <paramref name="item"/> would delete.</summary>
+    [RelayCommand]
+    private void OpenPreview(CleanupItemViewModel item)
+    {
+        if (Phase == CleanupPhase.Select)
+        {
+            Preview = new CleanupPreviewViewModel(item, this, _explorer);
+        }
+    }
+
+    public void ClosePreview() => Preview = null;
 
     [RelayCommand]
     private void AskClean()
@@ -167,6 +191,7 @@ public sealed partial class CleanupViewModel : ObservableObject
             return;
         }
 
+        Preview = null;
         RunItems = selected;
         FreedBytes = 0;
         SkippedFiles = 0;
@@ -203,6 +228,7 @@ public sealed partial class CleanupViewModel : ObservableObject
 
     private async Task MeasureCoreAsync()
     {
+        Preview = null;
         Phase = CleanupPhase.Measuring;
         var estimates = await Task.WhenAll(_service.Rules.Select(rule => _service.MeasureAsync(rule, CancellationToken.None)));
         Items = estimates
@@ -252,6 +278,14 @@ public sealed partial class CleanupItemViewModel : ObservableObject
     public bool IsAvailable { get; }
 
     public bool NeedsFullScan => !IsAvailable;
+
+    public bool IsRecycleBin => Rule.Kind == CleanupKind.RecycleBin;
+
+    /// <summary>"See what will be deleted (1,204 files)".</summary>
+    public string PreviewText => string.Format(IsRecycleBin ? Strings.PreviewLinkBin : Strings.PreviewLink, Items);
+
+    /// <summary>"1,204 files" (Recycle Bin: "12 items").</summary>
+    public string CountText => string.Format(IsRecycleBin ? Strings.CountBin : Strings.CountFiles, Items);
 
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
@@ -326,11 +360,22 @@ public sealed partial class CleanConfirmDialogViewModel(CleanupViewModel cleanup
 
     public string BinNote => string.Format(Strings.BinNote, Rows.FirstOrDefault(row => row.Rule.Kind == CleanupKind.RecycleBin)?.Items ?? 0);
 
+    /// <summary>"18.2 GB in 2,310 files", above the reminder that only the listed files go.</summary>
+    public string CountLine => string.Format(Strings.ConfirmCount, ByteSize.Format(cleanup.SelectedBytes), Rows.Sum(row => row.Items));
+
     /// <summary>The run started by <see cref="ConfirmCommand"/>; lets tests await it.</summary>
     public Task Run { get; private set; } = Task.CompletedTask;
 
     [RelayCommand]
     private void Cancel() => host.CloseDialog();
+
+    /// <summary>Back to the cleanup screen, on the list of what <paramref name="row"/> deletes.</summary>
+    [RelayCommand]
+    private void Review(CleanupItemViewModel row)
+    {
+        host.CloseDialog();
+        cleanup.OpenPreviewCommand.Execute(row);
+    }
 
     [RelayCommand]
     private void Confirm()

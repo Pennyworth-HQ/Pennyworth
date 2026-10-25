@@ -72,6 +72,76 @@ public sealed class CleanupViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task Shows_every_file_before_cleaning_largest_first()
+    {
+        var explorer = new FakeExplorer();
+        var (cleanup, _) = Create(explorer);
+        await cleanup.MeasureAsync();
+        var temp = cleanup.Items.Single(i => i.Rule == Temp);
+
+        cleanup.OpenPreviewCommand.Execute(temp);
+        var preview = cleanup.Preview!;
+
+        Assert.True(cleanup.IsPreviewing);
+        Assert.Equal("See what will be deleted (3 files)", temp.PreviewText);
+        Assert.Equal(["big.tmp", "notes.log", "small.tmp"], preview.Files.Select(f => f.Name));
+        Assert.Equal(@"temp\sub", preview.Files[1].Folder);
+        Assert.Equal([@"C:\fake\temp"], preview.Folders.Select(f => f.Path));
+
+        preview.Search = "LOG";
+        Assert.Equal(["notes.log"], preview.Files.Select(f => f.Name));
+        Assert.Equal("1 matching", preview.MatchText);
+
+        preview.ShowInExplorerCommand.Execute(preview.Files[0].Path);
+        Assert.Equal([@"C:\fake\temp\sub\notes.log"], explorer.Shown);
+
+        preview.ToggleIncludeCommand.Execute(null);
+        Assert.False(temp.IsSelected);
+        Assert.Equal(0, cleanup.SelectedBytes);
+
+        preview.BackCommand.Execute(null);
+        Assert.False(cleanup.IsPreviewing);
+    }
+
+    [Fact]
+    public async Task Recycle_bin_items_show_where_they_came_from()
+    {
+        var (cleanup, _) = Create();
+        await cleanup.MeasureAsync();
+
+        cleanup.OpenPreviewCommand.Execute(cleanup.Items.Single(i => i.Rule == Bin));
+        var big = cleanup.Preview!.Files[0];
+
+        Assert.Equal("big.doc", big.Name);
+        Assert.StartsWith(@"C:\Users\Bob · deleted ", big.Location);
+        Assert.False(big.CanShow);
+    }
+
+    [Fact]
+    public async Task Cleans_exactly_the_lists_that_were_shown()
+    {
+        var (cleanup, host) = Create();
+        await cleanup.MeasureAsync();
+        var temp = cleanup.Items.Single(i => i.Rule == Temp);
+
+        cleanup.AskCleanCommand.Execute(null);
+        var dialog = Assert.IsType<CleanConfirmDialogViewModel>(host.Dialog);
+        Assert.Equal("3.00 GB in 3 files and items.", dialog.CountLine);
+
+        dialog.ReviewCommand.Execute(temp);
+        Assert.Null(host.Dialog);
+        Assert.Same(temp, cleanup.Preview!.Item);
+
+        cleanup.AskCleanCommand.Execute(null);
+        var again = Assert.IsType<CleanConfirmDialogViewModel>(host.Dialog);
+        again.ConfirmCommand.Execute(null);
+        await again.Run;
+
+        Assert.Same(temp.Estimate, Assert.Single(host.Service.CleanedLists));
+        Assert.False(cleanup.IsPreviewing);
+    }
+
+    [Fact]
     public async Task Says_so_when_there_is_nothing_to_clean()
     {
         var host = new DialogHost(new FakeCleanup((Empty, 0)));
@@ -83,10 +153,10 @@ public sealed class CleanupViewModelTests : IDisposable
         Assert.False(cleanup.CanClean);
     }
 
-    private (CleanupViewModel Cleanup, DialogHost Host) Create()
+    private (CleanupViewModel Cleanup, DialogHost Host) Create(FakeExplorer? explorer = null)
     {
         var host = new DialogHost(new FakeCleanup((Temp, 3 * Gb), (Bin, Gb), (Update, 5 * Gb), (Empty, 0)));
-        return (new CleanupViewModel(host.Service, host, () => { }, new CleanupHistory(Path.Combine(_dir, "h.jsonl"))), host);
+        return (new CleanupViewModel(host.Service, host, () => { }, new CleanupHistory(Path.Combine(_dir, "h.jsonl")), explorer), host);
     }
 
     private sealed class DialogHost(FakeCleanup service) : IDialogHost

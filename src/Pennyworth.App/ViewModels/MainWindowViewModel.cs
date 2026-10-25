@@ -74,7 +74,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Live = new LiveViewModel();
         Welcome = new WelcomeViewModel(this);
         Home = new HomeViewModel(this);
-        Cleanup = new CleanupViewModel(services.Cleanup, this, () => Page = Page.Home, services.CleanupHistory);
+        Cleanup = new CleanupViewModel(services.Cleanup, this, () => Page = Page.Home, services.CleanupHistory, services.Explorer);
         Memory = new MemoryViewModel(Live, this, services.Closer ?? new ProcessCloser());
         Folders = new FolderBrowserViewModel(this);
         Pc = new PcViewModel(this);
