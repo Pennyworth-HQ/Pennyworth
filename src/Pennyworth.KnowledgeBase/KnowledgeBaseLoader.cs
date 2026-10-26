@@ -8,6 +8,7 @@ public static class KnowledgeBaseLoader
     private const string ResourceName = "Pennyworth.KnowledgeBase.locations.json";
     private const string ProcessesResource = "Pennyworth.KnowledgeBase.processes.json";
     private const string CleanupResource = "Pennyworth.KnowledgeBase.cleanup.json";
+    private const string DiagnosisResource = "Pennyworth.KnowledgeBase.diagnosis.json";
 
     public static KnowledgeBaseData LoadEmbedded() =>
         Load(ResourceName, KnowledgeBaseJsonContext.Default.KnowledgeBaseData);
@@ -21,6 +22,13 @@ public static class KnowledgeBaseLoader
 
     /// <summary>What the cleanup screen offers, with safety levels and consequences.</summary>
     public static CleanupCatalog LoadCleanupRules() => Load(CleanupResource, CatalogJsonContext.Default.CleanupCatalog);
+
+    /// <summary>What the assistant concludes from the facts it is given.</summary>
+    public static DiagnosisCatalog LoadDiagnosisRules() => Load(DiagnosisResource, AssistantCatalogJsonContext.Default.DiagnosisCatalog);
+
+    public static DiagnosisCatalog ParseDiagnosisRules(string json) =>
+        JsonSerializer.Deserialize(json, AssistantCatalogJsonContext.Default.DiagnosisCatalog)
+        ?? throw new InvalidDataException("The diagnosis rules are empty.");
 
     private static T Load<T>(string resourceName, JsonTypeInfo<T> typeInfo)
     {

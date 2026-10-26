@@ -82,4 +82,35 @@ public class CatalogTests
             Assert.True(r.Kind == CleanupKind.RecycleBin || r.Paths.Count > 0, $"{r.Id} has no paths");
         });
     }
+
+    [Fact]
+    public void Diagnosis_rules_are_complete_and_bilingual()
+    {
+        var rules = KnowledgeBaseLoader.LoadDiagnosisRules().Rules;
+
+        Assert.NotEmpty(rules);
+        Assert.Equal(rules.Count, rules.Select(r => r.Id).Distinct().Count());
+        Assert.All(rules, r =>
+        {
+            Assert.NotEmpty(r.When);
+            Assert.All(r.When, c => Assert.Contains(c.Op, new[] { "gt", "gte", "lt", "lte", "eq", "exists" }));
+            Assert.False(string.IsNullOrWhiteSpace(r.Finding.En));
+            Assert.False(string.IsNullOrWhiteSpace(r.Finding.PtBr));
+        });
+    }
+
+    [Fact]
+    public void Parses_diagnosis_rules()
+    {
+        var catalog = KnowledgeBaseLoader.ParseDiagnosisRules("""
+            { "version": 1, "rules": [ { "id": "x", "severity": "Warning", "group": "Memory",
+              "when": [ { "fact": "ram.used_percent", "op": "gte", "value": 85 } ],
+              "finding": { "en": "a", "pt-BR": "b" } } ] }
+            """);
+
+        var rule = Assert.Single(catalog.Rules);
+        Assert.Equal(DiagnosisSeverity.Warning, rule.Severity);
+        Assert.Equal(85, rule.When[0].Value);
+        Assert.Null(rule.Action);
+    }
 }
