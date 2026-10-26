@@ -50,7 +50,7 @@ public class ContextBuilderTests
 
         Assert.Equal(new AssistantAction(ActionKind.CleanupItem, "recycle-bin"), bundle.AllowedActions[0]);
         Assert.Contains(new ContextLine("If removed", "conseq"), bundle.Facts);
-        Assert.Contains(new ContextLine("Item in the Recycle Bin", @"setup.exe, 1.50 GB (from C:\Users\ana\Documents)"), bundle.Facts);
+        Assert.Contains(new ContextLine("Item in the Recycle Bin", @"C:\Users\ana\Documents\setup.exe (1.50 GB)"), bundle.Facts);
         Assert.Contains(bundle.AllowedActions, a => a.Kind == ActionKind.Unlock);
     }
 

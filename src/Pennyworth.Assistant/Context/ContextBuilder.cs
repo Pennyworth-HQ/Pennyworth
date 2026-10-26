@@ -154,9 +154,8 @@ public static class ContextBuilder
         lines.Add(new ContextLine(pt ? "Se for removido" : "If removed", estimate.Rule.Consequence.Get(culture)));
         foreach (CleanupFile item in (estimate.Files ?? []).Where(f => f.OriginalPath is not null).Take(MaxRecycleBinItems))
         {
-            string name = Path.GetFileName(item.OriginalPath!);
-            string from = Path.GetDirectoryName(item.OriginalPath!) ?? "";
-            lines.Add(new ContextLine(pt ? "Item na Lixeira" : "Item in the Recycle Bin", $"{name}, {ByteSize.Format(item.Size, culture)} ({(pt ? "veio de" : "from")} {from})"));
+            // The full path in one piece, so the anonymiser hides personal file names too (phase 6 privacy review).
+            lines.Add(new ContextLine(pt ? "Item na Lixeira" : "Item in the Recycle Bin", $"{item.OriginalPath} ({ByteSize.Format(item.Size, culture)})"));
         }
 
         return lines;
