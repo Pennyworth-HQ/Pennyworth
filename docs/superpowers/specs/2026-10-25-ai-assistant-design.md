@@ -360,6 +360,25 @@ measured. Tested revisions for reference: `microsoft/Phi-3.5-mini-instruct-onnx@
 (`model.onnx.data` SHA-256 `a5152617…ccc84e8`), `microsoft/Phi-4-mini-instruct-onnx@fc04c8f`
 (`model.onnx.data` SHA-256 `b32f38f9…d559d0f`).
 
+### Phase 1 evaluation (2026-10-26, real prompt, 32 scenarios × EN/PT-BR)
+
+Phi-4-mini-instruct on DirectML (the only phase 0 model that runs on the GPU), strict checks:
+
+| Run | EN pass | PT-BR pass | numbers | actions | safety | length | unknown |
+|---|---|---|---|---|---|---|---|
+| v1: real persona prompt | 26/32 | 12/32 | 4 | 12 | 3 | 15 | 7/8 failed |
+| v2: + "NOT MEASURED" line in the context, refusal-aware warnings | 25/32 | 13/32 | 2 | 5 | 4 | 19 | 3/8 failed |
+
+- Listing what Pennyworth doesn't measure (temperatures, fans, internet speed, game or Windows
+  requirements, prices) cut "answered from general knowledge" failures from 7 to 3 of 8.
+- The 4 safety failures in v2 are real unsafe advice the model gave when asked directly
+  (steps to disable Windows updates, recommending "PC optimizers"); `AdviceFilter` replaces
+  those sentences in the app, which is why the filter exists.
+- Action failures are extra or invented codes (`[[action:restart]]`); `ActionLinker` shows only
+  the first allowed one, so users never see them.
+- Portuguese answers are too long (most length failures) — a model-choice item for phase 4.
+- Speed: median 1.6 s (EN) / 3.1 s (PT-BR) per answer, ~85 tok/s on the RTX 5060.
+
 ### Changes to the plan
 
 - Phase 2 drops the Anthropic, Google and Azure SDKs: OpenAI SDK for three backends, own
