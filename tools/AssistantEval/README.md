@@ -44,4 +44,6 @@ dotnet run --project tools/AssistantEval -- --rescore tools/AssistantEval/report
 ```
 
 The project is not in `Pennyworth.slnx` so normal builds and tests don't pull the ONNX runtime.
-The persona prompt in `Prompt.cs` is provisional; phase 1 moves it into `Pennyworth.Assistant`.
+Each scenario becomes a `ContextBundle` and is sent with the app's own `PersonaPrompt`; the
+safety check uses the app's `AdviceFilter`, so a failure there means the model gave advice the
+app would replace.
