@@ -82,9 +82,23 @@ public sealed partial class Anonymizer
         return sb.ToString();
     }
 
-    /// <summary>Puts the original names back, for showing the answer to the person.</summary>
-    public string Restore(string text) =>
-        PlaceholderPattern().Replace(text, match => _originals.TryGetValue(match.Value, out string? original) ? original : match.Value);
+    /// <summary>
+    /// Puts the original names back, for showing the answer to the person. A path sent with forward
+    /// slashes comes back with forward slashes: the restored text matches what was sent instead of
+    /// mixing separators.
+    /// </summary>
+    public string Restore(string text) => PlaceholderPattern().Replace(text, match =>
+    {
+        if (!_originals.TryGetValue(match.Value, out string? original))
+        {
+            return match.Value;
+        }
+
+        int after = match.Index + match.Length;
+        return match.Value == "<profile>" && after < text.Length && text[after] == '/'
+            ? original.Replace('\\', '/')
+            : original;
+    });
 
     private string Outside(string text)
     {

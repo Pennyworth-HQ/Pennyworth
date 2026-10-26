@@ -89,6 +89,25 @@ public class AnonymizerTests
         Assert.Equal("See <profile> now", anonymizer.Anonymize("See C:/Users/ana now"));
     }
 
+    [Theory]
+    [InlineData(@"C:\Users\ana\Divórcio-2026\pensão.docx")]
+    [InlineData("C:/Users/ana/Divórcio-2026/pensão.docx")]
+    public void Round_trips_what_the_person_sent(string input)
+    {
+        var anonymizer = new Anonymizer("ana", @"C:\Users\ana", "PC1");
+
+        Assert.Equal(input, anonymizer.Restore(anonymizer.Anonymize(input)));
+    }
+
+    [Fact]
+    public void Round_trips_a_posix_profile()
+    {
+        var anonymizer = new Anonymizer("ana", "/home/ana", "PC1");
+        const string Input = "/home/ana/Divórcio-2026/pensão.docx";
+
+        Assert.Equal(Input, anonymizer.Restore(anonymizer.Anonymize(Input)));
+    }
+
     [Fact]
     public void Mixed_separators_still_hide_personal_folders()
     {
