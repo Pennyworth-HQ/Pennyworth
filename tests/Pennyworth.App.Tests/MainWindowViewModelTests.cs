@@ -41,6 +41,25 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task A_failed_rescan_keeps_the_summary_that_was_on_screen()
+    {
+        var results = new Queue<Func<StorageTree>>([() => Build(), () => throw new IOException("The drive went away.")]);
+        var scanner = new FakeScanner(_ => results.Dequeue()());
+        var viewModel = new MainWindowViewModel(TestApp.Services(scanner));
+        viewModel.Initialize();
+        await viewModel.CurrentScan;
+        var shown = Assert.IsType<StorageSummaryViewModel>(viewModel.CurrentSummary);
+        Assert.True(shown.IsComplete);
+
+        viewModel.RescanCommand.Execute(null);
+        await viewModel.CurrentScan;
+
+        Assert.Same(shown, viewModel.CurrentSummary);
+        Assert.True(shown.IsComplete);
+        Assert.True(viewModel.HasToast);
+    }
+
+    [Fact]
     public async Task A_failed_scan_can_be_retried()
     {
         var scanner = new FakeScanner(_ => throw new IOException("The drive went away."));

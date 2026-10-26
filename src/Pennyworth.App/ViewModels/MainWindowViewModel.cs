@@ -309,9 +309,19 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             Live.Flicker();
         }
 
-        Memory.Update();
-        Home.RefreshLive();
-        Pc.RefreshLive();
+        try
+        {
+            Memory.Update();
+            Home.RefreshLive();
+            Pc.RefreshLive();
+        }
+        catch (Exception ex)
+        {
+            // Refreshing the views must not escape either: TickAsync runs from an async void timer
+            // handler, and a stale number is better than a dead window.
+            Debug.WriteLine(ex);
+        }
+
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(RamStatus));
         OnPropertyChanged(nameof(CpuStatus));
@@ -642,6 +652,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             return;
         }
 
+        // What the screen showed before this attempt: a failed rescan must not replace it with a
+        // half-built summary.
+        StorageSummaryViewModel? previous = _summaries.GetValueOrDefault(root);
+
         var cancellation = new CancellationTokenSource();
         _scanCancellation = cancellation;
         var summary = new StorageSummaryViewModel(drive.Summary, _services.Locations, OpenFolder, RequestUnlock, isSystemDrive: drive == SystemDrive);
@@ -680,12 +694,20 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         catch (Exception ex)
         {
             // A scan fails for reasons the person cannot control: a drive that went away, a folder
-            // deleted mid-walk, permissions. Tell them and forget the result so a retry rescans,
-            // instead of leaving an empty screen with nothing to click.
+            // deleted mid-walk, permissions. Tell them, put back what was on screen before and let a
+            // retry rescan, instead of leaving an empty screen with nothing to click.
             Debug.WriteLine(ex);
             if (_summaries.GetValueOrDefault(root) == summary)
             {
-                _summaries.Remove(root);
+                if (previous is null)
+                {
+                    _summaries.Remove(root);
+                }
+                else
+                {
+                    _summaries[root] = previous;
+                    CurrentSummary = previous;
+                }
             }
 
             ShowToast(string.Format(Strings.ScanFailed, drive.Name));
