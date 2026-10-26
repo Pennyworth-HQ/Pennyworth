@@ -186,11 +186,11 @@ timeout, retry once on transient errors).
 
 | Backend | Client | Notes |
 |---|---|---|
-| OpenAI-compatible | OpenAI .NET SDK `ChatClient` + `AsIChatClient()` with custom endpoint | Covers OpenAI, OpenRouter, Groq, Ollama, LM Studio, Gemini's OpenAI-compatible endpoint |
-| Anthropic | Official `Anthropic` SDK, `IAnthropicClient.AsIChatClient(model)` | |
-| Google Gemini | Native SDK if it is AOT-safe (phase 0), otherwise Gemini's OpenAI-compatible endpoint | |
-| Azure OpenAI | Azure OpenAI client → `ChatClient` → `AsIChatClient()` | Endpoint + deployment name |
-| Local | ONNX Runtime GenAI `IChatClient` (DirectML; CPU fallback) | Loaded lazily in-process; unloaded after idle |
+| OpenAI-compatible | OpenAI .NET SDK `ChatClient` + `AsIChatClient()` with custom endpoint | Covers OpenAI, OpenRouter, Groq, Ollama, LM Studio. Zero AOT warnings (§17) |
+| Anthropic | **Own small Messages API client** (`HttpClient` + source-generated JSON + SSE) implementing `IChatClient` | The official `Anthropic` SDK fails under AOT (§17) |
+| Google Gemini | Gemini's OpenAI-compatible endpoint through the OpenAI SDK | The native `Google.GenAI` SDK works under AOT but pulls Newtonsoft.Json, System.Management and Google auth for a text chat (§17) |
+| Azure OpenAI | OpenAI SDK against the resource's v1 endpoint (`https://<resource>.openai.azure.com/openai/v1`) | `Azure.AI.OpenAI` works but adds 62 AOT warnings; not needed (§17) |
+| Local | ONNX Runtime GenAI `OnnxRuntimeGenAIChatClient` (GPU; CPU fallback) with the model's own chat template | Loaded lazily in-process; unloaded after idle. AOT-clean (§17) |
 
 **Keys** are stored in Windows Credential Manager (`CredWrite`/`CredRead` via `LibraryImport`,
 target `Pennyworth/Assistant/<profile-id>`), never logged or shown again in full (last 4
@@ -204,7 +204,11 @@ connection" sends a one-word prompt and reports success, latency and the model's
 - **Choice:** the default is decided in phase 0 by running the evaluation set in PT-BR and EN
   on Phi-mini and one or two other small instruction models published in ONNX GenAI format
   with permissive licences. Selection criteria, in order: no invented facts, PT-BR quality,
-  RAM use, speed on CPU-only machines.
+  RAM use, speed on CPU-only machines. **Phase 0 result:** Phi-3.5-mini-instruct (MIT) is the
+  provisional default, Phi-4-mini-instruct the fallback; the final variant and hashes are
+  pinned in phase 4 after the conditions in §17 are met.
+- **Generation settings:** a repetition penalty and a repeated-phrase guard that stops the
+  stream (both models looped in phase 0), and the answer budget enforced in tokens.
 - **Hardware check:** before offering the download, measure free disk on the target drive,
   total and available RAM, DirectML-capable GPU and VRAM. Show a plain verdict ("Should run
   well" / "Will be slow on this PC" / "Not enough free space") with the reasons and a link to
@@ -276,15 +280,90 @@ connection" sends a one-word prompt and reports success, latency and the model's
 - App tests: Ask view model flows (setup, send preview, streaming, stop, feedback, action
   button opens the right screen), contextual buttons pass the right topic.
 - Integration (manual / opt-in, needs keys or the model): `AssistantEval` per backend.
-- AOT: publish with `PublishAot=true` in CI once phase 0 confirms the packages trim cleanly.
+- AOT: publish with `PublishAot=true` in CI (phase 0 confirmed the chosen packages are clean, §17).
 
 ## 16. Open risks
 
-| Risk | Mitigation |
-|---|---|
-| Provider SDKs or ONNX Runtime GenAI not AOT/trim safe | Phase 0 spike; fall back to raw `HttpClient` + source-generated JSON clients behind `IChatClient` |
-| No small local model is good enough in PT-BR | Evaluation decides; fallback: local answers in English with a note, or cloud-only for PT-BR |
-| Anonymiser misses a personal name in a path | Default to anonymising every non-knowledge-base segment under the profile; tests with real-looking paths |
-| Local model memory pressure on the target audience's PCs | Optional download, hardware verdict, lazy load, idle unload |
-| Persona drifts into inventing facts | Facts-first prompt, number check in evaluation, short answer budget |
-| One large release | Internal phases, each merged only when its tests and evaluation pass |
+| Risk | Mitigation | Status after phase 0 |
+|---|---|---|
+| Provider SDKs or ONNX Runtime GenAI not AOT/trim safe | Phase 0 spike; fall back to raw `HttpClient` + source-generated JSON clients behind `IChatClient` | Resolved: OpenAI SDK and ONNX GenAI are clean; own Anthropic client; Gemini and Azure through the OpenAI SDK |
+| No small local model is good enough in PT-BR | Evaluation decides; fallback: local answers in English with a note, or cloud-only for PT-BR | Partly: Phi-3.5-mini passes 9/10 PT-BR checks but its tone is odd at times; re-evaluate in phase 4 with the real prompt, repetition guard and a human review |
+| Local model is too slow without a GPU | Hardware verdict says "Will be slow", shorter answers, CPU-optimised variant | New: ~4 tok/s on a Ryzen 5 5600 with the GPU variant, 40–85 s per answer; measure the CPU variant in phase 4 |
+| DirectML packaging changes | Pin versions; evaluate the WinML package | New: `OnnxRuntimeGenAI.DirectML` stopped at 0.14.1 (June 2026) while the main package is at 0.18.0; WinML is the active Windows GPU path |
+| Anonymiser misses a personal name in a path | Default to anonymising every non-knowledge-base segment under the profile; tests with real-looking paths | Open (phase 1) |
+| Local model memory pressure on the target audience's PCs | Optional download, hardware verdict, lazy load, idle unload | Unload confirmed to return memory (§17) |
+| Persona drifts into inventing facts | Facts-first prompt, number check in evaluation, short answer budget | Phi-4-mini invented a percentage once; checks catch it |
+| Model parrots the safety rules ("I can't suggest editing the registry…") | Rules phrased as behaviour, not as a list of topics; advice filter treats refusals separately | New: seen in both Phi models |
+| One large release | Internal phases, each merged only when its tests and evaluation pass | Open |
+
+## 17. Phase 0 results (2026-10-25)
+
+Measured on the development PC: Ryzen 5 5600 (6 cores), 16 GB RAM, RTX 5060 8 GB, Windows 11,
+.NET 10.0.401, Visual Studio 18 C++ tools for Native AOT. Throwaway spikes lived in a scratch
+folder; the evaluation harness is kept in `tools/AssistantEval` with its reports.
+
+### Providers under Native AOT
+
+A console app with every client was published with `PublishAot=true` and run against a local
+stub server that answers in each API's wire format (single response and streaming, with usage).
+
+| Backend / package (version) | AOT warnings | Works after AOT publish | Decision |
+|---|---|---|---|
+| OpenAI SDK 2.14.0 + `Microsoft.Extensions.AI.OpenAI` 10.11.0 | 0 | Yes, both modes, usage reported | Use for OpenAI-compatible, Gemini and Azure |
+| Azure OpenAI v1 endpoint through the OpenAI SDK | 0 | Yes | Use for Azure |
+| `Azure.AI.OpenAI` 2.1.0 | 62 | Yes | Not needed |
+| `Google.GenAI` 1.27.0 (`AsIChatClient`) | 2 own + Newtonsoft.Json, System.Management (COM), Google.Apis | Yes on the tested path | Not needed; Gemini's OpenAI-compatible endpoint instead |
+| `Anthropic` 13.3.0 (`AsIChatClient`) | ~3,700 | **No**: throws "Reflection-based serialization has been disabled" while building the request | Own small client in `Pennyworth.Assistant.Providers` |
+
+The provider spike executable with all SDKs was 50 MB; dropping Anthropic, Google and Azure
+SDKs removes most of that.
+
+### Local runtime
+
+- `Microsoft.ML.OnnxRuntimeGenAI.DirectML` 0.14.1 ships `OnnxRuntimeGenAIChatClient`
+  (`IChatClient`); it needs a prompt formatter, done with `Tokenizer.ApplyChatTemplate` so each
+  model uses its own template.
+- Native AOT publish: **0 warnings**, runs correctly. Native files: DirectML.dll 18.5 MB,
+  onnxruntime.dll 17.2 MB, onnxruntime-genai.dll 6.3 MB (~42 MB, can be downloaded with the
+  model instead of shipped).
+- Cancelling mid-stream stops at once (0 ms on GPU, 20 ms on CPU) and the next request works.
+- Unload returns the memory: Phi-4-mini private memory 4.2 GB → 0.33 GB on DirectML and
+  2.5 GB → 0.02 GB on CPU, repeatable across two load/unload rounds; load takes 4–5 s warm.
+- The Phi-3.5-mini GPU variant (`gpu-int4-awq-block-128`) does not run on DirectML 0.14.1
+  ("cannot use the graph capture feature… control flow nodes"); no provider option tried
+  turned it off. Its CPU run was used for quality.
+
+### Models (10 scenarios × EN/PT-BR, provisional prompt)
+
+| Model (variant tested) | Licence | Download | EN pass | PT-BR pass | GPU speed | CPU speed (same files) | RAM on CPU |
+|---|---|---|---|---|---|---|---|
+| Phi-3.5-mini-instruct (`gpu-int4-awq-block-128`) | MIT | 2.3 GB (CPU variant 2.8 GB) | 10/10 | 9/10 | did not run on DirectML | 3.9 tok/s, median 40 s EN / 65 s PT | ~3 GB |
+| Phi-4-mini-instruct (`gpu-int4-rtn-block-32`) | MIT | 3.4 GB (CPU variant 4.9 GB) | 8/10 | 5/10 | 84–89 tok/s, median 2–4 s | 3.7 tok/s, median 44 s EN / 85 s PT | 2.8 GB |
+| Gemma-3-4b-it (`gpu-fp16-io-int4`) | Gemma Terms of Use (repo says MIT; weights are Google's) | 4.1 GB | — | — | did not run: the repo is the multimodal pipeline and the chat client fails on `image_features` | — | — |
+
+Reading the answers, not only the checks:
+
+- Phi-3.5-mini follows the facts and safety rules best and keeps to the length, but its
+  Portuguese persona is sometimes odd ("meu ladrão", "bem, bem, bem…" loop once).
+- Phi-4-mini writes longer, rambles in Portuguese (one answer looped), invented "55%" once and
+  suggested changing BIOS settings in one Portuguese answer.
+- Both append stray brackets after action codes (`]]]]`, `].`); the action linker must accept them.
+- Both sometimes repeat the rule list back to the user; prompts should describe behaviour
+  instead of listing forbidden topics.
+
+**Decision:** Phi-3.5-mini-instruct is the provisional local default (best grounding and PT-BR
+checks, smallest download), Phi-4-mini-instruct the fallback for PCs where only it runs well on
+the GPU. Conditions before pinning it in phase 4: (1) a GPU path for it (CPU variant on
+DirectML, or `OnnxRuntimeGenAI.WinML` 0.18), (2) repetition penalty + loop guard, (3) the
+real phase 1 prompt re-evaluated with a human read of every PT-BR answer, (4) CPU-variant speed
+measured. Tested revisions for reference: `microsoft/Phi-3.5-mini-instruct-onnx@7230dcd`
+(`model.onnx.data` SHA-256 `a5152617…ccc84e8`), `microsoft/Phi-4-mini-instruct-onnx@fc04c8f`
+(`model.onnx.data` SHA-256 `b32f38f9…d559d0f`).
+
+### Changes to the plan
+
+- Phase 2 drops the Anthropic, Google and Azure SDKs: OpenAI SDK for three backends, own
+  Anthropic client.
+- Phase 4 starts with the WinML-vs-DirectML package decision and the CPU-variant measurement.
+- Phase 1's advice filter must tell refusals ("I won't suggest…") from advice, as the harness
+  now does.

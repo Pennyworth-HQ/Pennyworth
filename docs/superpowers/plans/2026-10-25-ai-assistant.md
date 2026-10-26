@@ -40,14 +40,16 @@ Phases 2 and 4 touch different projects and can run in parallel once phase 1 is 
 
 Throwaway code lives in `tools/spikes/`; only the evaluation harness is kept.
 
-- [ ] **0.1 AOT check for each package.** In a scratch console app with `PublishAot=true` and `TreatWarningsAsErrors`, call each client once: `Microsoft.Extensions.AI` + `Microsoft.Extensions.AI.OpenAI` (custom endpoint), the official `Anthropic` SDK (`AsIChatClient`), the Gemini .NET SDK, Azure OpenAI client, `Microsoft.ML.OnnxRuntimeGenAI.DirectML`. Record trim/AOT warnings and whether the published exe works.
+- [x] **0.1 AOT check for each package.** In a scratch console app with `PublishAot=true` and `TreatWarningsAsErrors`, call each client once: `Microsoft.Extensions.AI` + `Microsoft.Extensions.AI.OpenAI` (custom endpoint), the official `Anthropic` SDK (`AsIChatClient`), the Gemini .NET SDK, Azure OpenAI client, `Microsoft.ML.OnnxRuntimeGenAI.DirectML`. Record trim/AOT warnings and whether the published exe works.
   - Exit: a table in `docs/superpowers/specs/2026-10-25-ai-assistant-design.md` §9 noting, per backend, "SDK" or "raw HTTP fallback".
-- [ ] **0.2 ONNX GenAI `IChatClient`.** Confirm the package version that ships an `IChatClient` implementation, its streaming and cancellation behaviour, DirectML device selection and CPU fallback, and peak RAM for a ~4B int4 model.
-- [ ] **0.3 Evaluation harness skeleton.** `tools/AssistantEval`: loads scenario JSON (facts + questions in EN/PT-BR), sends them through any `IChatClient`, runs the automatic checks (numbers only from facts, allowed actions only, blocked advice, length, language, no character names) and writes a Markdown report. Start with 10 scenarios; grow to 30+ in phase 1.
-- [ ] **0.4 Local model shortlist.** Run the harness on Phi-mini (ONNX, int4) and one or two other small instruction models published in ONNX GenAI format with permissive licences, CPU and DirectML. Record score, RAM, tokens/s, download size.
+- [x] **0.2 ONNX GenAI `IChatClient`.** Confirm the package version that ships an `IChatClient` implementation, its streaming and cancellation behaviour, DirectML device selection and CPU fallback, and peak RAM for a ~4B int4 model.
+- [x] **0.3 Evaluation harness skeleton.** `tools/AssistantEval`: loads scenario JSON (facts + questions in EN/PT-BR), sends them through any `IChatClient`, runs the automatic checks (numbers only from facts, allowed actions only, blocked advice, length, language, no character names) and writes a Markdown report. Start with 10 scenarios; grow to 30+ in phase 1.
+- [x] **0.4 Local model shortlist.** Run the harness on Phi-mini (ONNX, int4) and one or two other small instruction models published in ONNX GenAI format with permissive licences, CPU and DirectML. Record score, RAM, tokens/s, download size.
   - Exit: default model, its Hugging Face repo, file list and SHA-256 hashes written into the spec §10. If none passes PT-BR, write down the fallback chosen (English local answers or cloud-only PT-BR).
 
 **Phase exit:** every open risk in spec §16 marked resolved or with a chosen fallback.
+
+**Done 2026-10-25** — results in spec §17: OpenAI SDK + ONNX GenAI are AOT-clean; the Anthropic SDK is not (own client); Gemini and Azure go through the OpenAI SDK; Phi-3.5-mini is the provisional local default with conditions for phase 4.
 
 ---
 
@@ -75,7 +77,7 @@ New projects `src/Pennyworth.Assistant` and `tests/Pennyworth.Assistant.Tests`, 
 
 - [ ] **2.1 Credential store.** `ICredentialStore` + `WindowsCredentialStore` (`CredWriteW`/`CredReadW`/`CredDeleteW` via `LibraryImport`, target `Pennyworth/Assistant/<profile-id>`). Tests against the real store with a test-only target prefix, cleaned up after.
 - [ ] **2.2 Profiles in settings.** Extend `AppSettings` with assistant profiles (no keys), default profile, monthly cap, "show what I send" per profile; migration from settings without them.
-- [ ] **2.3 Chat client factory.** One builder per backend: OpenAI-compatible (endpoint + model), Anthropic, Gemini (SDK or OpenAI-compatible endpoint per phase 0), Azure OpenAI (endpoint + deployment). Shared pipeline: usage metering, timeout, one retry on transient errors, cancellation.
+- [ ] **2.3 Chat client factory.** OpenAI SDK for OpenAI-compatible (endpoint + model), Gemini (its OpenAI-compatible endpoint) and Azure OpenAI (resource v1 endpoint + deployment); a small own Anthropic Messages client (`HttpClient`, source-generated JSON, SSE streaming, usage) because the official SDK fails under AOT (spec §17). Shared pipeline: usage metering, timeout, one retry on transient errors, cancellation.
 - [ ] **2.4 Test connection.** One short prompt; returns success, latency, model name or a classified error (bad key, unknown model, network, quota).
 - [ ] **2.5 Error mapping.** Provider errors → `AssistantError` kinds used by the UI; nothing sensitive in messages.
 - [ ] **2.6 Evaluation per backend.** Run `AssistantEval` on at least one model per backend; record results.
@@ -100,6 +102,8 @@ New projects `src/Pennyworth.Assistant` and `tests/Pennyworth.Assistant.Tests`, 
 ---
 
 ## Phase 4 — Local model (`Pennyworth.Assistant.Local`)
+
+- [ ] **4.0 Runtime package and variant.** Choose `OnnxRuntimeGenAI.WinML` 0.18+ or `DirectML` 0.14.1 (frozen since June 2026); get Phi-3.5-mini running on the GPU (CPU variant on DirectML or WinML); measure the CPU-optimised variant; add repetition penalty and a loop guard; re-run `AssistantEval` with the phase 1 prompt and read every PT-BR answer. Pin the default model and hashes in spec §10.
 
 - [ ] **4.1 Hardware check.** RAM total/available, free space on the models drive, DirectML adapters and VRAM (reuse `WindowsSpecsReader` data); verdict + reasons. Tests on synthetic specs.
 - [ ] **4.2 Model catalogue.** Embedded entry for the default model chosen in phase 0: repo, revision, files, sizes, SHA-256, licence, RAM estimate.
