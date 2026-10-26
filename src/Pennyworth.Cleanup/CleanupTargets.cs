@@ -59,16 +59,23 @@ internal static class CleanupTargets
         return result.ToString();
     }
 
+    /// <summary>
+    /// Walks an absolute pattern down from its real root, which comes from
+    /// <see cref="Path.GetPathRoot(string)"/> rather than from the first segment: only drive letters
+    /// double as a root, so a UNC share or a POSIX path used to be turned into a relative walk that
+    /// matched nothing.
+    /// </summary>
     private static IEnumerable<string> Match(string path)
     {
-        string[] segments = path.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length == 0)
+        string? root = Path.GetPathRoot(path);
+        if (string.IsNullOrEmpty(root))
         {
             yield break;
         }
 
-        IEnumerable<string> current = [segments[0] + Path.DirectorySeparatorChar];
-        foreach (string segment in segments.Skip(1))
+        string[] segments = path[root.Length..].Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
+        IEnumerable<string> current = [root];
+        foreach (string segment in segments)
         {
             current = segment == "*"
                 ? current.SelectMany(SafeSubdirectories)
