@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Pennyworth.App/Pennyworth.App.csproj" />
     <Project Path="src/Pennyworth.Assistant/Pennyworth.Assistant.csproj" />
+    <Project Path="src/Pennyworth.Assistant.Providers/Pennyworth.Assistant.Providers.csproj" />
     <Project Path="src/Pennyworth.Cleanup/Pennyworth.Cleanup.csproj" />
     <Project Path="src/Pennyworth.Core/Pennyworth.Core.csproj" />
     <Project Path="src/Pennyworth.Insights/Pennyworth.Insights.csproj" />
@@ -12,6 +13,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Pennyworth.App.Tests/Pennyworth.App.Tests.csproj" />
     <Project Path="tests/Pennyworth.Assistant.Tests/Pennyworth.Assistant.Tests.csproj" />
+    <Project Path="tests/Pennyworth.Assistant.Providers.Tests/Pennyworth.Assistant.Providers.Tests.csproj" />
     <Project Path="tests/Pennyworth.Cleanup.Tests/Pennyworth.Cleanup.Tests.csproj" />
     <Project Path="tests/Pennyworth.Core.Tests/Pennyworth.Core.Tests.csproj" />
     <Project Path="tests/Pennyworth.Insights.Tests/Pennyworth.Insights.Tests.csproj" />
