@@ -35,7 +35,20 @@ public sealed partial class AssistantSession(
         IReadOnlyList<ChatMessage> history,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        StoppedRepeating = false;
+        PreparedQuestion prepared = Prepare(question, topic, snapshot, culture, history);
+        yield return new ContextUpdate(prepared.Bundle, prepared.SentPrompt, prepared.SentQuestion);
+        await foreach (AssistantUpdate update in StreamAsync(prepared, cancellationToken))
+        {
+            yield return update;
+        }
+    }
+
+    /// <summary>
+    /// Everything that will be sent, built and (for the cloud) anonymised, without sending it —
+    /// so the person can see it first in the send preview.
+    /// </summary>
+    public PreparedQuestion Prepare(string question, AssistantTopic topic, PcSnapshot snapshot, CultureInfo culture, IReadOnlyList<ChatMessage> history)
+    {
         var facts = FactCollector.Collect(snapshot, culture);
         var bundle = ContextBuilder.Build(topic, facts, engine.Evaluate(facts, culture), snapshot, culture);
         bool cloud = !profile.IsLocal && anonymizer is not null;
@@ -43,19 +56,26 @@ public sealed partial class AssistantSession(
 
         string prompt = Send(PersonaPrompt.Compose(bundle));
         string sentQuestion = Send(question);
-        yield return new ContextUpdate(bundle, prompt, sentQuestion);
-
         List<ChatMessage> messages =
         [
             new(ChatRole.System, prompt),
             .. history.Select(m => new ChatMessage(m.Role, Send(m.Text))),
             new(ChatRole.User, sentQuestion),
         ];
+        return new PreparedQuestion(bundle, prompt, sentQuestion, messages, cloud);
+    }
+
+    /// <summary>Sends a prepared question and streams the restored, linked and filtered answer.</summary>
+    public async IAsyncEnumerable<AssistantUpdate> StreamAsync(PreparedQuestion prepared, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        StoppedRepeating = false;
+        ContextBundle bundle = prepared.Bundle;
+        IReadOnlyList<ChatMessage> messages = prepared.Messages;
         var options = new ChatOptions { MaxOutputTokens = MaxOutputTokens, Temperature = 0.3f };
 
-        var restorer = new PlaceholderRestorer(cloud ? anonymizer : null);
+        var restorer = new PlaceholderRestorer(prepared.IsCloud ? anonymizer : null);
         var linker = new ActionLinker(bundle.AllowedActions);
-        var filter = new AdviceFilter(advice, culture);
+        var filter = new AdviceFilter(advice, bundle.Culture);
         var answer = new StringBuilder();
         UsageDetails? usage = null;
 

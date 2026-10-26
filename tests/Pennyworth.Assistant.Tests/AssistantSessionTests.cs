@@ -66,6 +66,24 @@ public class AssistantSessionTests
     }
 
     [Fact]
+    public async Task The_preview_shows_exactly_what_is_sent()
+    {
+        var client = new FakeChatClient(["Fine."]);
+        var session = Session(client, Cloud);
+
+        var prepared = session.Prepare(@"What is C:\Users\ana\Music?", AssistantTopic.Overview, Snapshot(), En, []);
+        Assert.True(prepared.IsCloud);
+        Assert.Equal(@"What is <profile>\Music?", prepared.SentQuestion);
+        Assert.Empty(client.Calls); // nothing sent while previewing
+
+        await foreach (var _ in session.StreamAsync(prepared, TestContext.Current.CancellationToken))
+        {
+        }
+
+        Assert.Equal(prepared.Messages.Select(m => m.Text), client.Calls.Single().Select(m => m.Text));
+    }
+
+    [Fact]
     public async Task Local_requests_send_the_real_text()
     {
         var client = new FakeChatClient(["Fine."]);

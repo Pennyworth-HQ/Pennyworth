@@ -25,5 +25,6 @@ public sealed record AssistantProfile(
     long? MonthlyTokenCap = null)
 {
     /// <summary>Local answers need no send preview and no anonymisation.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
     public bool IsLocal => Backend == AssistantBackend.Local;
 }

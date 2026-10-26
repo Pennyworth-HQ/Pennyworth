@@ -17,3 +17,12 @@ public sealed record UsageUpdate(long InputTokens, long OutputTokens) : Assistan
 
 /// <summary>The first update: the context used and the exact system prompt sent (anonymised for the cloud).</summary>
 public sealed record ContextUpdate(ContextBundle Bundle, string SentPrompt, string SentQuestion) : AssistantUpdate;
+
+/// <summary>A question ready to send: what the person sees in the send preview is exactly <see cref="Messages"/>.</summary>
+/// <param name="IsCloud">The text was anonymised and the answer's placeholders will be restored.</param>
+public sealed record PreparedQuestion(
+    ContextBundle Bundle,
+    string SentPrompt,
+    string SentQuestion,
+    IReadOnlyList<Microsoft.Extensions.AI.ChatMessage> Messages,
+    bool IsCloud);
