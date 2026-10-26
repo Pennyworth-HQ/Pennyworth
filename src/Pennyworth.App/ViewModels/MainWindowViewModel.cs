@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Pennyworth.App.Localization;
 using Pennyworth.App.Resources;
 using Pennyworth.App.Services;
+using Pennyworth.Assistant;
 using Pennyworth.Cleanup;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
@@ -28,7 +29,8 @@ public sealed record AppServices(
     CleanupHistory? CleanupHistory = null,
     Func<DateTimeOffset>? Clock = null,
     ISpecsReader? Specs = null,
-    IClipboardService? Clipboard = null);
+    IClipboardService? Clipboard = null,
+    AssistantServices? Assistant = null);
 
 public enum Page
 {
@@ -39,13 +41,14 @@ public enum Page
     Memory,
     Folders,
     Specs,
+    Ask,
 }
 
 /// <summary>
 /// The app shell: pages, Simple/3D mode, scans per drive, live monitoring, dialogs, toasts,
 /// language and theme. Pages call back into it through small host interfaces.
 /// </summary>
-public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost, IMemoryHost
+public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost, IMemoryHost, IAskHost
 {
     private static readonly TimeSpan ToastDuration = TimeSpan.FromSeconds(3.4);
 
@@ -56,6 +59,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     private AppSettings _settings;
     private CancellationTokenSource? _scanCancellation;
     private int _toastVersion;
+    private readonly Queue<MonitorSample> _recentSamples = new();
 
     public MainWindowViewModel(AppServices services)
     {
@@ -79,6 +83,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Folders = new FolderBrowserViewModel(this);
         Pc = new PcViewModel(this);
         Specs = new SpecsViewModel(services.Specs ?? new WindowsSpecsReader(), this, services.Clipboard);
+        Ask = services.Assistant is { } assistant ? new AskViewModel(assistant, this, _clock) : null;
         Page = _settings.WelcomeSeen ? Page.Home : Page.Welcome;
         Localizer.Instance.LanguageChanged += (_, _) => RefreshTexts();
     }
@@ -98,6 +103,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public PcViewModel Pc { get; }
 
     public SpecsViewModel Specs { get; }
+
+    /// <summary>The assistant screen; null when the app runs without assistant services (some tests).</summary>
+    public AskViewModel? Ask { get; }
+
+    public bool HasAssistant => Ask is not null;
 
     public ObservableCollection<DriveViewModel> Drives { get; } = [];
 
@@ -138,7 +148,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentPage), nameof(MainContent), nameof(ShowSidebar),
-        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage))]
+        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage))]
     public partial Page Page { get; private set; }
 
     /// <summary>3D mode replaces the pages with the ASCII PC.</summary>
@@ -155,6 +165,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Page.Cleanup => Cleanup,
         Page.Memory => Memory,
         Page.Specs => Specs,
+        Page.Ask => Ask,
         _ => Folders,
     };
 
@@ -174,6 +185,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public bool IsFoldersPage => Page == Page.Folders;
 
     public bool IsSpecsPage => Page == Page.Specs;
+
+    public bool IsAskPage => Page == Page.Ask;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RescanCommand))]
@@ -268,7 +281,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         {
             try
             {
-                Live.Apply(await Task.Run(monitor.Sample));
+                MonitorSample sample = await Task.Run(monitor.Sample);
+                Live.Apply(sample);
+                _recentSamples.Enqueue(sample);
+                while (_recentSamples.Count > FactCollector.SustainedSamples)
+                {
+                    _recentSamples.Dequeue();
+                }
             }
             catch (InvalidOperationException)
             {
@@ -457,6 +476,100 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     }
 
     [RelayCommand]
+    private void GoAsk()
+    {
+        if (Ask is { } ask)
+        {
+            Navigate(Page.Ask);
+            _ = ask.EnterAsync();
+        }
+    }
+
+    /// <summary>"Ask about this" on another screen: opens Ask with the question ready, about that topic.</summary>
+    public void AskAbout(AssistantTopic topic, string question)
+    {
+        if (Ask is { } ask)
+        {
+            ask.AskAbout(topic, question);
+            GoAsk();
+        }
+    }
+
+    AssistantSettings IAskHost.AssistantSettings => _settings.Assistant;
+
+    void IAskHost.SaveAssistantSettings(AssistantSettings settings) => SaveSettings(_settings with { Assistant = settings });
+
+    /// <summary>What the assistant may know about this PC: everything the app has measured so far.</summary>
+    public async Task<PcSnapshot> SnapshotAsync()
+    {
+        try
+        {
+            await Specs.EnsureLoaded();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            // The specs are optional; the assistant answers from the rest.
+        }
+
+        StorageTree? tree = SystemSummary is { IsComplete: true, Tree: { } t } ? t : null;
+        return new PcSnapshot(
+            Specs.Specs,
+            [.. _recentSamples],
+            [.. Drives.Select(d => new DriveFact(d.Summary.RootPath, d.Summary.Label, d.Summary.TotalBytes, d.Summary.FreeBytes, d == SystemDrive))],
+            tree is null ? null : StorageCategories.All.ToDictionary(c => c, tree.GetCategoryBytes),
+            [.. Cleanup.Items.Select(i => i.Estimate)],
+            IsUnlocked);
+    }
+
+    /// <summary>The screen or dialog an assistant answer points to.</summary>
+    public void Open(AssistantAction action)
+    {
+        switch (action.Kind)
+        {
+            case ActionKind.Cleanup:
+                Navigate(Page.Cleanup);
+                break;
+            case ActionKind.CleanupItem:
+                Navigate(Page.Cleanup);
+                if (Cleanup.Items.FirstOrDefault(i => i.Rule.Id == action.Argument) is { } item)
+                {
+                    Cleanup.OpenPreviewCommand.Execute(item);
+                }
+
+                break;
+            case ActionKind.Memory:
+                Navigate(Page.Memory);
+                break;
+            case ActionKind.CloseApp:
+                Navigate(Page.Memory);
+                Memory.Update();
+                if (Memory.Apps.FirstOrDefault(a => a.Key == action.Argument) is { } row)
+                {
+                    Memory.CloseCommand.Execute(row);
+                }
+
+                break;
+            case ActionKind.Storage:
+                ShowStorageCommand.Execute(null);
+                break;
+            case ActionKind.Folders:
+                ShowFoldersCommand.Execute(null);
+                break;
+            case ActionKind.Specs:
+                GoSpecsCommand.Execute(null);
+                break;
+            case ActionKind.Unlock:
+                RequestUnlock();
+                break;
+        }
+    }
+
+    public string? AppName(string key) =>
+        Live.Apps.FirstOrDefault(a => a.Key == key) is { } app
+            ? app.Explanation?.Title.Get(Localizer.Instance.Culture) ?? app.Description ?? app.Key
+            : null;
+
+    [RelayCommand]
     private void SetSimpleMode() => Is3d = false;
 
     [RelayCommand]
@@ -595,6 +708,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Cleanup.RefreshTexts();
         Memory.RefreshTexts();
         Specs.RefreshTexts();
+        Ask?.RefreshTexts();
         Welcome.Refresh();
         RefreshPages();
         OnPropertyChanged(nameof(IsPortuguese));
