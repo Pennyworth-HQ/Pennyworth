@@ -215,6 +215,41 @@ public sealed class CleanupServiceTests : IDisposable
         Assert.False(SafetyGuard.MayCleanInside(folder, _ => null));
     }
 
+    [Theory]
+    [InlineData(@"C:\Program Files\App\cache")]
+    [InlineData(@"C:\Program Files (x86)\Steam\shadercache")]
+    public void Guard_refuses_program_files_when_the_program_files_variable_is_missing(string folder)
+    {
+        // The reported gap: with only the profile and the Windows directory known, an unresolved
+        // Program Files used to stop protecting itself.
+        static string? WithoutProgramFiles(string name) => name switch
+        {
+            "SystemRoot" => @"C:\Windows",
+            "USERPROFILE" => @"C:\Users\Bob",
+            _ => null,
+        };
+
+        Assert.False(SafetyGuard.MayCleanInside(folder, WithoutProgramFiles));
+    }
+
+    [Theory]
+    [InlineData(@"C:\Program Files\App\cache")]
+    [InlineData(@"C:\Program Files (x86)\Steam\shadercache")]
+    public void Guard_refuses_program_files_when_the_x86_and_6432_variables_are_missing(string folder)
+    {
+        // Same environment, but Program Files is known: the x86 folder must still be derived from
+        // the Windows path instead of being dropped with the missing variable.
+        static string? OnlyRequired(string name) => name switch
+        {
+            "SystemRoot" => @"C:\Windows",
+            "USERPROFILE" => @"C:\Users\Bob",
+            "ProgramFiles" => @"C:\Program Files",
+            _ => null,
+        };
+
+        Assert.False(SafetyGuard.MayCleanInside(folder, OnlyRequired));
+    }
+
     [Fact]
     public void Guard_still_allows_caches_when_only_the_optional_variables_are_missing()
     {
@@ -222,6 +257,7 @@ public sealed class CleanupServiceTests : IDisposable
         {
             "SystemRoot" => @"C:\Windows",
             "USERPROFILE" => @"C:\Users\Bob",
+            "ProgramFiles" => @"C:\Program Files",
             _ => null,
         };
 
