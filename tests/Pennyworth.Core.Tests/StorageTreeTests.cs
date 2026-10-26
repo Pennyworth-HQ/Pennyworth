@@ -53,7 +53,7 @@ public class StorageTreeTests
     {
         var bob = BuildSample().Root.GetChildren().Single(n => n.Name == "Users").GetChildren().Single();
 
-        Assert.Equal(@"C:\Users\Bob", bob.FullPath);
+        Assert.Equal(Path.Combine(@"C:\", "Users", "Bob"), bob.FullPath);
         Assert.Equal(@"C:\", bob.Parent!.Value.Parent!.Value.FullPath);
     }
 
@@ -75,14 +75,14 @@ public class StorageTreeTests
         var tree = BuildSample();
 
         var yourFiles = Assert.Single(tree.GetCategoryAreas(StorageCategory.YourFiles));
-        Assert.Equal(@"C:\Users\Bob", yourFiles.Node.FullPath);
+        Assert.Equal(Path.Combine(@"C:\", "Users", "Bob"), yourFiles.Node.FullPath);
         Assert.Equal(300, yourFiles.Bytes);
 
         var apps = Assert.Single(tree.GetCategoryAreas(StorageCategory.Apps));
-        Assert.Equal(@"C:\Users\Bob\AppData", apps.Node.FullPath);
+        Assert.Equal(Path.Combine(@"C:\", "Users", "Bob", "AppData"), apps.Node.FullPath);
 
         var hidden = Assert.Single(tree.GetCategoryAreas(StorageCategory.HiddenSystem));
-        Assert.Equal(@"C:\hiberfil.sys", hidden.Node.FullPath);
+        Assert.Equal(Path.Combine(@"C:\", "hiberfil.sys"), hidden.Node.FullPath);
         Assert.False(hidden.Node.IsDirectory);
 
         Assert.Empty(tree.GetCategoryAreas(StorageCategory.Games));

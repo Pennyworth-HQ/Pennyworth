@@ -9,6 +9,7 @@ namespace Pennyworth.Cleanup.Tests;
 public sealed class CleanupServiceTests : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("pw-clean-").FullName;
+    private static readonly char S = Path.DirectorySeparatorChar;
     private readonly List<string> _junctions = [];
 
     public void Dispose()
@@ -20,26 +21,26 @@ public sealed class CleanupServiceTests : IDisposable
     [Fact]
     public async Task Measures_without_deleting()
     {
-        Write(@"cache\a.bin", 1000);
-        Write(@"cache\sub\b.bin", 500);
-        var rule = Rule("%ROOT%\\cache");
+        Write(Path.Combine("cache", "a.bin"), 1000);
+        Write(Path.Combine("cache", "sub", "b.bin"), 500);
+        var rule = Rule($"%ROOT%{S}cache");
 
         var estimate = await Service().MeasureAsync(rule, TestContext.Current.CancellationToken);
 
         Assert.Equal(1500, estimate.Bytes);
         Assert.Equal(2, estimate.Items);
         Assert.True(estimate.IsAvailable);
-        Assert.True(File.Exists(Path.Combine(_root, @"cache\a.bin")));
+        Assert.True(File.Exists(Path.Combine(_root, "cache", "a.bin")));
     }
 
     [Fact]
     public async Task Deletes_the_contents_but_keeps_the_folder()
     {
-        Write(@"cache\a.bin", 1000);
-        Write(@"cache\sub\deep\b.bin", 500);
+        Write(Path.Combine("cache", "a.bin"), 1000);
+        Write(Path.Combine("cache", "sub", "deep", "b.bin"), 500);
         var progress = new List<double>();
 
-        var result = await MeasureAndClean(Rule("%ROOT%\\cache"), new SyncProgress(progress));
+        var result = await MeasureAndClean(Rule($"%ROOT%{S}cache"), new SyncProgress(progress));
 
         Assert.Equal(1500, result.BytesFreed);
         Assert.Equal(2, result.FilesDeleted);
@@ -52,43 +53,43 @@ public sealed class CleanupServiceTests : IDisposable
     [Fact]
     public async Task Skips_files_in_use()
     {
-        Write(@"cache\busy.bin", 100);
-        Write(@"cache\free.bin", 100);
+        Write(Path.Combine("cache", "busy.bin"), 100);
+        Write(Path.Combine("cache", "free.bin"), 100);
 
         CleanupResult result;
-        using (File.Open(Path.Combine(_root, @"cache\busy.bin"), FileMode.Open, FileAccess.Read, FileShare.None))
+        using (File.Open(Path.Combine(_root, "cache", "busy.bin"), FileMode.Open, FileAccess.Read, FileShare.None))
         {
-            result = await MeasureAndClean(Rule("%ROOT%\\cache"), null);
+            result = await MeasureAndClean(Rule($"%ROOT%{S}cache"), null);
         }
 
         Assert.Equal(1, result.FilesDeleted);
         Assert.Equal(1, result.Skipped);
-        Assert.True(File.Exists(Path.Combine(_root, @"cache\busy.bin")));
+        Assert.True(File.Exists(Path.Combine(_root, "cache", "busy.bin")));
     }
 
     [WindowsFact]
     public async Task Never_follows_junctions_out_of_the_folder()
     {
-        Write(@"precious\photo.jpg", 100);
-        Write(@"cache\a.bin", 100);
-        CreateJunction(Path.Combine(_root, @"cache\link"), Path.Combine(_root, "precious"));
+        Write(Path.Combine("precious", "photo.jpg"), 100);
+        Write(Path.Combine("cache", "a.bin"), 100);
+        CreateJunction(Path.Combine(_root, "cache", "link"), Path.Combine(_root, "precious"));
 
-        await MeasureAndClean(Rule("%ROOT%\\cache"), null);
+        await MeasureAndClean(Rule($"%ROOT%{S}cache"), null);
 
-        Assert.True(File.Exists(Path.Combine(_root, @"precious\photo.jpg")));
+        Assert.True(File.Exists(Path.Combine(_root, "precious", "photo.jpg")));
     }
 
     [Fact]
     public async Task Lists_every_file_and_folder_it_would_delete()
     {
-        Write(@"cache\a.bin", 1000);
-        Write(@"cache\sub\b.bin", 500);
-        Write(@"other\c.bin", 100);
+        Write(Path.Combine("cache", "a.bin"), 1000);
+        Write(Path.Combine("cache", "sub", "b.bin"), 500);
+        Write(Path.Combine("other", "c.bin"), 100);
 
-        var estimate = await Service().MeasureAsync(Rule("%ROOT%\\cache", "%ROOT%\\other"), TestContext.Current.CancellationToken);
+        var estimate = await Service().MeasureAsync(Rule($"%ROOT%{S}cache", $"%ROOT%{S}other"), TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            [Path.Combine(_root, @"cache\a.bin"), Path.Combine(_root, @"cache\sub\b.bin"), Path.Combine(_root, @"other\c.bin")],
+            [Path.Combine(_root, "cache", "a.bin"), Path.Combine(_root, "cache", "sub", "b.bin"), Path.Combine(_root, "other", "c.bin")],
             estimate.Files!.Select(f => f.Path).Order());
         Assert.Equal([(1500L, 2L), (100L, 1L)], estimate.Folders!.Select(f => (f.Bytes, f.Files)));
     }
@@ -96,52 +97,52 @@ public sealed class CleanupServiceTests : IDisposable
     [Fact]
     public async Task Deletes_only_what_was_listed()
     {
-        Write(@"cache\listed.bin", 100);
-        var estimate = await Service().MeasureAsync(Rule("%ROOT%\\cache"), TestContext.Current.CancellationToken);
-        Write(@"cache\new-after-preview.bin", 100);
-        Write(@"cache\later\also-new.bin", 100);
+        Write(Path.Combine("cache", "listed.bin"), 100);
+        var estimate = await Service().MeasureAsync(Rule($"%ROOT%{S}cache"), TestContext.Current.CancellationToken);
+        Write(Path.Combine("cache", "new-after-preview.bin"), 100);
+        Write(Path.Combine("cache", "later", "also-new.bin"), 100);
 
         var result = await Service().CleanAsync(estimate, null, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, result.FilesDeleted);
-        Assert.False(File.Exists(Path.Combine(_root, @"cache\listed.bin")));
-        Assert.True(File.Exists(Path.Combine(_root, @"cache\new-after-preview.bin")));
-        Assert.True(File.Exists(Path.Combine(_root, @"cache\later\also-new.bin")));
+        Assert.False(File.Exists(Path.Combine(_root, "cache", "listed.bin")));
+        Assert.True(File.Exists(Path.Combine(_root, "cache", "new-after-preview.bin")));
+        Assert.True(File.Exists(Path.Combine(_root, "cache", "later", "also-new.bin")));
     }
 
     [Fact]
     public async Task Leaves_files_that_changed_since_the_preview()
     {
-        Write(@"cache\changed.bin", 100);
-        var estimate = await Service().MeasureAsync(Rule("%ROOT%\\cache"), TestContext.Current.CancellationToken);
-        File.SetLastWriteTimeUtc(Path.Combine(_root, @"cache\changed.bin"), DateTime.UtcNow.AddMinutes(5));
+        Write(Path.Combine("cache", "changed.bin"), 100);
+        var estimate = await Service().MeasureAsync(Rule($"%ROOT%{S}cache"), TestContext.Current.CancellationToken);
+        File.SetLastWriteTimeUtc(Path.Combine(_root, "cache", "changed.bin"), DateTime.UtcNow.AddMinutes(5));
 
         var result = await Service().CleanAsync(estimate, null, TestContext.Current.CancellationToken);
 
         Assert.Equal(0, result.FilesDeleted);
         Assert.Equal(1, result.Skipped);
-        Assert.True(File.Exists(Path.Combine(_root, @"cache\changed.bin")));
+        Assert.True(File.Exists(Path.Combine(_root, "cache", "changed.bin")));
     }
 
     [Fact]
     public async Task Removes_only_folders_it_emptied()
     {
-        Write(@"cache\deep\inner\a.bin", 100);
-        Directory.CreateDirectory(Path.Combine(_root, @"cache\was-empty"));
+        Write(Path.Combine("cache", "deep", "inner", "a.bin"), 100);
+        Directory.CreateDirectory(Path.Combine(_root, "cache", "was-empty"));
 
-        await MeasureAndClean(Rule("%ROOT%\\cache"), null);
+        await MeasureAndClean(Rule($"%ROOT%{S}cache"), null);
 
-        Assert.False(Directory.Exists(Path.Combine(_root, @"cache\deep")));
-        Assert.True(Directory.Exists(Path.Combine(_root, @"cache\was-empty")));
+        Assert.False(Directory.Exists(Path.Combine(_root, "cache", "deep")));
+        Assert.True(Directory.Exists(Path.Combine(_root, "cache", "was-empty")));
     }
 
     [Fact]
     public async Task Refuses_listed_files_outside_the_rule_folders()
     {
-        Write(@"cache\a.bin", 10);
-        Write(@"precious\photo.jpg", 10);
-        var estimate = await Service().MeasureAsync(Rule("%ROOT%\\cache"), TestContext.Current.CancellationToken);
-        var photo = new FileInfo(Path.Combine(_root, @"precious\photo.jpg"));
+        Write(Path.Combine("cache", "a.bin"), 10);
+        Write(Path.Combine("precious", "photo.jpg"), 10);
+        var estimate = await Service().MeasureAsync(Rule($"%ROOT%{S}cache"), TestContext.Current.CancellationToken);
+        var photo = new FileInfo(Path.Combine(_root, "precious", "photo.jpg"));
         var tampered = estimate with { Files = [.. estimate.Files!, new CleanupFile(photo.FullName, photo.Length, photo.LastWriteTimeUtc)] };
 
         var result = await Service().CleanAsync(tampered, null, TestContext.Current.CancellationToken);
@@ -166,11 +167,11 @@ public sealed class CleanupServiceTests : IDisposable
     [Fact]
     public async Task Expands_wildcard_folders()
     {
-        Write(@"profiles\Default\Cache\a.bin", 10);
-        Write(@"profiles\Profile 1\Cache\b.bin", 20);
-        Write(@"profiles\Profile 1\Bookmarks", 30);
+        Write(Path.Combine("profiles", "Default", "Cache", "a.bin"), 10);
+        Write(Path.Combine("profiles", "Profile 1", "Cache", "b.bin"), 20);
+        Write(Path.Combine("profiles", "Profile 1", "Bookmarks"), 30);
 
-        var estimate = await Service().MeasureAsync(Rule("%ROOT%\\profiles\\*\\Cache"), TestContext.Current.CancellationToken);
+        var estimate = await Service().MeasureAsync(Rule($"%ROOT%{S}profiles{S}*{S}Cache"), TestContext.Current.CancellationToken);
 
         Assert.Equal(30, estimate.Bytes);
     }
@@ -186,8 +187,8 @@ public sealed class CleanupServiceTests : IDisposable
     [Fact]
     public async Task Refuses_admin_rules()
     {
-        var rule = Rule("%ROOT%\\cache") with { RequiresAdmin = true };
-        Write(@"cache\a.bin", 10);
+        var rule = Rule($"%ROOT%{S}cache") with { RequiresAdmin = true };
+        Write(Path.Combine("cache", "a.bin"), 10);
 
         var estimate = await Service().MeasureAsync(rule, TestContext.Current.CancellationToken);
 
@@ -301,7 +302,7 @@ public sealed class CleanupServiceTests : IDisposable
     public async Task History_keeps_every_run()
     {
         var history = new CleanupHistory(Path.Combine(_root, @"logs\history.jsonl"));
-        var rule = Rule("%ROOT%\\cache");
+        var rule = Rule($"%ROOT%{S}cache");
         var when = new DateTimeOffset(2026, 10, 24, 12, 0, 0, TimeSpan.Zero);
 
         history.Append([new CleanupResult(rule, 100, 2, 1)], when);
@@ -343,7 +344,8 @@ public sealed class CleanupServiceTests : IDisposable
         return [.. BitConverter.GetBytes(1L), .. BitConverter.GetBytes(size), .. BitConverter.GetBytes(deleted.ToFileTimeUtc()), .. name];
     }
 
-    private CleanupService Service() => new([], name => name == "ROOT" ? _root : Environment.GetEnvironmentVariable(name));
+    // The safety rule needs the Windows variables, which exist on Windows (identical there) but not on other systems.
+    private CleanupService Service() => new([], name => name == "ROOT" ? _root : Environment.GetEnvironmentVariable(name) ?? Env(name));
 
     private static CleanupRule Rule(params string[] paths) => new(
         "test", SafetyLevel.Safe, CleanupKind.FolderContents, paths, RequiresAdmin: false,
