@@ -24,11 +24,12 @@ public sealed partial class Anonymizer
         // Linux: the XDG folders, packaged-app folders and the stock folders of a Linux home.
         ".cache", ".config", ".local", "share", "state", "Public", "Templates", "snap", "flatpak", ".var", "app", "Trash",
         "applications", "icons", "fonts", "mesa_shader_cache", "thumbnails", "mozilla", "chromium", "google-chrome", "microsoft-edge",
-        "vivaldi", "zen", "librewolf", "Games", "Applications", "AppImages", ".mozilla", ".steam", ".npm", ".cargo", ".rustup",
+        "vivaldi", "zen", "librewolf", "steamapps", "Games", "Applications", "AppImages", ".mozilla", ".steam", ".npm", ".cargo", ".rustup",
         ".gradle", ".nuget", ".dotnet", ".docker", ".vscode", ".wine", ".android", ".java", ".bun",
     };
 
     private readonly string _profile;
+    private readonly char _separator;
     private readonly Func<string, bool> _isKnownFolder;
     private readonly Regex? _names;
     private readonly Dictionary<string, string> _placeholders = new(StringComparer.OrdinalIgnoreCase);
@@ -74,7 +75,7 @@ public sealed partial class Anonymizer
     {
         var sb = new StringBuilder();
         int last = 0;
-        Regex profilePaths = ProfilePathPattern(_profile);
+        Regex profilePaths = ProfilePathPattern(_profile, _separator);
         foreach (Match path in profilePaths.Matches(text))
         {
             string value = path.Value.TrimEnd(); // "Temp (18 GB)": the space belongs to the sentence
@@ -138,6 +139,9 @@ public sealed partial class Anonymizer
 
         return placeholder;
     }
+
+    /// <summary>The separator the profile path is written with: a forward slash for a POSIX home folder, a backslash otherwise.</summary>
+    private static char SeparatorOf(string profile) => profile.Contains('/') && !profile.Contains('\\') ? '/' : '\\';
 
     /// <summary>
     /// The profile path and the segments after it, with either separator: a path pasted from a URL,
