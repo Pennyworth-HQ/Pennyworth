@@ -294,4 +294,109 @@
   <data name="PartHint_Graphics" xml:space="preserve"><value>Desenha tudo na tela, sobretudo os jogos.</value></data>
   <data name="PartHint_Power" xml:space="preserve"><value>Energia e descanso. A hibernação guarda sua sessão enquanto o PC dorme.</value></data>
   <data name="PartHint_Trash" xml:space="preserve"><value>O que pode sair, e quão seguro é deixar ir.</value></data>
+  <data name="NavAsk" xml:space="preserve"><value>Pergunte</value></data>
+  <data name="NavAskHint" xml:space="preserve"><value>O mordomo explica seu PC</value></data>
+  <data name="AskTitle" xml:space="preserve"><value>Pergunte sobre seu PC</value></data>
+  <data name="AskSub" xml:space="preserve"><value>Respondo com base no que o Pennyworth mediu neste PC, e nunca mudo nada por conta própria.</value></data>
+  <data name="AskNote" xml:space="preserve"><value>As respostas são geradas por IA e podem errar. O Pennyworth nunca muda nada sem perguntar a você.</value></data>
+  <data name="SetupTitle" xml:space="preserve"><value>Como devo pensar?</value></data>
+  <data name="SetupSub" xml:space="preserve"><value>Escolha uma opção. Dá para mudar depois em Ajustes.</value></data>
+  <data name="SetupLocalTitle" xml:space="preserve"><value>Rodar neste PC</value></data>
+  <data name="SetupLocalSub" xml:space="preserve"><value>Privado: nada sai do seu PC. Um download de {0}.</value></data>
+  <data name="SetupCloudTitle" xml:space="preserve"><value>Usar minha conta de IA</value></data>
+  <data name="SetupCloudSub" xml:space="preserve"><value>Mais rápido e afiado, com sua própria chave de API. Você vê o que será enviado antes.</value></data>
+  <data name="FitGood" xml:space="preserve"><value>Deve rodar bem</value></data>
+  <data name="FitSlow" xml:space="preserve"><value>Vai ficar lento neste PC</value></data>
+  <data name="FitMemory" xml:space="preserve"><value>Este PC pode ter dificuldade</value></data>
+  <data name="FitSpace" xml:space="preserve"><value>Sem espaço livre suficiente</value></data>
+  <data name="DownloadModel" xml:space="preserve"><value>Baixar {0}</value></data>
+  <data name="UseModel" xml:space="preserve"><value>Usar o modelo baixado</value></data>
+  <data name="DownloadingModel" xml:space="preserve"><value>Baixando {0}…</value></data>
+  <data name="DownloadLeft" xml:space="preserve"><value>{0} · cerca de {1:N0} s restantes</value></data>
+  <data name="DownloadFailed" xml:space="preserve"><value>O download parou: {0}</value></data>
+  <data name="VerifyingModel" xml:space="preserve"><value>Conferindo os arquivos…</value></data>
+  <data name="BackendOpenAi" xml:space="preserve"><value>OpenAI ou compatível</value></data>
+  <data name="BackendAnthropic" xml:space="preserve"><value>Anthropic (Claude)</value></data>
+  <data name="BackendGemini" xml:space="preserve"><value>Google Gemini</value></data>
+  <data name="BackendAzure" xml:space="preserve"><value>Azure OpenAI</value></data>
+  <data name="FieldName" xml:space="preserve"><value>Nome</value></data>
+  <data name="FieldEndpoint" xml:space="preserve"><value>Endereço (vazio para o oficial)</value></data>
+  <data name="FieldEndpointAzure" xml:space="preserve"><value>Endereço do recurso</value></data>
+  <data name="FieldModel" xml:space="preserve"><value>Modelo</value></data>
+  <data name="FieldModelAzure" xml:space="preserve"><value>Nome da implantação</value></data>
+  <data name="FieldKey" xml:space="preserve"><value>Chave de API</value></data>
+  <data name="KeyNote" xml:space="preserve"><value>Guardada no Gerenciador de Credenciais do Windows, nunca em arquivo.</value></data>
+  <data name="TestConnection" xml:space="preserve"><value>Testar conexão</value></data>
+  <data name="Testing" xml:space="preserve"><value>Testando…</value></data>
+  <data name="TestOk" xml:space="preserve"><value>Conectado em {1:N0} ms. Resposta: {0}</value></data>
+  <data name="SaveProfile" xml:space="preserve"><value>Salvar e começar</value></data>
+  <data name="ErrorBadKey" xml:space="preserve"><value>Sua chave foi recusada.</value></data>
+  <data name="ErrorUnknownModel" xml:space="preserve"><value>Esse modelo não existe para esta conta.</value></data>
+  <data name="ErrorQuota" xml:space="preserve"><value>O provedor diz que o limite ou o crédito acabou.</value></data>
+  <data name="ErrorNetwork" xml:space="preserve"><value>Não consegui falar com o provedor. A internet está ligada?</value></data>
+  <data name="ErrorTimeout" xml:space="preserve"><value>O provedor demorou demais para responder.</value></data>
+  <data name="ErrorServer" xml:space="preserve"><value>O provedor teve um problema. Tente de novo daqui a pouco.</value></data>
+  <data name="ErrorUnknown" xml:space="preserve"><value>Algo deu errado.</value></data>
+  <data name="ErrorNoKey" xml:space="preserve"><value>Não há chave salva para esta conta. Adicione de novo em Ajustes.</value></data>
+  <data name="ErrorNoModel" xml:space="preserve"><value>O modelo não está mais neste PC. Baixe de novo em Ajustes.</value></data>
+  <data name="ErrorDetails" xml:space="preserve"><value>Detalhes</value></data>
+  <data name="AskPlaceholder" xml:space="preserve"><value>Pergunte sobre seu PC…</value></data>
+  <data name="Send" xml:space="preserve"><value>Enviar</value></data>
+  <data name="Stop" xml:space="preserve"><value>Parar</value></data>
+  <data name="StarterOverview" xml:space="preserve"><value>Tem algo que eu deveria melhorar?</value></data>
+  <data name="StarterSlow" xml:space="preserve"><value>Por que meu PC está lento?</value></data>
+  <data name="StarterStorage" xml:space="preserve"><value>O que está enchendo meu disco?</value></data>
+  <data name="StarterExplain" xml:space="preserve"><value>Explique meu PC em palavras simples.</value></data>
+  <data name="You" xml:space="preserve"><value>Você</value></data>
+  <data name="Helpful" xml:space="preserve"><value>Útil</value></data>
+  <data name="NotHelpful" xml:space="preserve"><value>Não ajudou</value></data>
+  <data name="FeedbackThanks" xml:space="preserve"><value>Obrigado por avisar.</value></data>
+  <data name="TokensUsed" xml:space="preserve"><value>{0:N0} tokens</value></data>
+  <data name="BlockedNote" xml:space="preserve"><value>Segurei uma sugestão que poderia prejudicar o Windows.</value></data>
+  <data name="RepeatingNote" xml:space="preserve"><value>Parei porque comecei a me repetir.</value></data>
+  <data name="Thinking" xml:space="preserve"><value>Pensando…</value></data>
+  <data name="BadgeLocal" xml:space="preserve"><value>Neste PC · {0}</value></data>
+  <data name="BadgeCloud" xml:space="preserve"><value>{0} · envia pela internet</value></data>
+  <data name="NewConversation" xml:space="preserve"><value>Nova conversa</value></data>
+  <data name="History" xml:space="preserve"><value>Histórico</value></data>
+  <data name="AssistantSettings" xml:space="preserve"><value>Ajustes</value></data>
+  <data name="UsageNear" xml:space="preserve"><value>{0} do limite de tokens do mês já foi usado.</value></data>
+  <data name="UsageReached" xml:space="preserve"><value>O limite de tokens do mês acabou. Aumente em Ajustes para continuar.</value></data>
+  <data name="SendPreviewTitle" xml:space="preserve"><value>O que vou enviar</value></data>
+  <data name="SendPreviewSub" xml:space="preserve"><value>Para {0}. Seu nome, sua pasta de usuário e pastas pessoais viram marcadores como &lt;user&gt;.</value></data>
+  <data name="SendPreviewInstructions" xml:space="preserve"><value>Instruções e fatos</value></data>
+  <data name="SendPreviewQuestion" xml:space="preserve"><value>Sua pergunta</value></data>
+  <data name="EditQuestion" xml:space="preserve"><value>Editar pergunta</value></data>
+  <data name="DontShowAgain" xml:space="preserve"><value>Não mostrar de novo para esta conta</value></data>
+  <data name="HistoryTitle" xml:space="preserve"><value>Conversas</value></data>
+  <data name="HistoryEmpty" xml:space="preserve"><value>Nenhuma conversa ainda.</value></data>
+  <data name="HistoryTurns" xml:space="preserve"><value>{0:N0} mensagens</value></data>
+  <data name="DeleteAllConversations" xml:space="preserve"><value>Apagar todas as conversas</value></data>
+  <data name="DeleteAllConfirm" xml:space="preserve"><value>Sim, apagar todas</value></data>
+  <data name="ConversationsDeleted" xml:space="preserve"><value>Conversas apagadas.</value></data>
+  <data name="SettingsProfiles" xml:space="preserve"><value>Formas de responder</value></data>
+  <data name="ProfileInUse" xml:space="preserve"><value>Em uso</value></data>
+  <data name="UseThis" xml:space="preserve"><value>Usar este</value></data>
+  <data name="RemoveProfile" xml:space="preserve"><value>Remover</value></data>
+  <data name="AddProfile" xml:space="preserve"><value>Adicionar outra</value></data>
+  <data name="MonthlyCap" xml:space="preserve"><value>Limite mensal de tokens (vazio para nenhum)</value></data>
+  <data name="SaveCap" xml:space="preserve"><value>Salvar limite</value></data>
+  <data name="UsageThisMonth" xml:space="preserve"><value>{0:N0} tokens usados este mês</value></data>
+  <data name="ShowPreviewSetting" xml:space="preserve"><value>Mostrar o que envio antes de cada conversa</value></data>
+  <data name="LocalModelOnDisk" xml:space="preserve"><value>Modelo neste PC: {0}</value></data>
+  <data name="RemoveModel" xml:space="preserve"><value>Remover modelo</value></data>
+  <data name="ModelRemoved" xml:space="preserve"><value>Modelo removido; {0} liberados.</value></data>
+  <data name="AskAboutThis" xml:space="preserve"><value>Perguntar sobre isto</value></data>
+  <data name="AskAboutHome" xml:space="preserve"><value>Como está meu PC no geral?</value></data>
+  <data name="AskAboutApp" xml:space="preserve"><value>Por que {0} está usando tanta memória?</value></data>
+  <data name="AskAboutCleanup" xml:space="preserve"><value>É seguro limpar {0}?</value></data>
+  <data name="AskAboutSpec" xml:space="preserve"><value>Explique esta parte do meu PC em palavras simples: {0}.</value></data>
+  <data name="ActionCleanup" xml:space="preserve"><value>Abrir a limpeza</value></data>
+  <data name="ActionCleanupItem" xml:space="preserve"><value>Ver o que seria apagado</value></data>
+  <data name="ActionMemory" xml:space="preserve"><value>Abrir Memória e CPU</value></data>
+  <data name="ActionCloseApp" xml:space="preserve"><value>Fechar {0}…</value></data>
+  <data name="ActionStorage" xml:space="preserve"><value>Abrir armazenamento</value></data>
+  <data name="ActionFolders" xml:space="preserve"><value>Abrir pastas</value></data>
+  <data name="ActionSpecs" xml:space="preserve"><value>Abrir especificações</value></data>
+  <data name="ActionUnlock" xml:space="preserve"><value>Liberar verificação completa</value></data>
 </root>
