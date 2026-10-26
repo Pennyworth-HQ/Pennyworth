@@ -42,12 +42,18 @@ public interface ICleanupService
 /// <summary>
 /// Measures and cleans what the knowledge base allows. Hard rules: only files listed in the
 /// preview are deleted, only inside the rule's folders (never the folders themselves), nothing
-/// inside Windows or Program Files, links and junctions are never followed, files in use or
-/// changed since the preview are skipped.
+/// the environment's safety rule refuses (system folders, the user's profile), links and junctions
+/// are never followed, files in use or changed since the preview are skipped.
 /// </summary>
-public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string, string?>? getEnvironmentVariable = null) : ICleanupService
+/// <param name="getEnvironmentVariable">Variables for the Windows rules used when no environment is given; defaults to the process environment.</param>
+/// <param name="environment">The operating system's trash, safety rule and path comparison. Null means the Windows rules without a Recycle Bin.</param>
+public sealed class CleanupService(
+    IReadOnlyList<CleanupRule> rules,
+    Func<string, string?>? getEnvironmentVariable = null,
+    CleanupEnvironment? environment = null) : ICleanupService
 {
-    private readonly Func<string, string?> _env = getEnvironmentVariable ?? Environment.GetEnvironmentVariable;
+    private readonly CleanupEnvironment _environment =
+        environment ?? CleanupEnvironment.Windows(getEnvironmentVariable ?? Environment.GetEnvironmentVariable);
 
     private static readonly EnumerationOptions Walk = new()
     {
@@ -63,7 +69,7 @@ public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string
     {
         if (rule.Kind == CleanupKind.RecycleBin)
         {
-            var items = RecycleBin.List();
+            var items = RecycleBinOf(rule).List();
             return new CleanupEstimate(rule, items.Sum(i => i.Size), items.Count, IsAvailable: true, [], items);
         }
 
@@ -99,11 +105,11 @@ public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string
 
         IReadOnlyList<CleanupFile> files = estimate.Files ?? [];
         Func<CleanupFile, bool> delete = rule.Kind == CleanupKind.RecycleBin
-            ? RecycleBin.Delete
+            ? RecycleBinOf(rule).Delete
             : DeleteFileIn(FoldersOf(rule));
 
         long freed = 0, deleted = 0, skipped = 0;
-        var touchedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var touchedFolders = new HashSet<string>(_environment.PathComparison);
         for (int i = 0; i < files.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -129,7 +135,7 @@ public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string
 
         if (rule.Kind == CleanupKind.RecycleBin)
         {
-            RecycleBin.RefreshIcon();
+            RecycleBinOf(rule).RefreshIcon();
         }
         else
         {
@@ -140,17 +146,29 @@ public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string
         return new CleanupResult(rule, freed, deleted, skipped);
     }, cancellationToken);
 
+    private IRecycleBin RecycleBinOf(CleanupRule rule) =>
+        _environment.RecycleBin ?? throw new InvalidOperationException($"Cleanup rule '{rule.Id}' needs a recycle bin and this system has none.");
+
     private IReadOnlyList<string> FoldersOf(CleanupRule rule) =>
-        CleanupTargets.Resolve(rule.Paths, _env).Where(folder => SafetyGuard.MayCleanInside(folder, _env)).ToArray();
+        CleanupTargets.Resolve(rule.Paths, _environment.Variables, _environment.PathComparison)
+            .Where(_environment.MayCleanInside)
+            .ToArray();
+
+    /// <summary>Whether <paramref name="path"/> lies strictly below <paramref name="root"/>, as this OS compares paths.</summary>
+    private bool IsBelow(string path, string root)
+    {
+        string prefix = Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar;
+        return path.Length >= prefix.Length && _environment.PathComparison.Equals(path[..prefix.Length], prefix);
+    }
 
     /// <summary>
     /// Deletes a listed file only if it is still inside one of the rule's folders (checked again now),
     /// is not a link, and hasn't changed since it was listed.
     /// </summary>
-    private static Func<CleanupFile, bool> DeleteFileIn(IReadOnlyList<string> roots) => listed =>
+    private Func<CleanupFile, bool> DeleteFileIn(IReadOnlyList<string> roots) => listed =>
     {
         string full = Path.GetFullPath(listed.Path);
-        if (!roots.Any(root => full.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
+        if (!roots.Any(root => IsBelow(full, root)))
         {
             return false;
         }
@@ -207,15 +225,15 @@ public sealed class CleanupService(IReadOnlyList<CleanupRule> rules, Func<string
     /// Removes folders that this cleanup emptied, deepest first, never a rule's own folder and never
     /// a folder that was already empty before.
     /// </summary>
-    private static void RemoveEmptiedFolders(IEnumerable<string> touched, IReadOnlyList<string> roots)
+    private void RemoveEmptiedFolders(IEnumerable<string> touched, IReadOnlyList<string> roots)
     {
-        var rootSet = roots.Select(Path.TrimEndingDirectorySeparator).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var candidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var rootSet = roots.Select(Path.TrimEndingDirectorySeparator).ToHashSet(_environment.PathComparison);
+        var candidates = new HashSet<string>(_environment.PathComparison);
         foreach (string folder in touched)
         {
             for (string? current = folder; current is not null && !rootSet.Contains(current); current = Path.GetDirectoryName(current))
             {
-                if (!roots.Any(root => current.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
+                if (!roots.Any(root => IsBelow(current, root)))
                 {
                     break;
                 }

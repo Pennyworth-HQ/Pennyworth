@@ -4,6 +4,7 @@ using Pennyworth.App.Services;
 using Pennyworth.Cleanup;
 using Pennyworth.Core.Formatting;
 using Pennyworth.KnowledgeBase;
+using Pennyworth.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 

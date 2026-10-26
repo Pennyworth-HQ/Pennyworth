@@ -1,14 +1,17 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
+using Pennyworth.Tests;
 
 namespace Pennyworth.Scanning.Tests;
 
+[SupportedOSPlatform("windows")]
 public sealed class HiddenSpaceTests : IDisposable
 {
     private readonly string _dir = Directory.CreateTempSubdirectory("pw-hidden-").FullName;
 
     public void Dispose() => Directory.Delete(_dir, recursive: true);
 
-    [Theory]
+    [WindowsTheory]
     [InlineData("C:", true)]
     [InlineData("d:", true)]
     [InlineData(@"C:\", false)]
@@ -19,13 +22,13 @@ public sealed class HiddenSpaceTests : IDisposable
         Assert.Equal(expected, HiddenSpace.IsDriveLetter(drive));
     }
 
-    [Fact]
+    [WindowsFact]
     public void Rejects_anything_else_before_running()
     {
         Assert.Throws<ArgumentException>(() => HiddenSpace.Measure("C:' ; Remove-Item x"));
     }
 
-    [Fact]
+    [WindowsFact]
     public void Reports_round_trip_through_the_result_file()
     {
         string path = Path.Combine(_dir, "result.json");
@@ -38,7 +41,7 @@ public sealed class HiddenSpaceTests : IDisposable
         Assert.Null(HiddenSpace.ReadReport(Path.Combine(_dir, "missing.json")));
     }
 
-    [Fact]
+    [WindowsFact]
     public void A_process_that_never_exits_is_killed_at_the_timeout()
     {
         (string File, string[] Arguments) command = OperatingSystem.IsWindows()
@@ -52,7 +55,7 @@ public sealed class HiddenSpaceTests : IDisposable
         Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"waited {clock.Elapsed}");
     }
 
-    [Fact]
+    [WindowsFact]
     public void A_process_that_exits_returns_its_output()
     {
         (string File, string[] Arguments) command = OperatingSystem.IsWindows()
@@ -62,7 +65,7 @@ public sealed class HiddenSpaceTests : IDisposable
         Assert.Equal("hello", HiddenSpace.RunCaptured(command.File, command.Arguments, TimeSpan.FromSeconds(10))?.Trim());
     }
 
-    [Fact]
+    [WindowsFact]
     public void A_process_that_fails_returns_null()
     {
         (string File, string[] Arguments) command = OperatingSystem.IsWindows()
@@ -72,7 +75,7 @@ public sealed class HiddenSpaceTests : IDisposable
         Assert.Null(HiddenSpace.RunCaptured(command.File, command.Arguments, TimeSpan.FromSeconds(10)));
     }
 
-    [Fact]
+    [WindowsFact]
     public void Volume_metadata_degrades_to_null_without_admin()
     {
         long? mft = HiddenSpace.MeasureNtfsMetadata("C:");

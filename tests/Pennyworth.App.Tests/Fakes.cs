@@ -7,6 +7,8 @@ using Pennyworth.Cleanup;
 using Pennyworth.Core.Storage;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
+using Pennyworth.Monitoring.Hardware;
+using Pennyworth.Platform;
 using Pennyworth.Scanning;
 
 namespace Pennyworth.App.Tests;
@@ -153,6 +155,12 @@ internal sealed class FakeCloser(bool closes) : IProcessCloser
     public void ForceClose(IReadOnlyList<int> pids) => Forced.AddRange(pids);
 }
 
+/// <summary>Specs of a made-up PC, so no test reads the hardware it runs on.</summary>
+internal sealed class SamplePcReader : ISpecsReader
+{
+    public PcSpecs Read() => SpecsViewModelTests.SamplePc();
+}
+
 /// <summary>A shell wired to fakes; pieces can be replaced per test.</summary>
 internal static class TestApp
 {
@@ -175,6 +183,7 @@ internal static class TestApp
         cleanup ?? new FakeCleanup(),
         hidden ?? new FakeHiddenSpace(new UnlockResult(UnlockOutcome.Declined)),
         settings ?? new MemorySettings(),
+        new SamplePcReader(),
         monitor,
         closer ?? new FakeCloser(closes: true),
         Clock: () => new DateTimeOffset(2026, 10, 24, 20, 0, 0, TimeSpan.Zero));

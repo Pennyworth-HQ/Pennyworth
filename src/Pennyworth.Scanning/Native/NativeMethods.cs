@@ -1,7 +1,9 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Pennyworth.Scanning.Native;
 
+[SupportedOSPlatform("windows")]
 internal static unsafe partial class NativeMethods
 {
     public const int FindExInfoBasic = 1;

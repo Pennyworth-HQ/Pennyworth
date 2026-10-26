@@ -11,6 +11,7 @@ using Pennyworth.Assistant.Local;
 using Pennyworth.Assistant.Providers;
 using Pennyworth.Core.Formatting;
 using Pennyworth.KnowledgeBase;
+using Pennyworth.Platform;
 
 namespace Pennyworth.App.ViewModels;
 

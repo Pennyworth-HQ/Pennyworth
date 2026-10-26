@@ -1,7 +1,9 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Pennyworth.Monitoring.Native;
 
+[SupportedOSPlatform("windows")]
 internal static unsafe partial class MonitorNative
 {
     public const int SystemProcessInformation = 5;

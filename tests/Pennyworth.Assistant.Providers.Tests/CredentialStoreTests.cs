@@ -1,5 +1,9 @@
+using System.Runtime.Versioning;
+using Pennyworth.Tests;
+
 namespace Pennyworth.Assistant.Providers.Tests;
 
+[SupportedOSPlatform("windows")]
 public sealed class CredentialStoreTests : IDisposable
 {
     // A test-only prefix so the real Windows store is used without touching the app's keys.
@@ -7,7 +11,7 @@ public sealed class CredentialStoreTests : IDisposable
 
     public void Dispose() => _store.Delete("profile");
 
-    [Fact]
+    [WindowsFact]
     public void Saves_reads_replaces_and_deletes_a_key()
     {
         Assert.Null(_store.Read("profile"));

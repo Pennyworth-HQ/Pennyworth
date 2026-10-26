@@ -9,6 +9,7 @@
     <Project Path="src/Pennyworth.Insights/Pennyworth.Insights.csproj" />
     <Project Path="src/Pennyworth.KnowledgeBase/Pennyworth.KnowledgeBase.csproj" />
     <Project Path="src/Pennyworth.Monitoring/Pennyworth.Monitoring.csproj" />
+    <Project Path="src/Pennyworth.Platform/Pennyworth.Platform.csproj" />
     <Project Path="src/Pennyworth.Scanning/Pennyworth.Scanning.csproj" />
   </Folder>
   <Folder Name="/tests/">

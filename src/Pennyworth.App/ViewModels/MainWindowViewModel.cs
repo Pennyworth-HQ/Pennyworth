@@ -9,6 +9,7 @@ using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
 using Pennyworth.Monitoring;
 using Pennyworth.Monitoring.Hardware;
+using Pennyworth.Platform;
 using Pennyworth.Scanning;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -25,11 +26,11 @@ public sealed record AppServices(
     ICleanupService Cleanup,
     IHiddenSpaceService HiddenSpace,
     ISettingsStore Settings,
+    ISpecsReader Specs,
     ISystemMonitor? Monitor = null,
     IProcessCloser? Closer = null,
     CleanupHistory? CleanupHistory = null,
     Func<DateTimeOffset>? Clock = null,
-    ISpecsReader? Specs = null,
     IClipboardService? Clipboard = null,
     AssistantServices? Assistant = null);
 
@@ -83,7 +84,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Memory = new MemoryViewModel(Live, this, services.Closer ?? new ProcessCloser());
         Folders = new FolderBrowserViewModel(this);
         Pc = new PcViewModel(this);
-        Specs = new SpecsViewModel(services.Specs ?? new WindowsSpecsReader(), this, services.Clipboard);
+        Specs = new SpecsViewModel(services.Specs, this, services.Clipboard);
         Ask = services.Assistant is { } assistant ? new AskViewModel(assistant, this, _clock) : null;
         if (Ask is not null)
         {

@@ -10,4 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pennyworth.Assistant.Providers\Pennyworth.Assistant.Providers.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Shared\WindowsOnly.cs" Link="WindowsOnly.cs" />
+  </ItemGroup>
 </Project>

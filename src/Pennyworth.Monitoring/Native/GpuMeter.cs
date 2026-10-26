@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Pennyworth.Monitoring.Native;
 
@@ -6,6 +7,7 @@ namespace Pennyworth.Monitoring.Native;
 /// GPU load the way Task Manager shows it: the busiest engine type (3D, video, copy...),
 /// summed over all processes, from the "GPU Engine" performance counters.
 /// </summary>
+[SupportedOSPlatform("windows")]
 internal sealed unsafe class GpuMeter : IDisposable
 {
     private nint _query;

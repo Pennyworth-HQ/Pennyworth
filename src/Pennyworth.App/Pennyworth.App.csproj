@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
+    <OutputType Condition="'$(OS)' != 'Unix'">WinExe</OutputType>
+    <OutputType Condition="'$(OS)' == 'Unix'">Exe</OutputType>
     <AssemblyName>Pennyworth</AssemblyName>
     <RootNamespace>Pennyworth.App</RootNamespace>
     <IsAotCompatible>true</IsAotCompatible>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Assets\pennyworth.ico</ApplicationIcon>
+    <ApplicationManifest Condition="'$(OS)' != 'Unix'">app.manifest</ApplicationManifest>
+    <ApplicationIcon Condition="'$(OS)' != 'Unix'">Assets\pennyworth.ico</ApplicationIcon>
     <SatelliteResourceLanguages>en;pt-BR</SatelliteResourceLanguages>
   </PropertyGroup>
   <ItemGroup>
@@ -22,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
+    <ProjectReference Include="..\Pennyworth.Platform\Pennyworth.Platform.csproj" />
     <ProjectReference Include="..\Pennyworth.Insights\Pennyworth.Insights.csproj" />
     <ProjectReference Include="..\Pennyworth.Scanning\Pennyworth.Scanning.csproj" />
     <ProjectReference Include="..\Pennyworth.Monitoring\Pennyworth.Monitoring.csproj" />

@@ -1,34 +1,42 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.Versioning;
+using Pennyworth.Platform;
 using Pennyworth.Scanning;
 
-namespace Pennyworth.App.Services;
-
-public enum UnlockOutcome
-{
-    Measured,
-
-    /// <summary>The user said no to Windows' permission prompt.</summary>
-    Declined,
-
-    Failed,
-}
-
-public sealed record UnlockResult(UnlockOutcome Outcome, HiddenSpaceReport? Report = null);
-
-public interface IHiddenSpaceService
-{
-    /// <summary>Asks Windows for permission and measures the drive's hidden system space.</summary>
-    Task<UnlockResult> MeasureAsync(string driveRoot, CancellationToken cancellationToken);
-}
+namespace Pennyworth.App.Services.Windows;
 
 /// <summary>
 /// Starts a short-lived elevated copy of Pennyworth that only measures and writes a report.
 /// The window you see never runs elevated.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public sealed class ElevatedHiddenSpaceService : IHiddenSpaceService
 {
     private const int ErrorCancelled = 1223;
+
+    /// <summary>
+    /// The elevated copy's side of the exchange: when <paramref name="args"/> ask for a measurement,
+    /// measure, write the report and say so. No window is ever created.
+    /// </summary>
+    public static bool TryRunHelper(string[] args, out int exitCode)
+    {
+        if (args is not [HiddenSpace.Argument, string drive, string reportPath])
+        {
+            exitCode = 0;
+            return false;
+        }
+
+        if (!HiddenSpace.IsDriveLetter(drive))
+        {
+            exitCode = 2;
+            return true;
+        }
+
+        HiddenSpace.WriteReport(HiddenSpace.Measure(drive), reportPath);
+        exitCode = 0;
+        return true;
+    }
 
     public async Task<UnlockResult> MeasureAsync(string driveRoot, CancellationToken cancellationToken)
     {

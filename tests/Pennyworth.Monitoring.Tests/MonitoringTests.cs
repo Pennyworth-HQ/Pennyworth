@@ -1,5 +1,7 @@
+using System.Runtime.Versioning;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring.Native;
+using Pennyworth.Tests;
 
 namespace Pennyworth.Monitoring.Tests;
 
@@ -59,9 +61,10 @@ public class MemoryStatusTests
     }
 }
 
+[SupportedOSPlatform("windows")]
 public class GpuMeterTests
 {
-    [Fact]
+    [WindowsFact]
     public void Reports_the_busiest_engine_type()
     {
         double load = GpuMeter.Combine([
@@ -150,9 +153,10 @@ public class AppGrouperTests
 }
 
 /// <summary>Runs against the real machine: only checks that the numbers are sane.</summary>
+[SupportedOSPlatform("windows")]
 public class SystemMonitorTests
 {
-    [Fact]
+    [WindowsFact]
     public void Reads_this_machine()
     {
         using var monitor = new SystemMonitor(KnowledgeBaseLoader.LoadProcesses().Processes);
@@ -168,7 +172,7 @@ public class SystemMonitorTests
         Assert.Contains(sample.Apps, app => app.Explanation?.Id == "windows-services" && app.Processes.Any(p => p.Services.Count > 0));
     }
 
-    [Fact]
+    [WindowsFact]
     public void Measures_cpu_per_process()
     {
         using var monitor = new SystemMonitor(KnowledgeBaseLoader.LoadProcesses().Processes);

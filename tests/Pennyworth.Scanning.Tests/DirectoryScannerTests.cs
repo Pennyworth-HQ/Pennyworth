@@ -1,10 +1,13 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using Pennyworth.Core.Storage;
+using Pennyworth.Tests;
 
 namespace Pennyworth.Scanning.Tests;
 
+[SupportedOSPlatform("windows")]
 public sealed class DirectoryScannerTests : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("pw-scan-").FullName;
@@ -18,7 +21,7 @@ public sealed class DirectoryScannerTests : IDisposable
         Directory.Delete(_root, recursive: true);
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task Counts_every_file_and_rolls_up_sizes()
     {
         WriteFile("a.txt", 1000);
@@ -35,7 +38,7 @@ public sealed class DirectoryScannerTests : IDisposable
         Assert.Equal(Path.Combine(_root, "docs"), docs.FullPath);
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task Applies_the_classifier_to_folders_and_inherits_it_below()
     {
         WriteFile(@"games\x\big.bin", 2000);
@@ -50,7 +53,7 @@ public sealed class DirectoryScannerTests : IDisposable
         Assert.True(tree.GetCategoryBytes(StorageCategory.Other) > 0);
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task Classifies_files_in_the_scan_root()
     {
         WriteFile("hiberfil.sys", 4096);
@@ -61,7 +64,7 @@ public sealed class DirectoryScannerTests : IDisposable
         Assert.Equal(4096, tree.GetCategoryBytes(StorageCategory.HiddenSystem));
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task Counts_sparse_files_by_their_stored_size()
     {
         string path = Path.Combine(_root, "disk.vhdx");
@@ -82,7 +85,7 @@ public sealed class DirectoryScannerTests : IDisposable
         Assert.True(disk.SizeOnDisk < 1024 * 1024, $"Expected almost nothing stored, got {disk.SizeOnDisk}.");
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task Does_not_follow_junctions()
     {
         WriteFile(@"real\data.bin", 8000);
@@ -94,7 +97,7 @@ public sealed class DirectoryScannerTests : IDisposable
         Assert.DoesNotContain(tree.Root.GetChildren(), n => n.Name == "link");
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task Marks_unreadable_folders_as_locked_and_keeps_going()
     {
         WriteFile(@"secret\hidden.bin", 100);
@@ -108,7 +111,7 @@ public sealed class DirectoryScannerTests : IDisposable
         Assert.Equal(1, tree.FileCount);
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task Reports_progress_with_category_totals()
     {
         WriteFile("a.bin", 100);
@@ -122,7 +125,7 @@ public sealed class DirectoryScannerTests : IDisposable
         Assert.Equal(StorageCategories.Count, last.CategoryBytes.Count);
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task Stops_when_cancelled()
     {
         WriteFile("a.bin", 1);

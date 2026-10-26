@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -18,6 +19,7 @@ public sealed record HiddenSpaceReport(long? RestorePoints, long? NtfsMetadata)
 /// Runs in the short-lived elevated copy of the app (<c>--measure-hidden C: result.json</c>).
 /// Reads only sizes; it never changes anything.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public static partial class HiddenSpace
 {
     public const string Argument = "--measure-hidden";

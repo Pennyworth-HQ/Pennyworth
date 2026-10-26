@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime.Versioning;
 using Pennyworth.Core.Storage;
 using Pennyworth.Scanning.Native;
 
@@ -8,6 +9,7 @@ namespace Pennyworth.Scanning;
 /// Scans any drive or folder without admin rights by listing directories in parallel.
 /// Folders Windows refuses to list are recorded as locked and the scan continues.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public sealed class DirectoryScanner : IStorageScanner
 {
     private readonly int _workerCount;

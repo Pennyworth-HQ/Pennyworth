@@ -3,35 +3,29 @@ using Pennyworth.Assistant;
 using Pennyworth.Assistant.Local;
 using Pennyworth.Assistant.Providers;
 
-namespace Pennyworth.App.Services;
+namespace Pennyworth.Platform;
 
-/// <summary>Everything the Ask screen needs; tests pass fakes.</summary>
-/// <param name="CreateClient">A chat client for a profile; the key is null for local profiles.</param>
-/// <param name="Download">Downloads and verifies a catalogued model into a folder.</param>
-/// <param name="AvailableMemory">Physical memory free right now, in bytes.</param>
-/// <param name="FreeSpace">Free bytes on the drive holding a folder.</param>
-public sealed record AssistantServices(
-    ICredentialStore Keys,
-    ConversationStore Conversations,
-    UsageMeter Usage,
-    ModelCatalog Catalog,
-    LocalModelStore Models,
-    Func<AssistantProfile, string?, IChatClient> CreateClient,
-    Func<LocalModel, string, IProgress<DownloadProgress>, CancellationToken, Task> Download,
-    Anonymizer Anonymizer,
-    Func<long> AvailableMemory,
-    Func<string, long> FreeSpace)
+/// <summary>
+/// Builds the Ask screen's services from the parts an operating system decides: where the API keys
+/// are kept, where files live, and how to measure free disk space.
+/// </summary>
+public static class AssistantServicesFactory
 {
-    /// <summary>The real services: Credential Manager, files under %LocalAppData%\Pennyworth, Hugging Face downloads.</summary>
-    public static AssistantServices CreateDefault(Func<long> availableMemory)
+    public static AssistantServices Create(
+        ICredentialStore keys,
+        string conversationFolder,
+        string usagePath,
+        string modelRoot,
+        Func<long> availableMemory,
+        Func<string, long> freeSpace)
     {
         var catalog = ModelCatalog.Load();
-        var models = new LocalModelStore(LocalModelStore.DefaultRoot);
+        var models = new LocalModelStore(modelRoot);
         var local = new Dictionary<string, LocalChatClient>();
         var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
         var downloader = new ModelDownloader(http);
 
-        IChatClient Create(AssistantProfile profile, string? key)
+        IChatClient CreateClient(AssistantProfile profile, string? key)
         {
             if (!profile.IsLocal)
             {
@@ -50,16 +44,16 @@ public sealed record AssistantServices(
         }
 
         return new AssistantServices(
-            new WindowsCredentialStore(),
-            new ConversationStore(ConversationStore.DefaultFolder),
-            new UsageMeter(UsageMeter.DefaultPath),
+            keys,
+            new ConversationStore(conversationFolder),
+            new UsageMeter(usagePath),
             catalog,
             models,
-            Create,
+            CreateClient,
             (model, folder, progress, ct) => downloader.DownloadAsync(model, folder, progress, ct),
             Anonymizer.ForCurrentUser(),
             availableMemory,
-            folder => new DriveInfo(Path.GetPathRoot(Path.GetFullPath(folder))!).AvailableFreeSpace);
+            freeSpace);
     }
 
     /// <summary>Lets the screen dispose what it was given without unloading a shared local model.</summary>

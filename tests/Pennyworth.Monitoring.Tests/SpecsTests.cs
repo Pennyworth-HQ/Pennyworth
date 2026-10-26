@@ -1,5 +1,7 @@
+using System.Runtime.Versioning;
 using System.Text;
 using Pennyworth.Monitoring.Hardware;
+using Pennyworth.Tests;
 
 namespace Pennyworth.Monitoring.Tests;
 
@@ -102,9 +104,10 @@ public class SmbiosTests
 }
 
 /// <summary>Runs against the real machine: only checks that the answers are sane.</summary>
+[SupportedOSPlatform("windows")]
 public class WindowsSpecsReaderTests
 {
-    [Fact]
+    [WindowsFact]
     public void Reads_this_machine()
     {
         PcSpecs specs = new WindowsSpecsReader().Read();

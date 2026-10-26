@@ -1,8 +1,10 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Pennyworth.Monitoring.Native;
 
 /// <summary>Which Windows services run in which process (for expanding "Windows services").</summary>
+[SupportedOSPlatform("windows")]
 internal static unsafe partial class ServiceReader
 {
     private const uint ScManagerEnumerateService = 0x0004;
