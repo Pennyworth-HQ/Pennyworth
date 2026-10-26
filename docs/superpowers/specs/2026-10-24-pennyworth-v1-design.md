@@ -32,7 +32,7 @@ by someone with no technical knowledge.
 
 - Startup-apps manager, driver/update management, registry cleaning.
 - Usage history over time / background service.
-- AI-generated explanations.
+- AI-generated explanations. *(Amended 2026-10-26: an optional assistant, off until the user sets it up, ships as screen 07 — see `2026-10-25-ai-assistant-design.md`. The knowledge base stays the source of truth.)*
 - Incremental scanning via the USN journal (candidate for v2; v1 uses saved
   snapshot + full rescan).
 - Final visual design (comes later from Claude Design — see §10).
@@ -48,7 +48,7 @@ by someone with no technical knowledge.
 | Drives | All internal and removable drives; fast mode on NTFS, normal scan elsewhere |
 | Admin | Not required to start; "Unlock full scan" elevates a separate helper on demand |
 | Scan speed | Raw MFT reading when admin is unlocked; directory walk otherwise |
-| Explanations | Curated offline knowledge base (no AI, no network) |
+| Explanations | Curated offline knowledge base (no AI, no network); optional assistant on top since 2026-10-26 (see the assistant spec) |
 | First storage view | Plain-language category summary, drill down to folder tree |
 | Actions | Explain + guided cleanup; personal files go to the Recycle Bin |
 | Languages | English + Portuguese (Brazil) at launch, translation-ready |
