@@ -136,6 +136,8 @@
                       <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Button Classes="small" Content="{l:Tr StorageShort, Upper=True}" IsVisible="{Binding HasStorage}"
                                 Command="{Binding $parent[UserControl].((vm:MemoryViewModel)DataContext).OpenStorageCommand}" CommandParameter="{Binding}" />
+                        <Button Classes="small" Content="{l:Tr AskAboutThis, Upper=True}" IsVisible="{Binding $parent[UserControl].((vm:MemoryViewModel)DataContext).CanAsk}"
+                                Command="{Binding $parent[UserControl].((vm:MemoryViewModel)DataContext).AskAboutAppCommand}" CommandParameter="{Binding}" />
                         <Button Classes="small" Foreground="{DynamicResource Brush.TextPrimary}" Content="{l:Tr CloseApp, Upper=True}" IsVisible="{Binding CanClose}"
                                 Command="{Binding $parent[UserControl].((vm:MemoryViewModel)DataContext).CloseCommand}" CommandParameter="{Binding}" />
                         <Border Classes="badge" IsVisible="{Binding IsProtected}" ToolTip.Tip="{l:Tr ProtectedTip}">

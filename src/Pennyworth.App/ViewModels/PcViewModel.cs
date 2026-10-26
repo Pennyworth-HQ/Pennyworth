@@ -1,5 +1,6 @@
 using System.Globalization;
 using Pennyworth.App.Resources;
+using Pennyworth.Assistant;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -225,6 +226,22 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
 
     [RelayCommand]
     private void SelectPart(PcPart part) => Part = part;
+
+    public bool CanAsk => shell.HasAssistant;
+
+    [RelayCommand]
+    private void AskAboutPart()
+    {
+        TopicKind topic = Part switch
+        {
+            PcPart.Memory => TopicKind.Memory,
+            PcPart.Processor => TopicKind.Processor,
+            PcPart.Graphics => TopicKind.Graphics,
+            PcPart.Power => TopicKind.Power,
+            _ => TopicKind.Storage,
+        };
+        shell.AskAbout(new AssistantTopic(topic), string.Format(CultureInfo.CurrentCulture, Strings.AskAboutSpec, PartName));
+    }
 
     [RelayCommand]
     private void DismissHint() => ShowHint = false;

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Pennyworth.App.Resources;
 using Pennyworth.App.Services;
+using Pennyworth.Assistant;
 using Pennyworth.Cleanup;
 using Pennyworth.Core.Formatting;
 using Pennyworth.KnowledgeBase;
@@ -172,6 +173,15 @@ public sealed partial class CleanupViewModel : ObservableObject
     }
 
     public void ClosePreview() => Preview = null;
+
+    /// <summary>"Ask about this": set by the shell when the assistant is available.</summary>
+    public Action<AssistantTopic, string>? AskAbout { get; set; }
+
+    public bool CanAsk => AskAbout is not null;
+
+    [RelayCommand]
+    private void AskAboutItem(CleanupItemViewModel item) =>
+        AskAbout?.Invoke(new AssistantTopic(TopicKind.CleanupItem, item.Rule.Id), string.Format(CultureInfo.CurrentCulture, Strings.AskAboutCleanup, item.Title));
 
     [RelayCommand]
     private void AskClean()

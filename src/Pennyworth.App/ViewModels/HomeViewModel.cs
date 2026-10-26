@@ -1,4 +1,5 @@
 using Pennyworth.App.Resources;
+using Pennyworth.Assistant;
 using Pennyworth.Core.Formatting;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -55,6 +56,11 @@ public sealed partial class HomeViewModel(MainWindowViewModel shell) : Observabl
         OnPropertyChanged(nameof(TopAppLine));
         OnPropertyChanged(nameof(CpuMini));
     }
+
+    public bool CanAsk => shell.HasAssistant;
+
+    [RelayCommand]
+    private void AskAboutPc() => shell.AskAbout(AssistantTopic.Overview, Strings.AskAboutHome);
 
     [RelayCommand]
     private void OpenDrive(DriveCardViewModel card) => shell.ShowDrive(card.Drive);

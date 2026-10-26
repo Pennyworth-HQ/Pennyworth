@@ -84,6 +84,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Pc = new PcViewModel(this);
         Specs = new SpecsViewModel(services.Specs ?? new WindowsSpecsReader(), this, services.Clipboard);
         Ask = services.Assistant is { } assistant ? new AskViewModel(assistant, this, _clock) : null;
+        if (Ask is not null)
+        {
+            Memory.AskAbout = AskAbout;
+            Cleanup.AskAbout = AskAbout;
+            Specs.AskAbout = AskAbout;
+        }
         Page = _settings.WelcomeSeen ? Page.Home : Page.Welcome;
         Localizer.Instance.LanguageChanged += (_, _) => RefreshTexts();
     }

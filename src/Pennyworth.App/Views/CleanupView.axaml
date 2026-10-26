@@ -144,14 +144,18 @@
                         </Grid>
                       </Button>
                       <!-- Outside the row so it works even for items that can't be cleaned yet. -->
-                      <Button Classes="link" Margin="40,-10,0,10" HorizontalAlignment="Left" Foreground="{DynamicResource Brush.Accent}"
-                              Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).OpenPreviewCommand}"
-                              CommandParameter="{Binding}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                          <TextBlock Text="{Binding PreviewText}" />
-                          <TextBlock Text="→" />
-                        </StackPanel>
-                      </Button>
+                      <StackPanel Orientation="Horizontal" Spacing="12" Margin="40,-10,0,10">
+                        <Button Classes="link" HorizontalAlignment="Left" Foreground="{DynamicResource Brush.Accent}"
+                                Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).OpenPreviewCommand}"
+                                CommandParameter="{Binding}">
+                          <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding PreviewText}" />
+                            <TextBlock Text="→" />
+                          </StackPanel>
+                        </Button>
+                        <Button Classes="small" Content="{l:Tr AskAboutThis, Upper=True}" VerticalAlignment="Center" IsVisible="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).CanAsk}"
+                                Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).AskAboutItemCommand}" CommandParameter="{Binding}" />
+                      </StackPanel>
                       </StackPanel>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
@@ -230,7 +234,10 @@
               </TextBlock>
               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
                 <TextBlock Classes="title" TextWrapping="Wrap" Text="{Binding Item.Title}" />
-                <Button Grid.Column="1" Classes="small" VerticalAlignment="Center" IsEnabled="{Binding Item.IsAvailable}" Command="{Binding ToggleIncludeCommand}">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button Classes="small" Content="{l:Tr AskAboutThis, Upper=True}" IsVisible="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).CanAsk}"
+                        Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).AskAboutItemCommand}" CommandParameter="{Binding Item}" />
+                <Button Classes="small" VerticalAlignment="Center" IsEnabled="{Binding Item.IsAvailable}" Command="{Binding ToggleIncludeCommand}">
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <Border Classes="check" Classes.on="{Binding Item.IsSelected}" Width="14" Height="14" Margin="0" VerticalAlignment="Center">
                       <TextBlock Text="✓" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -239,6 +246,7 @@
                     <TextBlock VerticalAlignment="Center" Text="{l:Tr PreviewInclude, Upper=True}" />
                   </StackPanel>
                 </Button>
+                </StackPanel>
               </Grid>
               <TextBlock Classes="secondary" TextWrapping="Wrap" Text="{Binding Summary}" />
               <TextBlock FontSize="13" TextWrapping="Wrap">

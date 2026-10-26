@@ -39,6 +39,7 @@
           <TextBlock Classes="title" TextWrapping="Wrap" Text="{l:Tr HomeTitle}" />
           <TextBlock Grid.Column="1" Classes="secondary" VerticalAlignment="Bottom" Margin="0,0,0,6" Text="{Binding Greeting}" />
         </Grid>
+        <Button Classes="small" Content="{l:Tr AskAboutThis, Upper=True}" HorizontalAlignment="Left" IsVisible="{Binding CanAsk}" Command="{Binding AskAboutPcCommand}" />
         <TextBlock Classes="secondary" FontSize="15" LineHeight="22" MaxWidth="640" HorizontalAlignment="Left" TextWrapping="Wrap" Text="{Binding StatusLine}" />
       </StackPanel>
 

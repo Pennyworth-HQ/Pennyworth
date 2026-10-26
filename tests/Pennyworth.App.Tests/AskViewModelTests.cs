@@ -221,6 +221,39 @@ public sealed class AskViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task Every_screen_can_ask_about_what_it_shows()
+    {
+        var (shell, ask) = Create();
+        await shell.Specs.EnsureLoaded();
+
+        shell.Home.AskAboutPcCommand.Execute(null);
+        Assert.Equal((TopicKind.Overview, Resources.Strings.AskAboutHome), (ask.Topic.Kind, ask.Draft));
+
+        shell.Specs.AskAboutSectionCommand.Execute(shell.Specs.Sections[1]);
+        Assert.Equal(new AssistantTopic(TopicKind.SpecSection, "02"), ask.Topic);
+        Assert.Contains(shell.Specs.Sections[1].Title, ask.Draft);
+
+        var row = new AppRowViewModel("chrome", null);
+        shell.Memory.AskAboutAppCommand.Execute(row);
+        Assert.Equal(TopicKind.Memory, ask.Topic.Kind);
+
+        shell.Pc.SelectPartCommand.Execute(PcPart.Graphics);
+        shell.Pc.AskAboutPartCommand.Execute(null);
+        Assert.Equal(TopicKind.Graphics, ask.Topic.Kind);
+        Assert.True(shell.IsAskPage);
+        Assert.True(shell.Home.CanAsk && shell.Memory.CanAsk && shell.Cleanup.CanAsk && shell.Specs.CanAsk);
+    }
+
+    [Fact]
+    public void Without_assistant_services_no_screen_offers_to_ask()
+    {
+        var shell = new MainWindowViewModel(TestApp.Services());
+
+        Assert.Null(shell.Ask);
+        Assert.False(shell.Home.CanAsk || shell.Memory.CanAsk || shell.Cleanup.CanAsk || shell.Specs.CanAsk || shell.Pc.CanAsk);
+    }
+
+    [Fact]
     public async Task Removing_the_last_way_to_answer_goes_back_to_setup()
     {
         var (_, ask) = Create();

@@ -48,6 +48,8 @@
                     <Run Text="{Binding Title, Converter={x:Static controls:TextCase.Upper}}" />
                   </TextBlock>
                   <TextBlock FontSize="19" FontWeight="Medium" LineHeight="24" TextWrapping="Wrap" Text="{Binding Headline}" />
+                  <Button Classes="small" Content="{l:Tr AskAboutThis, Upper=True}" HorizontalAlignment="Left" IsVisible="{Binding $parent[UserControl].((vm:SpecsViewModel)DataContext).CanAsk}"
+                          Command="{Binding $parent[UserControl].((vm:SpecsViewModel)DataContext).AskAboutSectionCommand}" CommandParameter="{Binding}" />
                   <ItemsControl ItemsSource="{Binding Rows}" Margin="0,4,0,0">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="vm:SpecRow">

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Pennyworth.App.Resources;
 using Pennyworth.App.Services;
+using Pennyworth.Assistant;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Monitoring.Hardware;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -24,6 +25,15 @@ public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host
     public partial IReadOnlyList<SpecSection> Sections { get; private set; } = [];
 
     public bool IsLoaded => Specs is not null;
+
+    /// <summary>"Ask about this": set by the shell when the assistant is available.</summary>
+    public Action<AssistantTopic, string>? AskAbout { get; set; }
+
+    public bool CanAsk => AskAbout is not null;
+
+    [RelayCommand]
+    private void AskAboutSection(SpecSection section) =>
+        AskAbout?.Invoke(new AssistantTopic(TopicKind.SpecSection, section.Index), string.Format(CultureInfo.CurrentCulture, Strings.AskAboutSpec, section.Title));
 
     /// <summary>The load started by <see cref="EnsureLoaded"/>; lets tests await it.</summary>
     public Task CurrentLoad { get; private set; } = Task.CompletedTask;

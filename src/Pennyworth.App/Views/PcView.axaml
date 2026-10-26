@@ -114,6 +114,7 @@
           <TextBlock Classes="label" Foreground="{DynamicResource Brush.Accent}" Text="{Binding PartIndexText}" />
           <TextBlock FontSize="24" FontWeight="Medium" TextWrapping="Wrap" Text="{Binding PartName}" />
           <TextBlock Classes="secondary" FontSize="13.5" LineHeight="20" TextWrapping="Wrap" Text="{Binding PartHint}" />
+          <Button Classes="small" Content="{l:Tr AskAboutThis, Upper=True}" HorizontalAlignment="Left" IsVisible="{Binding CanAsk}" Command="{Binding AskAboutPartCommand}" />
         </StackPanel>
 
         <!-- Drive -->

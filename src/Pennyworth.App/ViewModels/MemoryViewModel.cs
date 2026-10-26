@@ -1,5 +1,6 @@
 using System.Globalization;
 using Pennyworth.App.Resources;
+using Pennyworth.Assistant;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
 using Pennyworth.Monitoring;
@@ -119,6 +120,16 @@ public sealed partial class MemoryViewModel : ObservableObject
             _host.ShowDialog(new CloseAppDialogViewModel(row, _closer, _host));
         }
     }
+
+
+    /// <summary>"Ask about this": set by the shell when the assistant is available.</summary>
+    public Action<AssistantTopic, string>? AskAbout { get; set; }
+
+    public bool CanAsk => AskAbout is not null;
+
+    [RelayCommand]
+    private void AskAboutApp(AppRowViewModel row) =>
+        AskAbout?.Invoke(new AssistantTopic(TopicKind.Memory), string.Format(CultureInfo.CurrentCulture, Strings.AskAboutApp, row.Name));
 
     [RelayCommand]
     private void OpenStorage(AppRowViewModel row)
