@@ -17,6 +17,44 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task A_failed_scan_shows_a_message_instead_of_an_empty_screen()
+    {
+        var scanner = new FakeScanner(_ => throw new IOException("The drive went away."));
+        var viewModel = new MainWindowViewModel(TestApp.Services(scanner));
+
+        viewModel.Initialize();
+        await viewModel.CurrentScan;
+
+        Assert.False(viewModel.IsScanning);
+        string toast = Assert.IsType<string>(viewModel.Toast);
+        Assert.Contains("C:", toast, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_failed_sample_does_not_escape_the_tick()
+    {
+        var viewModel = new MainWindowViewModel(TestApp.Services(monitor: new ThrowingMonitor()));
+
+        await viewModel.TickAsync();
+
+        Assert.False(viewModel.Live.HasSample);
+    }
+
+    [Fact]
+    public async Task A_failed_scan_can_be_retried()
+    {
+        var scanner = new FakeScanner(_ => throw new IOException("The drive went away."));
+        var viewModel = new MainWindowViewModel(TestApp.Services(scanner));
+        viewModel.Initialize();
+        await viewModel.CurrentScan;
+
+        viewModel.RescanCommand.Execute(null);
+        await viewModel.CurrentScan;
+
+        Assert.Equal(2, scanner.ScannedRoots.Count);
+    }
+
+    [Fact]
     public async Task Starts_on_home_and_scans_the_windows_drive()
     {
         var (viewModel, scanner) = Create();
@@ -277,4 +315,10 @@ public sealed class ShellLanguageTests : IDisposable
         Assert.Equal("Disco Local (C:)", viewModel.SystemDrive?.Name);
         Assert.Equal("Pronto", viewModel.StatusShort);
     }
+}
+
+/// <summary>A monitor that fails the way a driver can: not with the exception the shell expects.</summary>
+internal sealed class ThrowingMonitor : ISystemMonitor
+{
+    public MonitorSample Sample() => throw new IOException("The counter went away.");
 }

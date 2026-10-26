@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Pennyworth.App.Localization;
 using Pennyworth.App.Resources;
 using Pennyworth.App.Services;
@@ -295,9 +296,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
                     _recentSamples.Dequeue();
                 }
             }
-            catch (InvalidOperationException)
+            catch (Exception ex)
             {
-                Live.Flicker(); // Sampling failed this time; keep the last numbers.
+                // Sampling must never take the app down: Windows refuses, a driver disappears, a
+                // counter query fails. Keep the last numbers and flicker the status.
+                Debug.WriteLine(ex);
+                Live.Flicker();
             }
         }
         else
@@ -672,6 +676,19 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             {
                 _summaries.Remove(root);
             }
+        }
+        catch (Exception ex)
+        {
+            // A scan fails for reasons the person cannot control: a drive that went away, a folder
+            // deleted mid-walk, permissions. Tell them and forget the result so a retry rescans,
+            // instead of leaving an empty screen with nothing to click.
+            Debug.WriteLine(ex);
+            if (_summaries.GetValueOrDefault(root) == summary)
+            {
+                _summaries.Remove(root);
+            }
+
+            ShowToast(string.Format(Strings.ScanFailed, drive.Name));
         }
         finally
         {

@@ -206,6 +206,7 @@
   <data name="DeclinedSub" xml:space="preserve"><value>I'll carry on in normal mode. Should you change your mind, it's in Storage.</value></data>
   <data name="UnlockedToast" xml:space="preserve"><value>Thank you. I can now see everything, hidden system space included.</value></data>
   <data name="UnlockFailed" xml:space="preserve"><value>I couldn't measure the hidden space this time. Normal mode carries on.</value></data>
+  <data name="ScanFailed" xml:space="preserve"><value>I couldn't finish reading {0}. Try again, or pick another drive.</value></data>
   <data name="NavSpecs" xml:space="preserve"><value>Specs</value></data>
   <data name="NavSpecsHint" xml:space="preserve"><value>Every part of your PC</value></data>
   <data name="SpecsTitle" xml:space="preserve"><value>Your PC, in detail</value></data>
