@@ -44,5 +44,8 @@
     <DataTemplate DataType="vm:PcViewModel">
       <views:PcView />
     </DataTemplate>
+    <DataTemplate DataType="vm:AskViewModel">
+      <views:AskView />
+    </DataTemplate>
   </Application.DataTemplates>
 </Application>

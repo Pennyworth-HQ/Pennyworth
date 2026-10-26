@@ -38,7 +38,8 @@ public sealed partial class App : Application
                 new ProcessCloser(),
                 new CleanupHistory(CleanupHistory.DefaultPath),
                 Specs: new WindowsSpecsReader(),
-                Clipboard: new AvaloniaClipboardService(() => desktop.MainWindow)));
+                Clipboard: new AvaloniaClipboardService(() => desktop.MainWindow),
+                Assistant: AssistantServices.CreateDefault(() => monitor.Sample().Memory.Available)));
 
             desktop.MainWindow = new MainWindow { DataContext = viewModel };
             desktop.Exit += (_, _) => monitor.Dispose();

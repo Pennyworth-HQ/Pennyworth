@@ -1,0 +1,287 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:l="using:Pennyworth.App.Localization"
+             xmlns:a="using:Pennyworth.Assistant"
+             x:Class="Pennyworth.App.Views.AskView"
+             x:DataType="vm:AskViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBox.field">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderStrong}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+      <Setter Property="Padding" Value="10,8" />
+      <Setter Property="FontSize" Value="13.5" />
+      <Setter Property="CaretBrush" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="TextBox.field:focus /template/ Border">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="Border.bubble">
+      <Setter Property="Padding" Value="16,12" />
+      <Setter Property="BorderThickness" Value="1,0,0,0" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
+    </Style>
+    <Style Selector="Border.bubble.user">
+      <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.TextTertiary}" />
+    </Style>
+    <Style Selector="Border.bubble.assistant">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+    </Style>
+    <Style Selector="Border.fit.warning">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*">
+    <!-- Header: what this screen is, which brain answers, and the tools. -->
+    <Grid Margin="36,28,36,14" ColumnDefinitions="*,Auto" ColumnSpacing="16">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="label">
+          <Run Text="07 / " />
+          <Run Text="{l:Tr NavAsk, Upper=True}" />
+        </TextBlock>
+        <TextBlock Classes="title" TextWrapping="Wrap" Text="{l:Tr AskTitle}" />
+        <TextBlock Classes="secondary" FontSize="13.5" TextWrapping="Wrap" Text="{l:Tr AskSub}" />
+        <Border Classes="badge" HorizontalAlignment="Left" Padding="8,3" IsVisible="{Binding !IsSetup}">
+          <TextBlock Text="{Binding BadgeText}" />
+        </Border>
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+        <Button Classes="ghost" Command="{Binding BackToChatCommand}" IsVisible="{Binding CanGoBack}">
+          <TextBlock>
+            <Run Text="← " />
+            <Run Text="{l:Tr Back, Upper=True}" />
+          </TextBlock>
+        </Button>
+        <Button Classes="small" Content="{l:Tr NewConversation, Upper=True}" Command="{Binding NewConversationCommand}" IsVisible="{Binding IsChat}" />
+        <Button Classes="small" Content="{l:Tr History, Upper=True}" Command="{Binding ShowHistoryCommand}" IsVisible="{Binding IsChat}" />
+        <Button Classes="small" Content="{l:Tr AssistantSettings, Upper=True}" Command="{Binding ShowSettingsCommand}" IsVisible="{Binding IsChat}" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Setup: run on this PC, or use an AI account. -->
+    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding IsSetup}">
+      <StackPanel Margin="36,4,36,28" Spacing="16">
+        <StackPanel Spacing="4">
+          <TextBlock FontSize="19" FontWeight="Medium" Text="{l:Tr SetupTitle}" />
+          <TextBlock Classes="secondary" FontSize="13" Text="{l:Tr SetupSub}" />
+        </StackPanel>
+        <UniformGrid Columns="2" ColumnSpacing="16">
+          <Border Classes="card" Padding="22,20" VerticalAlignment="Stretch">
+            <StackPanel Spacing="12">
+              <TextBlock Classes="label" Text="{l:Tr SetupLocalTitle, Upper=True}" />
+              <TextBlock FontSize="17" FontWeight="Medium" Text="{Binding RecommendedModel.DisplayName}" />
+              <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{Binding LocalSubtitle}" />
+              <Border Classes="badge fit" Classes.warning="{Binding IsVerdictWarning}" HorizontalAlignment="Left" Padding="8,3">
+                <TextBlock Text="{Binding VerdictTitle}" />
+              </Border>
+              <TextBlock FontSize="13" TextWrapping="Wrap" Text="{Binding VerdictReasons}" />
+              <StackPanel Spacing="8" IsVisible="{Binding IsDownloading}">
+                <ProgressBar MinHeight="6" Height="6" Minimum="0" Maximum="1" Value="{Binding DownloadFraction}" />
+                <TextBlock Classes="secondary" FontSize="12.5" Text="{Binding DownloadText}" />
+                <Button Classes="small" HorizontalAlignment="Left" Content="{l:Tr Cancel, Upper=True}" Command="{Binding CancelDownloadCommand}" />
+              </StackPanel>
+              <TextBlock Classes="warning" FontSize="12.5" TextWrapping="Wrap" Text="{Binding DownloadError}" IsVisible="{Binding HasDownloadError}" />
+              <Button Classes="primary" HorizontalAlignment="Left" MinHeight="40" Padding="18,0" Content="{Binding DownloadLabel}"
+                      Command="{Binding DownloadModelCommand}" IsVisible="{Binding !IsInstalled}" />
+              <Button Classes="primary" HorizontalAlignment="Left" MinHeight="40" Padding="18,0" Content="{l:Tr UseModel, Upper=True}"
+                      Command="{Binding UseLocalModelCommand}" IsVisible="{Binding IsInstalled}" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card" Padding="22,20">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="label" Text="{l:Tr SetupCloudTitle, Upper=True}" />
+              <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{l:Tr SetupCloudSub}" />
+              <WrapPanel>
+                <Button Classes="segment" Classes.selected="{Binding IsOpenAi}" Margin="0,0,4,4" Content="{l:Tr BackendOpenAi}"
+                        Command="{Binding SelectBackendCommand}" CommandParameter="{x:Static a:AssistantBackend.OpenAiCompatible}" />
+                <Button Classes="segment" Classes.selected="{Binding IsAnthropic}" Margin="0,0,4,4" Content="{l:Tr BackendAnthropic}"
+                        Command="{Binding SelectBackendCommand}" CommandParameter="{x:Static a:AssistantBackend.Anthropic}" />
+                <Button Classes="segment" Classes.selected="{Binding IsGemini}" Margin="0,0,4,4" Content="{l:Tr BackendGemini}"
+                        Command="{Binding SelectBackendCommand}" CommandParameter="{x:Static a:AssistantBackend.Gemini}" />
+                <Button Classes="segment" Classes.selected="{Binding IsAzure}" Margin="0,0,4,4" Content="{l:Tr BackendAzure}"
+                        Command="{Binding SelectBackendCommand}" CommandParameter="{x:Static a:AssistantBackend.AzureOpenAi}" />
+              </WrapPanel>
+              <TextBlock Classes="caption" Text="{l:Tr FieldName}" />
+              <TextBox Classes="field" Text="{Binding ProfileName}" />
+              <TextBlock Classes="caption" Text="{Binding EndpointLabel}" IsVisible="{Binding ShowEndpoint}" />
+              <TextBox Classes="field" Text="{Binding Endpoint}" IsVisible="{Binding ShowEndpoint}" />
+              <TextBlock Classes="caption" Text="{Binding ModelLabel}" />
+              <TextBox Classes="field" Text="{Binding ModelId}" />
+              <TextBlock Classes="caption" Text="{l:Tr FieldKey}" />
+              <TextBox Classes="field" PasswordChar="•" Text="{Binding ApiKey}" />
+              <TextBlock Classes="tertiary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr KeyNote}" />
+              <TextBlock FontSize="12.5" TextWrapping="Wrap" Text="{Binding TestResult}" IsVisible="{Binding HasTestResult}" />
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button MinHeight="40" Padding="16,0" Content="{l:Tr TestConnection, Upper=True}" Command="{Binding TestConnectionCommand}" />
+                <Button Classes="primary" MinHeight="40" Padding="18,0" Content="{l:Tr SaveProfile, Upper=True}" Command="{Binding SaveCloudProfileCommand}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </UniformGrid>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Conversation. -->
+    <Grid Grid.Row="1" RowDefinitions="*,Auto" IsVisible="{Binding IsChat}">
+      <ScrollViewer Name="MessagesScroll" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="36,4,36,16" Spacing="12">
+          <StackPanel Spacing="10" IsVisible="{Binding ShowStarters}">
+            <ItemsControl ItemsSource="{Binding Starters}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <Button Classes="link" Margin="0,0,8,8" BorderThickness="1" BorderBrush="{DynamicResource Brush.BorderStrong}" Padding="12,6"
+                          Content="{Binding}"
+                          Command="{Binding $parent[UserControl].((vm:AskViewModel)DataContext).AskStarterCommand}"
+                          CommandParameter="{Binding}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <ItemsControl ItemsSource="{Binding Messages}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:AskMessageViewModel">
+                <Border Classes="bubble" Classes.user="{Binding IsUser}" Classes.assistant="{Binding IsAssistant}" Margin="0,0,0,12">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="label" FontSize="10" Text="{Binding Author}" />
+                    <TextBlock Classes="secondary blink" FontSize="13" Text="{l:Tr Thinking}" IsVisible="{Binding ShowThinking}" />
+                    <SelectableTextBlock FontSize="14" LineHeight="21" TextWrapping="Wrap" Text="{Binding Text}" IsVisible="{Binding HasText}" />
+                    <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr BlockedNote}" IsVisible="{Binding HasBlocked}" />
+                    <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr RepeatingNote}" IsVisible="{Binding StoppedRepeating}" />
+                    <StackPanel Spacing="4" IsVisible="{Binding HasError}">
+                      <TextBlock Classes="warning" FontSize="13" TextWrapping="Wrap" Text="{Binding ErrorText}" />
+                      <TextBlock Classes="tertiary" FontSize="11.5" TextWrapping="Wrap" Text="{Binding ErrorDetail}" />
+                    </StackPanel>
+                    <Button Classes="small" HorizontalAlignment="Left" IsVisible="{Binding HasAction}"
+                            Command="{Binding $parent[UserControl].((vm:AskViewModel)DataContext).OpenActionCommand}"
+                            CommandParameter="{Binding Action}">
+                      <TextBlock>
+                        <Run Text="{Binding Action.Label}" />
+                        <Run Text=" →" />
+                      </TextBlock>
+                    </Button>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock Classes="tertiary mono" FontSize="10.5" VerticalAlignment="Center" Text="{Binding TokensText}" IsVisible="{Binding HasTokens}" />
+                      <Button Classes="small" Content="{l:Tr Helpful, Upper=True}" IsVisible="{Binding CanRate}"
+                              Command="{Binding $parent[UserControl].((vm:AskViewModel)DataContext).RateHelpfulCommand}" CommandParameter="{Binding}" />
+                      <Button Classes="small" Content="{l:Tr NotHelpful, Upper=True}" IsVisible="{Binding CanRate}"
+                              Command="{Binding $parent[UserControl].((vm:AskViewModel)DataContext).RateNotHelpfulCommand}" CommandParameter="{Binding}" />
+                      <TextBlock Classes="tertiary mono" FontSize="10.5" VerticalAlignment="Center" Text="✓" IsVisible="{Binding IsRated}" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+
+      <Border Grid.Row="1" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="0,1,0,0" Padding="36,12,36,14">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="warning" FontSize="12.5" TextWrapping="Wrap" Text="{Binding UsageNote}" IsVisible="{Binding HasUsageNote}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <TextBox Name="Input" Classes="field" PlaceholderText="{l:Tr AskPlaceholder}" Text="{Binding Draft}" MaxLength="1000">
+              <TextBox.KeyBindings>
+                <KeyBinding Gesture="Enter" Command="{Binding SendCommand}" />
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Panel Grid.Column="1">
+              <Button Classes="primary" MinHeight="40" Padding="18,0" Content="{l:Tr Send, Upper=True}" Command="{Binding SendCommand}" IsVisible="{Binding !IsBusy}" />
+              <Button MinHeight="40" Padding="18,0" Content="{l:Tr Stop, Upper=True}" Command="{Binding StopCommand}" IsVisible="{Binding IsBusy}" />
+            </Panel>
+          </Grid>
+          <TextBlock Classes="tertiary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr AskNote}" />
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <!-- History. -->
+    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding IsHistory}">
+      <StackPanel Margin="36,4,36,28" Spacing="10">
+        <TextBlock Classes="label" Text="{l:Tr HistoryTitle, Upper=True}" />
+        <TextBlock Classes="secondary" Text="{l:Tr HistoryEmpty}" IsVisible="{Binding !HasConversations}" />
+        <ItemsControl ItemsSource="{Binding Conversations}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ConversationRowViewModel">
+              <Button Classes="row" Padding="10,12"
+                      Command="{Binding $parent[UserControl].((vm:AskViewModel)DataContext).OpenConversationCommand}" CommandParameter="{Binding}">
+                <StackPanel Spacing="3">
+                  <TextBlock FontSize="14" TextTrimming="CharacterEllipsis" Text="{Binding Title}" />
+                  <TextBlock Classes="secondary" FontSize="12" Text="{Binding Detail}" />
+                </StackPanel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Panel HorizontalAlignment="Left" Margin="0,8,0,0" IsVisible="{Binding HasConversations}">
+          <Button Classes="small" Content="{l:Tr DeleteAllConversations, Upper=True}" Command="{Binding DeleteAllConversationsCommand}" IsVisible="{Binding !ConfirmingDelete}" />
+          <Button Classes="primary" MinHeight="32" Padding="12,0" Content="{l:Tr DeleteAllConfirm, Upper=True}" Command="{Binding DeleteAllConversationsCommand}" IsVisible="{Binding ConfirmingDelete}" />
+        </Panel>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Settings. -->
+    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" IsVisible="{Binding IsSettings}">
+      <StackPanel Margin="36,4,36,28" Spacing="12">
+        <TextBlock Classes="label" Text="{l:Tr SettingsProfiles, Upper=True}" />
+        <ItemsControl ItemsSource="{Binding ProfileRows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ProfileRowViewModel">
+              <Border Classes="rule" Padding="0,10">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                  <StackPanel Spacing="2">
+                    <TextBlock FontSize="14" Text="{Binding Name}" />
+                    <TextBlock Classes="secondary" FontSize="12" Text="{Binding Detail}" />
+                  </StackPanel>
+                  <Border Grid.Column="1" Classes="badge" VerticalAlignment="Center" Padding="8,3" IsVisible="{Binding IsDefault}">
+                    <TextBlock Text="{l:Tr ProfileInUse, Upper=True}" />
+                  </Border>
+                  <Button Grid.Column="1" Classes="small" VerticalAlignment="Center" Content="{l:Tr UseThis, Upper=True}" IsVisible="{Binding CanMakeDefault}"
+                          Command="{Binding $parent[UserControl].((vm:AskViewModel)DataContext).MakeDefaultCommand}" CommandParameter="{Binding}" />
+                  <Button Grid.Column="2" Classes="small" VerticalAlignment="Center" Content="{l:Tr RemoveProfile, Upper=True}"
+                          Command="{Binding $parent[UserControl].((vm:AskViewModel)DataContext).RemoveProfileCommand}" CommandParameter="{Binding}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Button Classes="small" HorizontalAlignment="Left" Content="{l:Tr AddProfile, Upper=True}" Command="{Binding AddAnotherCommand}" />
+
+        <StackPanel Spacing="8" Margin="0,12,0,0" IsVisible="{Binding IsCloudProfile}">
+          <CheckBox IsChecked="{Binding ShowPreview}" Content="{l:Tr ShowPreviewSetting}" />
+          <TextBlock Classes="caption" Text="{l:Tr MonthlyCap}" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBox Classes="field" Width="180" Text="{Binding CapText}" />
+            <Button Classes="small" VerticalAlignment="Center" Content="{l:Tr SaveCap, Upper=True}" Command="{Binding SaveCapCommand}" />
+          </StackPanel>
+          <TextBlock Classes="secondary" FontSize="12.5" Text="{Binding UsageText}" />
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding ModelRows}" Margin="0,12,0,0">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ModelRowViewModel">
+              <Border Classes="rule" Padding="0,10">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <TextBlock FontSize="13.5" VerticalAlignment="Center" TextWrapping="Wrap" Text="{Binding Text}" />
+                  <Button Grid.Column="1" Classes="small" Content="{l:Tr RemoveModel, Upper=True}"
+                          Command="{Binding $parent[UserControl].((vm:AskViewModel)DataContext).RemoveModelCommand}" CommandParameter="{Binding}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>
