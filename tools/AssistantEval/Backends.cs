@@ -14,7 +14,7 @@ public static class Backends
     /// </summary>
     public static IChatClient Create(Options options) => options.Backend switch
     {
-        "onnx" => Onnx(options.Model, options.Ep),
+        "onnx" => Onnx(options.Model, options.Ep, options.ProviderOptions),
         "openai" => new OpenAIClient(
                 new ApiKeyCredential(Environment.GetEnvironmentVariable(options.KeyEnv ?? "") ?? "none"),
                 new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint ?? "https://api.openai.com/v1") })
@@ -22,13 +22,17 @@ public static class Backends
         _ => throw new ArgumentException($"Unknown backend '{options.Backend}'"),
     };
 
-    private static IChatClient Onnx(string modelPath, string ep)
+    private static IChatClient Onnx(string modelPath, string ep, IReadOnlyList<(string Key, string Value)> providerOptions)
     {
         var config = new Config(modelPath);
         config.ClearProviders();
         if (ep != "cpu")
         {
             config.AppendProvider(ep);
+            foreach (var (key, value) in providerOptions)
+            {
+                config.SetProviderOption(ep, key, value);
+            }
         }
 
         var model = new Model(config);

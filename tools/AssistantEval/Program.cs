@@ -3,15 +3,24 @@
 //   dotnet run --project tools/AssistantEval -- --backend onnx --model <folder> --ep dml --name phi-4-mini-dml
 //   dotnet run --project tools/AssistantEval -- --backend openai --endpoint <url> --model <id> --key-env MY_KEY --name gpt
 //
-// Writes tools/AssistantEval/reports/<date>-<name>.md.
+//   dotnet run --project tools/AssistantEval -- --rescore tools/AssistantEval/reports/<report>.md
+//
+// Writes tools/AssistantEval/reports/<date>-<name>.md. --rescore re-checks the answers in an
+// existing report with the current checks, keeping its timings, and rewrites it in place.
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using AssistantEval;
 using Microsoft.Extensions.AI;
 
-var options = Options.Parse(args);
 string scenariosPath = Path.Combine(AppContext.BaseDirectory, "scenarios", "scenarios.json");
+if (Array.IndexOf(args, "--rescore") is int r and >= 0)
+{
+    Rescore.Run(args[r + 1], Scenarios.Load(scenariosPath));
+    return 0;
+}
+
+var options = Options.Parse(args);
 var scenarios = Scenarios.Load(scenariosPath)
     .Where(s => options.Only is null || options.Only.Contains(s.Id))
     .ToList();
@@ -83,6 +92,9 @@ public sealed record Run(Scenario Scenario, Question Question, string Answer, IR
 
 public sealed record Options(string Backend, string Model, string Ep, string? Endpoint, string? KeyEnv, string Name, HashSet<string>? Only)
 {
+    /// <summary>"--provider-option key=value", e.g. enable_graph_capture=0 for models DirectML can't capture.</summary>
+    public IReadOnlyList<(string Key, string Value)> ProviderOptions { get; init; } = [];
+
     public static Options Parse(string[] args)
     {
         string? Get(string name)
@@ -94,9 +106,13 @@ public sealed record Options(string Backend, string Model, string Ep, string? En
         string backend = Get("backend") ?? throw new ArgumentException("--backend onnx|openai is required");
         string model = Get("model") ?? throw new ArgumentException("--model is required");
         string? only = Get("only");
+        string? providerOption = Get("provider-option");
         return new Options(backend, model, Get("ep") ?? "dml", Get("endpoint"), Get("key-env"),
             Get("name") ?? Path.GetFileName(model.TrimEnd('/', '\\')),
-            only is null ? null : [.. only.Split(',')]);
+            only is null ? null : [.. only.Split(',')])
+        {
+            ProviderOptions = providerOption is null ? [] : [(providerOption.Split('=')[0], providerOption.Split('=')[1])],
+        };
     }
 }
 
@@ -112,6 +128,15 @@ public static class Report
         string ep = options.Backend == "onnx" ? " · ep `" + options.Ep + "`" : "";
         sb.AppendLine(inv, $"- Backend: `{options.Backend}` · model `{options.Model}`{ep}");
         sb.AppendLine(inv, $"- Load: {load.TotalSeconds:0.0} s · working set after load {memoryAfterLoad / 1e9:0.00} GB · peak {peak / 1e9:0.00} GB");
+        sb.Append(Body(runs));
+        return sb.ToString();
+    }
+
+    /// <summary>Everything after the header: per-language summary, check table and each answer.</summary>
+    public static string Body(List<Run> runs)
+    {
+        var sb = new StringBuilder();
+        var inv = CultureInfo.InvariantCulture;
         foreach (string lang in runs.Select(r => r.Question.Lang).Distinct())
         {
             var set = runs.Where(r => r.Question.Lang == lang).ToList();
