@@ -1,5 +1,6 @@
 using Pennyworth.App.Localization;
 using Pennyworth.App.Services;
+using Pennyworth.App.ViewModels;
 
 namespace Pennyworth.App.Tests;
 
@@ -76,6 +77,21 @@ public sealed class SettingsStoreTests : IDisposable
         store.Save(settings);
 
         Assert.Equal(settings, store.Load());
+    }
+
+    [Fact]
+    public void Settings_from_before_the_assistant_still_load()
+    {
+        string path = Path.Combine(_dir, "settings.json");
+        File.WriteAllText(path, """{ "language": "Portuguese", "theme": "Dark", "welcomeSeen": true }""");
+
+        var settings = new FileSettingsStore(path).Load();
+
+        Assert.True(settings.WelcomeSeen);
+        Assert.Empty(settings.Assistant.Profiles);
+        Assert.Empty(settings.Assistant.HidePreviewFor);
+        Assert.Null(settings.Assistant.Default);
+        Assert.NotNull(new MainWindowViewModel(TestApp.Services(settings: new FileSettingsStore(path)) with { Assistant = AskTestServices.Create(_dir) }).Ask);
     }
 
     [Fact]

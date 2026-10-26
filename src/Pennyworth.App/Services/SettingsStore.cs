@@ -21,18 +21,29 @@ public sealed record AppSettings
     /// <summary>The welcome screen is shown until the first "Analyze my PC".</summary>
     public bool WelcomeSeen { get; init; }
 
-    public AssistantSettings Assistant { get; init; } = new();
+    /// <summary>Never null: a settings file from before the assistant has no "assistant" key, and the JSON source generator passes null for missing init properties.</summary>
+    public AssistantSettings Assistant { get => field ?? new(); init; }
+
+    /// <summary>By what the properties return, so a missing "assistant" key equals the default.</summary>
+    public bool Equals(AppSettings? other) =>
+        other is not null
+        && Language == other.Language
+        && Theme == other.Theme
+        && WelcomeSeen == other.WelcomeSeen
+        && Assistant.Equals(other.Assistant);
+
+    public override int GetHashCode() => HashCode.Combine(Language, Theme, WelcomeSeen);
 }
 
 /// <summary>How the assistant answers. API keys are never here; they live in the Windows Credential Manager.</summary>
 public sealed record AssistantSettings
 {
-    public IReadOnlyList<AssistantProfile> Profiles { get; init; } = [];
+    public IReadOnlyList<AssistantProfile> Profiles { get => field ?? []; init; }
 
     public string? DefaultProfileId { get; init; }
 
     /// <summary>Cloud profiles whose send preview the person turned off.</summary>
-    public IReadOnlyList<string> HidePreviewFor { get; init; } = [];
+    public IReadOnlyList<string> HidePreviewFor { get => field ?? []; init; }
 
     [JsonIgnore]
     public AssistantProfile? Default => Profiles.FirstOrDefault(p => p.Id == DefaultProfileId) ?? Profiles.FirstOrDefault();

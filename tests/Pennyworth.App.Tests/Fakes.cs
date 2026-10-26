@@ -1,5 +1,8 @@
 using Pennyworth.App.Services;
 using Pennyworth.App.ViewModels;
+using Pennyworth.Assistant;
+using Pennyworth.Assistant.Local;
+using Pennyworth.Assistant.Providers;
 using Pennyworth.Cleanup;
 using Pennyworth.Core.Storage;
 using Pennyworth.KnowledgeBase;
@@ -175,4 +178,33 @@ internal static class TestApp
         monitor,
         closer ?? new FakeCloser(closes: true),
         Clock: () => new DateTimeOffset(2026, 10, 24, 20, 0, 0, TimeSpan.Zero));
+}
+
+/// <summary>Assistant services that work on temp folders and never call a model.</summary>
+internal static class AskTestServices
+{
+    public static AssistantServices Create(string dir) => new(
+        new NoKeys(),
+        new ConversationStore(Path.Combine(dir, "conversations")),
+        new UsageMeter(Path.Combine(dir, "usage.json")),
+        ModelCatalog.Load(),
+        new LocalModelStore(Path.Combine(dir, "models")),
+        (_, _) => throw new InvalidOperationException("No model in this test."),
+        (_, _, _, _) => Task.CompletedTask,
+        new Anonymizer("user", @"C:\Users\user", "PC"),
+        () => 0,
+        _ => 0);
+
+    private sealed class NoKeys : ICredentialStore
+    {
+        public void Save(string profileId, string secret)
+        {
+        }
+
+        public string? Read(string profileId) => null;
+
+        public void Delete(string profileId)
+        {
+        }
+    }
 }
