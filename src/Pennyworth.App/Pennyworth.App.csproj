@@ -17,6 +17,8 @@
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Simple" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <!-- Its build targets copy DirectML.dll, which the local assistant model needs on graphics cards; they do not flow through project references. -->
+    <PackageReference Include="Microsoft.AI.DirectML" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
