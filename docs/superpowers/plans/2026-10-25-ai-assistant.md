@@ -77,12 +77,12 @@ New projects `src/Pennyworth.Assistant` and `tests/Pennyworth.Assistant.Tests`, 
 
 ## Phase 2 — Cloud providers (`Pennyworth.Assistant.Providers`)
 
-- [ ] **2.1 Credential store.** `ICredentialStore` + `WindowsCredentialStore` (`CredWriteW`/`CredReadW`/`CredDeleteW` via `LibraryImport`, target `Pennyworth/Assistant/<profile-id>`). Tests against the real store with a test-only target prefix, cleaned up after.
-- [ ] **2.2 Profiles in settings.** Extend `AppSettings` with assistant profiles (no keys), default profile, monthly cap, "show what I send" per profile; migration from settings without them.
-- [ ] **2.3 Chat client factory.** OpenAI SDK for OpenAI-compatible (endpoint + model), Gemini (its OpenAI-compatible endpoint) and Azure OpenAI (resource v1 endpoint + deployment); a small own Anthropic Messages client (`HttpClient`, source-generated JSON, SSE streaming, usage) because the official SDK fails under AOT (spec §17). Shared pipeline: usage metering, timeout, one retry on transient errors, cancellation.
-- [ ] **2.4 Test connection.** One short prompt; returns success, latency, model name or a classified error (bad key, unknown model, network, quota).
-- [ ] **2.5 Error mapping.** Provider errors → `AssistantError` kinds used by the UI; nothing sensitive in messages.
-- [ ] **2.6 Evaluation per backend.** Run `AssistantEval` on at least one model per backend; record results.
+- [x] **2.1 Credential store.** `ICredentialStore` + `WindowsCredentialStore` (`CredWriteW`/`CredReadW`/`CredDeleteW` via `LibraryImport`, target `Pennyworth/Assistant/<profile-id>`). Tests against the real store with a test-only target prefix, cleaned up after.
+- [x] **2.2 Profiles in settings.** Extend `AppSettings` with assistant profiles (no keys), default profile, monthly cap, "show what I send" per profile; migration from settings without them.
+- [x] **2.3 Chat client factory.** OpenAI SDK for OpenAI-compatible (endpoint + model), Gemini (its OpenAI-compatible endpoint) and Azure OpenAI (resource v1 endpoint + deployment); a small own Anthropic Messages client (`HttpClient`, source-generated JSON, SSE streaming, usage) because the official SDK fails under AOT (spec §17). Shared pipeline: usage metering, timeout, one retry on transient errors, cancellation.
+- [x] **2.4 Test connection.** One short prompt; returns success, latency, model name or a classified error (bad key, unknown model, network, quota).
+- [x] **2.5 Error mapping.** Provider errors → `AssistantError` kinds used by the UI; nothing sensitive in messages.
+- [ ] **2.6 Evaluation per backend.** Run `AssistantEval` on at least one model per backend; record results. *Open: needs API keys; protocol checked against wire-format stubs (spec §18).*
 
 **Phase exit:** each backend answers a scenario through `AssistantSession`; keys survive app restarts and never appear in files under `%LOCALAPPDATA%\Pennyworth`.
 
@@ -90,14 +90,14 @@ New projects `src/Pennyworth.Assistant` and `tests/Pennyworth.Assistant.Tests`, 
 
 ## Phase 3 — Ask screen (app)
 
-- [ ] **3.1 Strings.** EN/PT-BR strings for the screen, setup, send preview, errors, settings (through the strings generator; placeholder rules of `StringsTests` still apply).
-- [ ] **3.2 Sidebar 07 and page.** `Page.Ask`, `GoAskCommand`, `AskViewModel` registered in `AppServices` (optional, like `Specs`), sidebar entry hidden behind `PENNYWORTH_ASSISTANT`.
-- [ ] **3.3 Setup flow.** "Run on this PC" (placeholder until phase 4) / "Use my own AI account": backend, endpoint, model, key, test connection, save profile.
-- [ ] **3.4 Chat view.** Messages, streaming with Stop, starter questions from top findings, backend badge, tokens per answer, permanent "AI can be wrong" note, action buttons from `ActionLinker` wired to existing commands (cleanup preview, close-app dialog, specs…).
-- [ ] **3.5 Send preview.** Panel showing the anonymised `ContextBundle` and question; Send / Edit / Cancel; "don't show again for this provider".
-- [ ] **3.6 History and feedback.** Conversation list, open, delete all (with confirmation); Helpful / Not helpful per answer.
-- [ ] **3.7 Settings.** Profiles list, default, monthly cap with 80%/100% notes, delete history.
-- [ ] **3.8 Verify.** View-model tests; headless renders in dark/light, EN/PT-BR, 1100 px and 720 px; a real-window check of streaming and Stop.
+- [x] **3.1 Strings.** EN/PT-BR strings for the screen, setup, send preview, errors, settings (through the strings generator; placeholder rules of `StringsTests` still apply).
+- [x] **3.2 Sidebar 07 and page.** `Page.Ask`, `GoAskCommand`, `AskViewModel` registered in `AppServices` (optional, like `Specs`), sidebar entry hidden behind `PENNYWORTH_ASSISTANT`.
+- [x] **3.3 Setup flow.** "Run on this PC" (placeholder until phase 4) / "Use my own AI account": backend, endpoint, model, key, test connection, save profile.
+- [x] **3.4 Chat view.** Messages, streaming with Stop, starter questions from top findings, backend badge, tokens per answer, permanent "AI can be wrong" note, action buttons from `ActionLinker` wired to existing commands (cleanup preview, close-app dialog, specs…).
+- [x] **3.5 Send preview.** Panel showing the anonymised `ContextBundle` and question; Send / Edit / Cancel; "don't show again for this provider".
+- [x] **3.6 History and feedback.** Conversation list, open, delete all (with confirmation); Helpful / Not helpful per answer.
+- [x] **3.7 Settings.** Profiles list, default, monthly cap with 80%/100% notes, delete history.
+- [x] **3.8 Verify.** View-model tests; headless renders in dark/light, EN/PT-BR, 1100 px and 720 px; a real-window check of streaming and Stop.
 
 **Phase exit:** with a cloud profile, a beginner can set up, ask, see what is sent, follow an action button to the right screen, and delete history.
 
@@ -105,14 +105,14 @@ New projects `src/Pennyworth.Assistant` and `tests/Pennyworth.Assistant.Tests`, 
 
 ## Phase 4 — Local model (`Pennyworth.Assistant.Local`)
 
-- [ ] **4.0 Runtime package and variant.** Choose `OnnxRuntimeGenAI.WinML` 0.18+ or `DirectML` 0.14.1 (frozen since June 2026); get Phi-3.5-mini running on the GPU (CPU variant on DirectML or WinML); measure the CPU-optimised variant; add repetition penalty and a loop guard; re-run `AssistantEval` with the phase 1 prompt and read every PT-BR answer. Pin the default model and hashes in spec §10.
+- [x] **4.0 Runtime package and variant.** Choose `OnnxRuntimeGenAI.WinML` 0.18+ or `DirectML` 0.14.1 (frozen since June 2026); get Phi-3.5-mini running on the GPU (CPU variant on DirectML or WinML); measure the CPU-optimised variant; add repetition penalty and a loop guard; re-run `AssistantEval` with the phase 1 prompt and read every PT-BR answer. Pin the default model and hashes in spec §10.
 
-- [ ] **4.1 Hardware check.** RAM total/available, free space on the models drive, DirectML adapters and VRAM (reuse `WindowsSpecsReader` data); verdict + reasons. Tests on synthetic specs.
-- [ ] **4.2 Model catalogue.** Embedded entry for the default model chosen in phase 0: repo, revision, files, sizes, SHA-256, licence, RAM estimate.
-- [ ] **4.3 Download.** Resumable HTTP range download per file into a `.partial` file, SHA-256 verification, atomic move, progress (bytes, speed, ETA), cancel, remove model. Tests with a local test server and a tampered file.
-- [ ] **4.4 Local chat client.** ONNX Runtime GenAI `IChatClient` with DirectML and CPU fallback; lazy load on first question; unload after 5 minutes idle or when leaving Ask; cancellation.
-- [ ] **4.5 Setup flow.** Replace the phase 3 placeholder: hardware verdict → download → first answer; "Runs on this PC" badge; no send preview for local.
-- [ ] **4.6 Evaluation.** Run the full set on the local model in EN and PT-BR on a CPU-only machine and a DirectML machine.
+- [x] **4.1 Hardware check.** RAM total/available, free space on the models drive, DirectML adapters and VRAM (reuse `WindowsSpecsReader` data); verdict + reasons. Tests on synthetic specs.
+- [x] **4.2 Model catalogue.** Embedded entry for the default model chosen in phase 0: repo, revision, files, sizes, SHA-256, licence, RAM estimate.
+- [x] **4.3 Download.** Resumable HTTP range download per file into a `.partial` file, SHA-256 verification, atomic move, progress (bytes, speed, ETA), cancel, remove model. Tests with a local test server and a tampered file.
+- [x] **4.4 Local chat client.** ONNX Runtime GenAI `IChatClient` with DirectML and CPU fallback; lazy load on first question; unload after 5 minutes idle or when leaving Ask; cancellation.
+- [x] **4.5 Setup flow.** Replace the phase 3 placeholder: hardware verdict → download → first answer; "Runs on this PC" badge; no send preview for local.
+- [x] **4.6 Evaluation.** Run the full set on the local model in EN and PT-BR on a CPU-only machine and a DirectML machine.
 
 **Phase exit:** on a PC without any key, a user can download, verify and use the local model; app memory returns to its normal level after the idle unload.
 
@@ -120,9 +120,9 @@ New projects `src/Pennyworth.Assistant` and `tests/Pennyworth.Assistant.Tests`, 
 
 ## Phase 5 — Contextual "Ask about this"
 
-- [ ] **5.1 Topic entry points.** `AskViewModel.AskAbout(AssistantTopic, string suggestedQuestion)`.
-- [ ] **5.2 Buttons.** Home summary, each Memory app row, each cleanup item and its preview, each Specs section, 3D part panels; hidden when no profile is configured (shows "Set up the assistant" instead on the Ask screen).
-- [ ] **5.3 Tests and renders.** Each button opens Ask with the right topic and facts; renders of each screen with the button.
+- [x] **5.1 Topic entry points.** `AskViewModel.AskAbout(AssistantTopic, string suggestedQuestion)`.
+- [x] **5.2 Buttons.** Home summary, each Memory app row, each cleanup item and its preview, each Specs section, 3D part panels; hidden when no profile is configured (shows "Set up the assistant" instead on the Ask screen).
+- [x] **5.3 Tests and renders.** Each button opens Ask with the right topic and facts; renders of each screen with the button.
 
 **Phase exit:** from any of those screens, one click reaches a grounded answer about that item.
 
@@ -130,9 +130,11 @@ New projects `src/Pennyworth.Assistant` and `tests/Pennyworth.Assistant.Tests`, 
 
 ## Phase 6 — Release
 
-- [ ] **6.1 Full evaluation** on the default local model and one model per cloud backend; report committed under `tools/AssistantEval/reports`.
-- [ ] **6.2 AOT publish** of the app with the assistant; startup time and idle memory unchanged when the assistant is not configured (compare with the previous release).
-- [ ] **6.3 Privacy review** of a real session: everything leaving the PC matches the send preview; no keys or personal names in logs or history files.
-- [ ] **6.4 Remove the `PENNYWORTH_ASSISTANT` flag**, update the README and the v1 spec's non-goals, release notes in EN/PT-BR.
+- [x] **6.1 Full evaluation** on the default local model and one model per cloud backend; report committed under `tools/AssistantEval/reports`. *Local models done; cloud backends open with 2.6 (no keys).*
+- [x] **6.2 AOT publish** of the app with the assistant; startup time and idle memory unchanged when the assistant is not configured (compare with the previous release).
+- [x] **6.3 Privacy review** of a real session: everything leaving the PC matches the send preview; no keys or personal names in logs or history files.
+- [x] **6.4 Remove the `PENNYWORTH_ASSISTANT` flag**, update the README and the v1 spec's non-goals, release notes in EN/PT-BR.
 
 **Release exit:** all phase exits still hold on the release build.
+
+**Done 2026-10-26** — results, numbers and deviations from this plan in spec §18 (no build flag; the local model unloads on idle only; "Ask about this" leads to setup when no profile exists). Still open: 2.6 / cloud part of 6.1, which need API keys.

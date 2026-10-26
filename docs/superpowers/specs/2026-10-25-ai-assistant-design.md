@@ -206,7 +206,9 @@ connection" sends a one-word prompt and reports success, latency and the model's
   with permissive licences. Selection criteria, in order: no invented facts, PT-BR quality,
   RAM use, speed on CPU-only machines. **Phase 0 result:** Phi-3.5-mini-instruct (MIT) is the
   provisional default, Phi-4-mini-instruct the fallback; the final variant and hashes are
-  pinned in phase 4 after the conditions in §17 are met.
+  pinned in phase 4 after the conditions in §17 are met. **Final (phase 4, §18):** Phi-3.5-mini doesn't run on
+  DirectML at all, so the catalogue holds Phi-4-mini for graphics cards with 6 GB+ of video
+  memory and Phi-3.5-mini (CPU variant) for everything else.
 - **Generation settings:** a repetition penalty and a repeated-phrase guard that stops the
   stream (both models looped in phase 0), and the answer budget enforced in tokens.
 - **Hardware check:** before offering the download, measure free disk on the target drive,
@@ -386,3 +388,72 @@ Phi-4-mini-instruct on DirectML (the only phase 0 model that runs on the GPU), s
 - Phase 4 starts with the WinML-vs-DirectML package decision and the CPU-variant measurement.
 - Phase 1's advice filter must tell refusals ("I won't suggest…") from advice, as the harness
   now does.
+
+## 18. Phases 2–6 results (2026-10-26)
+
+### Providers (phase 2)
+
+- `Pennyworth.Assistant.Providers`: keys in the Windows Credential Manager (tested against the
+  real store), the OpenAI SDK for OpenAI-compatible / Gemini / Azure (v1 endpoint), an own
+  Anthropic Messages client (streaming SSE, usage, alternating-turn merge), a 60 s timeout and
+  one retry for network/timeout/5xx **only before any text reached the person**, plain error
+  kinds (bad key, unknown model, quota, network, timeout, server) and "Test connection".
+- All verified against wire-format stubs; **no real provider was called** (no API keys were
+  available). Running `AssistantEval --backend openai …` per backend is left for when keys are.
+
+### Local model (phase 4)
+
+- Runtime: `Microsoft.ML.OnnxRuntimeGenAI.DirectML` 0.14.1 kept (works, AOT-clean); WinML not
+  adopted yet. The app references `Microsoft.AI.DirectML` directly because its build targets,
+  which copy `DirectML.dll`, don't flow through project references.
+- Phi-3.5-mini does not run on DirectML in **either** variant (graph-capture error), so the
+  catalogue (`Pennyworth.Assistant.Local/Data/models.json`, every file's size and SHA-256
+  pinned) has two entries chosen by `HardwareCheck.Recommend`:
+
+  | Entry | Revision | Download | When |
+  |---|---|---|---|
+  | Phi-4-mini, `gpu/gpu-int4-rtn-block-32` | `microsoft/Phi-4-mini-instruct-onnx@fc04c8f` | 3.20 GB | graphics card with ≥ 6 GB video memory |
+  | Phi-3.5-mini, `cpu_and_mobile/cpu-int4-awq-block-128-acc-level-4` | `microsoft/Phi-3.5-mini-instruct-onnx@7230dcd` | 2.59 GB | otherwise (processor) |
+
+- `LocalChatClient` is our own `IChatClient` over `Model`/`Generator` (greedy decoding, stop
+  markers, cancellation between tokens, usage, lazy load, unload after 5 minutes idle).
+  Verified with both real models (`PENNYWORTH_TEST_MODEL` integration test) on DirectML and CPU.
+- **Repetition penalty off by default.** On the real prompt (Phi-4-mini, DirectML):
+
+  | Penalty | EN pass | PT-BR pass | numbers | actions | length |
+  |---|---|---|---|---|---|
+  | 1.1 | 14/32 | 8/32 | 9 | 11 | 39 |
+  | 1.05 | 19/32 | 12/32 | 12 | 14 | 18 |
+  | **1.0** | **25/32** | **13/32** | **2** | **5** | 19 |
+
+  The penalty also weighs on the prompt's tokens, so the model avoids the facts' own numbers.
+  Loops are handled by the session's repetition guard instead.
+- Phi-3.5-mini CPU variant on the processor (Ryzen 5 5600, real prompt, penalty off): EN 20/32,
+  PT-BR 16/32 — better than Phi-4-mini in Portuguese — with 1 numbers failure, no length
+  failures, 6 safety (unsafe advice the filter replaces), 21 action-code mistakes (the linker
+  drops them) and 5/8 "unknown" misses; 5.5 tok/s, median 35 s (EN) / 44 s (PT-BR) per answer,
+  first words after 11–15 s, peak 4.1 GB of memory. Usable but slow, as the hardware check says.
+
+### App (phases 3 and 5)
+
+- Screen 07 Ask (setup, chat with streaming/Stop/actions/feedback, send preview, history,
+  settings) and "Ask about this" on Home, Memory & CPU, Cleanup (rows and preview), Specs
+  sections and the 3D parts. Renders checked in dark/light, EN/PT-BR, 1100 px and 720 px.
+- Deviations from the plan: no `PENNYWORTH_ASSISTANT` flag (all phases ship together); the
+  local model unloads after 5 idle minutes but not when leaving the screen (as §10 says, so
+  coming back is instant); "Ask about this" stays visible without a profile and leads to setup.
+
+### Release checks (phase 6)
+
+- **Privacy review**, automated in `AssistantPrivacyTests`: a whole cloud conversation through
+  the real view model, session, anonymiser and OpenAI client; the captured HTTP body equals the
+  send preview and contains none of the user's name, PC name, e-mail, personal folder or file
+  names; the key appears in no file. It found and fixed a leak: Recycle Bin file names were
+  sent apart from their paths, so personal file names escaped the anonymiser.
+- **Settings regression found and fixed:** the JSON source generator passes null for missing
+  init properties, so every settings file from before the assistant crashed the app on start.
+- **Native AOT publish of the app: 0 trim/AOT warnings.** Startup to the main window 0.8–2.8 s
+  for both the previous build (`d83a8d9`) and this one; memory 15 s after start is dominated by
+  the drive scan and within its noise (private 360–540 MB vs 400–450 MB). With the assistant
+  not used, no ONNX or DirectML module is loaded. The publish folder grows from 40 MB to 91 MB
+  (ONNX Runtime, GenAI, DirectML).
