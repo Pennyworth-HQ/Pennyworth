@@ -10,6 +10,7 @@
     <Project Path="src/Pennyworth.KnowledgeBase/Pennyworth.KnowledgeBase.csproj" />
     <Project Path="src/Pennyworth.Monitoring/Pennyworth.Monitoring.csproj" />
     <Project Path="src/Pennyworth.Platform/Pennyworth.Platform.csproj" />
+    <Project Path="src/Pennyworth.Platform.Linux/Pennyworth.Platform.Linux.csproj" />
     <Project Path="src/Pennyworth.Scanning/Pennyworth.Scanning.csproj" />
   </Folder>
   <Folder Name="/tests/">
@@ -22,6 +23,7 @@
     <Project Path="tests/Pennyworth.Insights.Tests/Pennyworth.Insights.Tests.csproj" />
     <Project Path="tests/Pennyworth.KnowledgeBase.Tests/Pennyworth.KnowledgeBase.Tests.csproj" />
     <Project Path="tests/Pennyworth.Monitoring.Tests/Pennyworth.Monitoring.Tests.csproj" />
+    <Project Path="tests/Pennyworth.Platform.Linux.Tests/Pennyworth.Platform.Linux.Tests.csproj" />
     <Project Path="tests/Pennyworth.Scanning.Tests/Pennyworth.Scanning.Tests.csproj" />
   </Folder>
 </Solution>
