@@ -1,7 +1,10 @@
 # Linux port: findings and implementation plan
 
 **Date:** 2026-10-26, revised after the first Windows fixes merged
-**Status:** plan, not implemented; §6 is the part that answers "how does the local model run"
+**Status:** implementation under way. Phase 0 (#12), the Linux base (#13), drives (#16), cleanup (#17),
+desktop (#18), system space (#19), scanner (#20), secrets (#21), specs (#22), monitor (#23) and the
+integration (#24) are open PRs; the `PathPattern` (#14) and `FactCollector` (#15) fixes are independent.
+Corrections found while implementing are marked **[corrected]**. §6 answers "how does the local model run".
 **Scope:** make Pennyworth run natively on Linux (X11/Wayland, x64/arm64) with the same screens,
 the same guarantees and the same data as the Windows build — without putting platform code into
 the Windows code paths.
@@ -111,9 +114,11 @@ from.
    "Windows is installed on" (64), "Windows drive is a hard disk" (65),
    `StorageCategory.Windows => "Windows"` (232). On Linux the assistant would assert a false fact
    about the machine it is describing.
-5. **`PathPattern` has no Unix root.** `SplitPath` drops the leading `/` and `IsMatch` compares only
-   the last N segments, so `/var/cache` also matches `/home/x/var/cache`, and `?:` can never match.
-   Linux knowledge-base patterns cannot be written safely until this is fixed.
+5. **`PathPattern` has no Unix root.** `SplitPath` dropped the leading `/`, so the rooted pattern
+   `/var/cache` matched the relative path `var/cache`, and a rooted path could not be told from a
+   drive path (`?:` had no defined behaviour on a Unix path). **[corrected]** Only `**` patterns
+   match by tail; non-wildcard patterns already needed equal length, so the plan's claim that
+   `/var/cache` matches `/home/x/var/cache` was wrong. Fixed in #14.
 6. **`SizeOnDisk` encodes Windows semantics**: cloud reparse tags, `SparseFile`/`Compressed`
    attributes and cluster rounding. Linux reports none of those attributes, so allocated size must
    come from `st_blocks` and the helper is replaced rather than reused.
@@ -611,26 +616,33 @@ failure is a fixture — no failure may be caused by a shared-logic defect any m
 **Rollback:** one commit for the seams; reverts cleanly, no data or schema changes.
 
 ### Phase 1 — Linux skeleton: paths, drives, trash, file manager, closer, safety, system space
-**New:** `LinuxPlatform`, `XdgPaths`, `EnvironmentScope` (Windows variable names → XDG:
-`TEMP`→`TMPDIR`/`/tmp`, `LOCALAPPDATA`→`$XDG_CACHE_HOME`, `APPDATA`→`$XDG_CONFIG_HOME`,
-`USERPROFILE`→`$HOME`, `SystemDrive`→`/`, `SystemRoot`/`ProgramFiles`/`ProgramData`→`null`),
+**New:** `LinuxPlatform`, `XdgPaths`, `EnvironmentScope` (**[corrected]** resolves only the names the
+Linux data uses: `HOME`, `TMPDIR`→`/tmp` fallback, `XDG_CACHE_HOME`, `XDG_CONFIG_HOME`,
+`XDG_DATA_HOME`, `XDG_STATE_HOME`, exact and case-sensitive. Windows names deliberately do **not**
+resolve: an earlier mapping of `%TEMP%` to `/tmp` made the Windows rule "Temporary files — Safe,
+Windows recreates them" delete from `/tmp` on the first integrated run),
 `MountDriveService`, `XdgTrash`, `XdgFileManager`, `SignalProcessCloser`, `LinuxSafetyGuard`,
 `LinuxSystemSpaceService` (D1 — measures, never elevates).
-**Drive rules:** enumerate `/proc/self/mounts` (labels/options) and `/proc/self/mountinfo`
-(`maj:min` = backing device), keep real block-device filesystems, drop pseudo-filesystems
-(`proc`, `sysfs`, `devtmpfs`, `tmpfs`, `cgroup2`, `overlay`, `squashfs` for snaps, `fuse.*`),
-dedupe by mountinfo `maj:min` — that collapses the 7 btrfs subvolume mounts of one device while
-keeping two distinct same-sized partitions separate — surface `/` as the system drive, and take
-labels from `/dev/disk/by-label`, falling back to the mount point.
+**Drive rules:** enumerate `/proc/self/mountinfo`, keep real block-device filesystems (source starts
+with `/dev/`, not squashfs), drop pseudo-filesystems, **[corrected]** dedupe by mount **source**, not
+`maj:min`: btrfs gives every subvolume mount its own anonymous `maj:min` (`0:38`, `0:46`, …) but one
+source (`/dev/nvme0n1p2`), so keying on `maj:min` collapses nothing. Two distinct same-sized
+partitions are distinct sources and stay separate. Keep the shortest mount path as the volume's root,
+surface `/` as the system drive, and take labels from `/dev/disk/by-label`, falling back to the mount point.
 **Trash rules:** `$XDG_DATA_HOME/Trash/{files,info}` plus `$topdir/.Trash-$uid` for other
 volumes; parse `.trashinfo` (`Path`, `DeletionDate`, URL-encoded); sidecar plays the `$I` role,
 so `CleanupFile.OriginalPath`/`CompanionPath` map 1:1.
 **Safety rules:** refuse `/`, `/etc`, `/usr`, `/boot`, `/var/lib`, `/home`, `$HOME`, any mount
 root, and any path outside the rule's own folders — deny by default when a variable is unresolved.
-**System space (D1):** `LinuxSystemSpaceService` reports the bytes the scan cannot see — `statvfs`
-reserved blocks and metadata overhead, `btrfs filesystem usage` and `snapper list` where readable,
-and the delta between the scanned total and used bytes — as one labelled bucket. No privilege
-escalation anywhere in the feature: if a source is unreadable, that part is simply absent.
+**System space (D1):** `LinuxSystemSpaceService` reports the bytes the scan cannot see, mapped onto the
+existing `HiddenSpaceReport` so no shared type changes. **[corrected]** `btrfs subvolume list`,
+`btrfs qgroup show` and `snapper list` all need root on this machine, so they are not used.
+`RestorePoints` = the exclusive bytes of snapper's snapshot qgroup, read from `/etc/snapper/configs/*`
+and `/sys/fs/btrfs/<uuid>/qgroups/1_0/exclusive` (null when the kernel flags it inconsistent);
+`NtfsMetadata` (name kept, carries *filesystem metadata + reserved blocks*) = `statvfs` reserved blocks
+plus btrfs metadata/system chunks (`btrfs filesystem usage -b`) or, for other block devices, the partition
+size minus the filesystem size. Measured here: `/` 13.0 GiB snapshots + 9.89 GiB overhead in 78 ms.
+No privilege escalation anywhere in the feature: an unreadable source is simply absent.
 **Acceptance:** drive list shows only real volumes (this box: `/`, `/home`, `/boot/efi`, three
 `/mnt/*` — not the 7 subvolume mounts, not `/sys/firmware/efi/efivars`); every volume carries a
 real label (filesystem label, else its mount point); `/` is the system drive; trash lists, restores
@@ -640,13 +652,14 @@ is reported from an unprivileged process on this btrfs root and never prompts fo
 
 ### Phase 2 — Linux storage scanning (unlocks Storage + Folders)
 **New:** `PosixDirectoryScanner : IStorageScanner`, `Statx` wrapper.
-**Rules:** enumerate with `FileSystemEnumerable` (`RecurseSubdirectories`,
-`IgnoreInaccessible`, `AttributesToSkip = ReparsePoint`); never cross into another mount point
-below the scan root (`/proc`, `/sys`, `/dev`, `/run`, NFS…) — this is what keeps a scan of `/`
-finite; allocated size from `st_blocks * 512` with `st_size` as logical size; hard links counted
-once per `(dev, inode)`; `statvfs` `f_frsize` only where a cluster figure is displayed; permission
-errors set `NodeFlags.Locked` and the scan continues; `statx` syscall, falling back to `stat` when
-unavailable.
+**Rules:** **[corrected]** raw `opendir`/`readdir` and `statx` relative to the directory fd, not
+`FileSystemEnumerable`: that decodes names to UTF-16, so a file whose name is not valid UTF-8 could not
+be stat'ed again. Never cross into another file system below the scan root, by comparing `st_dev` to the
+root's (`du -x` behaviour): this keeps a scan of `/` finite (`/proc`, `/sys`, `/dev`, `/run`, NFS…) and
+also skips separately mounted btrfs subvolumes, which have their own `st_dev`; allocated size from
+`st_blocks * 512` with `st_size` as logical size; hard links counted once per `(dev, inode)`; symlinks
+never followed; permission errors set `NodeFlags.Locked` and the scan continues; `statx`, falling back
+to the managed length on ENOSYS.
 **Acceptance:** scanning `/` and `/home` matches `du -sB1` within 2 % on ext4; a sparse file shows
 logical ≫ on-disk; a scan of `/` terminates and never enters `/proc`; unreadable folders are marked
 locked; progress callback fires at the configured interval.
@@ -696,7 +709,9 @@ interface listed.
 **New:** `SecretServiceStore : ICredentialStore` on libsecret (D4), `LinuxAssistantServices`
 (conversations, usage and the free-space delegate on XDG paths).
 **Deliberately absent:** local inference. Until Phase 9 the Ask screen offers the cloud providers
-only, and the "runs on your PC" option is not shown at all — better than showing it and failing.
+only: `AssistantServices.CanRunLocally` is `false` on Linux and the "runs on your PC" card is not shown
+at all — better than showing it and failing. A failed key save (no keyring) is shown in the settings
+panel and stores nothing.
 **Acceptance:** key saved/read/deleted through gnome-keyring or KWallet; with no secret service the
 app says so and stores nothing; no key ever reaches a file; the Ask screen works end to end against
 one real OpenAI-compatible endpoint with no local model present.
