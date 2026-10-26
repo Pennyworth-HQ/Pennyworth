@@ -30,6 +30,12 @@ public sealed record ContextBundle(
             sb.Append("- ").Append(line.Label).Append(": ").AppendLine(line.Value);
         }
 
+        // Phase 1 evaluation: without this line small models "answered" these from general knowledge.
+        sb.AppendLine();
+        sb.AppendLine(IsPortuguese
+            ? "NÃO MEDIDO pelo Pennyworth (diga que não consegue ver): temperaturas, ventoinhas, velocidade da internet, requisitos de jogos ou do Windows, preços."
+            : "NOT MEASURED by Pennyworth (say you can't see these): temperatures, fans, internet speed, game or Windows requirements, prices.");
+
         if (Findings.Count > 0)
         {
             sb.AppendLine();

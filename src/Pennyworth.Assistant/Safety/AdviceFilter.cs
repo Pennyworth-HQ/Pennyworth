@@ -16,6 +16,7 @@ public sealed partial class AdviceFilter
 
     private readonly List<Regex> _patterns;
     private readonly Regex _negation;
+    private readonly Regex? _warning;
     private readonly string _replacement;
     private readonly StringBuilder _buffer = new();
 
@@ -23,7 +24,8 @@ public sealed partial class AdviceFilter
     {
         const RegexOptions options = RegexOptions.IgnoreCase | RegexOptions.CultureInvariant;
         _patterns = [.. catalog.Topics.SelectMany(t => t.Patterns).Select(p => new Regex(p, options, MatchTimeout))];
-        _negation = new Regex(@"(?<!\w)(" + string.Join("|", catalog.Negations.Select(Regex.Escape)) + @")(?!\w)", options, MatchTimeout);
+        _negation = WordsPattern(catalog.Negations, options);
+        _warning = catalog.Warnings.Count == 0 ? null : WordsPattern(catalog.Warnings, options);
         _replacement = catalog.Replacement.Get(culture);
     }
 
@@ -57,7 +59,8 @@ public sealed partial class AdviceFilter
 
     /// <summary>
     /// True when the sentence gives blocked advice. It is a refusal, and passes, when a negation
-    /// comes before the advice ("Please don't turn off…"), not after ("Delete what you don't need").
+    /// comes before the advice ("Please don't turn off…"), not after ("Delete what you don't need"),
+    /// or when it warns ("Editing the registry is risky").
     /// </summary>
     public bool IsBlocked(string sentence)
     {
@@ -68,8 +71,12 @@ public sealed partial class AdviceFilter
         }
 
         Match negation = _negation.Match(sentence);
-        return !(negation.Success && negation.Index < first);
+        bool refusal = (negation.Success && negation.Index < first) || (_warning?.IsMatch(sentence) ?? false);
+        return !refusal;
     }
+
+    private static Regex WordsPattern(IEnumerable<string> words, RegexOptions options) =>
+        new(@"(?<!\w)(" + string.Join("|", words.Select(Regex.Escape)) + @")(?!\w)", options, MatchTimeout);
 
     private List<AssistantUpdate> Check(string text)
     {

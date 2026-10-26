@@ -37,10 +37,16 @@ public sealed record DiagnosisCatalog(int Version, IReadOnlyList<DiagnosisRule> 
 public sealed record BlockedAdvice(string Id, IReadOnlyList<string> Patterns);
 
 /// <summary>
-/// The assistant's safety net. A sentence matching a pattern is replaced, unless it is a refusal
-/// (it contains one of <see cref="Negations"/>, as in "I wouldn't disable Windows Security").
+/// The assistant's safety net. A sentence matching a pattern is replaced, unless it is a refusal:
+/// one of <see cref="Negations"/> comes before the advice ("I wouldn't disable Windows Security"),
+/// or one of <see cref="Warnings"/> appears anywhere ("Editing the registry is risky").
 /// </summary>
-public sealed record AdviceCatalog(int Version, LocalizedText Replacement, IReadOnlyList<string> Negations, IReadOnlyList<BlockedAdvice> Topics);
+public sealed record AdviceCatalog(
+    int Version,
+    LocalizedText Replacement,
+    IReadOnlyList<string> Negations,
+    IReadOnlyList<string> Warnings,
+    IReadOnlyList<BlockedAdvice> Topics);
 
 [JsonSerializable(typeof(DiagnosisCatalog))]
 [JsonSerializable(typeof(AdviceCatalog))]

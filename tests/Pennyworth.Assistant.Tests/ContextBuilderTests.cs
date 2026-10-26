@@ -81,6 +81,7 @@ public class ContextBuilderTests
         Assert.StartsWith("FATOS medidos pelo Pennyworth neste PC:\n- Tipo de PC: Desktop\n".ReplaceLineEndings(), text);
         Assert.Contains("- Disco C: ocupado: 92%", text);
         Assert.Contains("CONCLUSÕES das regras do Pennyworth:", text);
+        Assert.Contains("NÃO MEDIDO pelo Pennyworth (diga que não consegue ver): temperaturas", text);
     }
 
     [Fact]

@@ -6,9 +6,11 @@
   },
   "negations": [
     "can't", "cannot", "can not", "won't", "wouldn't", "would not", "shouldn't", "should not", "never", "don't", "do not",
-    "avoid", "not recommend", "not advisable", "not a good idea", "please don't",
-    "não", "nunca", "evite", "jamais", "nem pense"
+    "avoid", "not recommend", "not advisable", "not a good idea", "please don't", "advise against", "recommend against",
+    "unable", "no need", "no pressing need",
+    "não", "nunca", "evite", "jamais", "nem pense", "desaconselho", "sem necessidade"
   ],
+  "warnings": [ "risky", "dangerous", "not recommended", "arriscado", "perigoso", "não é recomendado" ],
   "topics": [
     {
       "id": "registry",
