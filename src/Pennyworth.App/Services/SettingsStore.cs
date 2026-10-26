@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Pennyworth.App.Localization;
+using Pennyworth.Assistant;
 
 namespace Pennyworth.App.Services;
 
@@ -19,6 +20,31 @@ public sealed record AppSettings
 
     /// <summary>The welcome screen is shown until the first "Analyze my PC".</summary>
     public bool WelcomeSeen { get; init; }
+
+    public AssistantSettings Assistant { get; init; } = new();
+}
+
+/// <summary>How the assistant answers. API keys are never here; they live in the Windows Credential Manager.</summary>
+public sealed record AssistantSettings
+{
+    public IReadOnlyList<AssistantProfile> Profiles { get; init; } = [];
+
+    public string? DefaultProfileId { get; init; }
+
+    /// <summary>Cloud profiles whose send preview the person turned off.</summary>
+    public IReadOnlyList<string> HidePreviewFor { get; init; } = [];
+
+    [JsonIgnore]
+    public AssistantProfile? Default => Profiles.FirstOrDefault(p => p.Id == DefaultProfileId) ?? Profiles.FirstOrDefault();
+
+    /// <summary>By content, so settings read back from disk equal the ones saved.</summary>
+    public bool Equals(AssistantSettings? other) =>
+        other is not null
+        && DefaultProfileId == other.DefaultProfileId
+        && Profiles.SequenceEqual(other.Profiles)
+        && HidePreviewFor.SequenceEqual(other.HidePreviewFor);
+
+    public override int GetHashCode() => HashCode.Combine(DefaultProfileId, Profiles.Count, HidePreviewFor.Count);
 }
 
 public interface ISettingsStore

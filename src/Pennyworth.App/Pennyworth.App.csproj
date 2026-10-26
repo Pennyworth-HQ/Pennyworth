@@ -24,6 +24,9 @@
     <ProjectReference Include="..\Pennyworth.Scanning\Pennyworth.Scanning.csproj" />
     <ProjectReference Include="..\Pennyworth.Monitoring\Pennyworth.Monitoring.csproj" />
     <ProjectReference Include="..\Pennyworth.Cleanup\Pennyworth.Cleanup.csproj" />
+    <ProjectReference Include="..\Pennyworth.Assistant\Pennyworth.Assistant.csproj" />
+    <ProjectReference Include="..\Pennyworth.Assistant.Providers\Pennyworth.Assistant.Providers.csproj" />
+    <ProjectReference Include="..\Pennyworth.Assistant.Local\Pennyworth.Assistant.Local.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- Window icon and the transparent logo shown in the title bar. -->
