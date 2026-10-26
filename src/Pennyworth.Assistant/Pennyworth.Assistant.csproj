@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pennyworth.Assistant.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
+    <ProjectReference Include="..\Pennyworth.KnowledgeBase\Pennyworth.KnowledgeBase.csproj" />
+    <ProjectReference Include="..\Pennyworth.Monitoring\Pennyworth.Monitoring.csproj" />
+    <ProjectReference Include="..\Pennyworth.Cleanup\Pennyworth.Cleanup.csproj" />
+  </ItemGroup>
+</Project>
