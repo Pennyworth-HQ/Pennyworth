@@ -33,7 +33,17 @@ public sealed record DiagnosisRule(
 
 public sealed record DiagnosisCatalog(int Version, IReadOnlyList<DiagnosisRule> Rules);
 
+/// <summary>Advice the assistant must never give, as case-insensitive regular expressions (English and Portuguese).</summary>
+public sealed record BlockedAdvice(string Id, IReadOnlyList<string> Patterns);
+
+/// <summary>
+/// The assistant's safety net. A sentence matching a pattern is replaced, unless it is a refusal
+/// (it contains one of <see cref="Negations"/>, as in "I wouldn't disable Windows Security").
+/// </summary>
+public sealed record AdviceCatalog(int Version, LocalizedText Replacement, IReadOnlyList<string> Negations, IReadOnlyList<BlockedAdvice> Topics);
+
 [JsonSerializable(typeof(DiagnosisCatalog))]
+[JsonSerializable(typeof(AdviceCatalog))]
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     UseStringEnumConverter = true,

@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "replacement": {
+    "en": "That is not something I would recommend: it can leave Windows unstable or unprotected. If it truly needs doing, a trusted person who knows PCs should look at it.",
+    "pt-BR": "Isso não é algo que eu recomendaria: pode deixar o Windows instável ou desprotegido. Se for mesmo necessário, peça a uma pessoa de confiança que entenda de PCs."
+  },
+  "negations": [
+    "can't", "cannot", "can not", "won't", "wouldn't", "would not", "shouldn't", "should not", "never", "don't", "do not",
+    "avoid", "not recommend", "not advisable", "not a good idea", "please don't",
+    "não", "nunca", "evite", "jamais", "nem pense"
+  ],
+  "topics": [
+    {
+      "id": "registry",
+      "patterns": [
+        "\\bregedit\\b",
+        "\\b(edit|change|tweak|modify|clean)\\w*\\s+(the\\s+|your\\s+|windows\\s+)?registry\\b",
+        "\\bregistry\\s+(key|tweak|edit|hack|cleaner)s?\\b",
+        "\\b(edit|alter|mex|limp|modific)\\w*\\s+(n?o\\s+)?registro\\b",
+        "\\bregistro do windows\\b"
+      ]
+    },
+    {
+      "id": "security-off",
+      "patterns": [
+        "\\b(disabl|turn\\w*\\s+off|switch\\w*\\s+off|stop|uninstall)\\w*\\s+(the\\s+)?(windows\\s+)?(defender|security|antivirus|anti-virus|firewall|smartscreen|uac|user account control|antimalware)\\b",
+        "\\b(desativ|deslig|desabilit|par|desinstal)\\w*\\s+(o\\s+|a\\s+)?(windows\\s+)?(defender|seguran[cç]a do windows|antiv[ií]rus|firewall|smartscreen|uac|controle de conta|antimalware)\\b"
+      ]
+    },
+    {
+      "id": "updates-off",
+      "patterns": [
+        "\\b(disabl|turn\\w*\\s+off|stop|block)\\w*\\s+(the\\s+|all\\s+)?(windows\\s+)?updates?\\b",
+        "\\b(desativ|deslig|desabilit|bloque|par)\\w*\\s+(as\\s+|o\\s+)?(atualiza[cç](ões|ão|oes)( do windows)?|windows update)\\b"
+      ]
+    },
+    {
+      "id": "system-files",
+      "patterns": [
+        "\\b(delet|remov|eras|clean)\\w*\\b.{0,40}\\b(system32|syswow64|winsxs|windows folder|program files|pagefile|hiberfil)\\b",
+        "\\b(apag|exclu|delet|remov)\\w*\\b.{0,40}\\b(system32|syswow64|winsxs|pasta (do )?windows|arquivos de programas|program files|pagefile|hiberfil)\\b"
+      ]
+    },
+    {
+      "id": "debloat",
+      "patterns": [ "\\bdebloat\\w*\\b" ]
+    },
+    {
+      "id": "overclock",
+      "patterns": [ "\\b(overclock|undervolt|overvolt)\\w*\\b" ]
+    },
+    {
+      "id": "firmware",
+      "patterns": [
+        "\\b(change|enter|updat|flash|open|go\\w*\\s+into|access|configur|tweak|set|reset)\\w*\\b.{0,30}\\b(bios|uefi|firmware)\\b",
+        "\\b(alter|entr|atualiz|configur|acess|mex|mud|reset|abr)\\w*\\b.{0,30}\\b(bios|uefi|firmware)\\b"
+      ]
+    },
+    {
+      "id": "optimizers",
+      "patterns": [
+        "\\b(ccleaner|ram cleaner|memory cleaner|registry cleaner|driver booster|driver updater|pc optimi[sz]er|game booster|optimi[sz]ers?)\\b",
+        "\\b(limpador(es)? de (ram|mem[oó]ria|registro)|otimizador(es)?|acelerador(es)? de (pc|jogos))\\b"
+      ]
+    },
+    {
+      "id": "commands",
+      "patterns": [
+        "\\b(powershell|command prompt|cmd\\.exe|\\.bat|\\.ps1|terminal command)\\b",
+        "\\brun\\s+(this|the\\s+following|these)\\s+(command|script)s?\\b",
+        "\\b(prompt de comando|terminal do windows)\\b",
+        "\\b(execute|rode|digite)\\s+(este|esse|o seguinte|estes)\\s+(comando|script)s?\\b"
+      ]
+    },
+    {
+      "id": "services",
+      "patterns": [
+        "\\bservices\\.msc\\b",
+        "\\bmsconfig\\b",
+        "\\b(disabl|stop)\\w*\\s+(the\\s+)?(\\w+\\s+)?services?\\b",
+        "\\b(desativ|desabilit|par)\\w*\\s+(o\\s+|os\\s+)?(\\w+\\s+)?servi[cç]os?\\b"
+      ]
+    }
+  ]
+}

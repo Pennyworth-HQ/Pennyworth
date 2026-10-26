@@ -9,6 +9,7 @@ public static class KnowledgeBaseLoader
     private const string ProcessesResource = "Pennyworth.KnowledgeBase.processes.json";
     private const string CleanupResource = "Pennyworth.KnowledgeBase.cleanup.json";
     private const string DiagnosisResource = "Pennyworth.KnowledgeBase.diagnosis.json";
+    private const string AdviceResource = "Pennyworth.KnowledgeBase.advice.json";
 
     public static KnowledgeBaseData LoadEmbedded() =>
         Load(ResourceName, KnowledgeBaseJsonContext.Default.KnowledgeBaseData);
@@ -25,6 +26,9 @@ public static class KnowledgeBaseLoader
 
     /// <summary>What the assistant concludes from the facts it is given.</summary>
     public static DiagnosisCatalog LoadDiagnosisRules() => Load(DiagnosisResource, AssistantCatalogJsonContext.Default.DiagnosisCatalog);
+
+    /// <summary>Advice the assistant must never give, and what it says instead.</summary>
+    public static AdviceCatalog LoadBlockedAdvice() => Load(AdviceResource, AssistantCatalogJsonContext.Default.AdviceCatalog);
 
     public static DiagnosisCatalog ParseDiagnosisRules(string json) =>
         JsonSerializer.Deserialize(json, AssistantCatalogJsonContext.Default.DiagnosisCatalog)
