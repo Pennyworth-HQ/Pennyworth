@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Pennyworth.Scanning.Tests;
 
 public sealed class HiddenSpaceTests : IDisposable
@@ -34,6 +36,40 @@ public sealed class HiddenSpaceTests : IDisposable
         Assert.Equal(report, HiddenSpace.ReadReport(path));
         Assert.Equal(12_000, report.Total);
         Assert.Null(HiddenSpace.ReadReport(Path.Combine(_dir, "missing.json")));
+    }
+
+    [Fact]
+    public void A_process_that_never_exits_is_killed_at_the_timeout()
+    {
+        (string File, string[] Arguments) command = OperatingSystem.IsWindows()
+            ? ("cmd.exe", ["/c", "ping -n 30 127.0.0.1"])
+            : ("/bin/sleep", ["30"]);
+        var clock = Stopwatch.StartNew();
+
+        string? output = HiddenSpace.RunCaptured(command.File, command.Arguments, TimeSpan.FromMilliseconds(300));
+
+        Assert.Null(output);
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(5), $"waited {clock.Elapsed}");
+    }
+
+    [Fact]
+    public void A_process_that_exits_returns_its_output()
+    {
+        (string File, string[] Arguments) command = OperatingSystem.IsWindows()
+            ? ("cmd.exe", ["/c", "echo hello"])
+            : ("/bin/echo", ["hello"]);
+
+        Assert.Equal("hello", HiddenSpace.RunCaptured(command.File, command.Arguments, TimeSpan.FromSeconds(10))?.Trim());
+    }
+
+    [Fact]
+    public void A_process_that_fails_returns_null()
+    {
+        (string File, string[] Arguments) command = OperatingSystem.IsWindows()
+            ? ("cmd.exe", ["/c", "exit 3"])
+            : ("/bin/false", []);
+
+        Assert.Null(HiddenSpace.RunCaptured(command.File, command.Arguments, TimeSpan.FromSeconds(10)));
     }
 
     [Fact]
