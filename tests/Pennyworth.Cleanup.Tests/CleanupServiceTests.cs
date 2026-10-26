@@ -193,6 +193,30 @@ public sealed class CleanupServiceTests : IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => Service().CleanAsync(estimate, null, TestContext.Current.CancellationToken));
     }
 
+    [Fact]
+    public void Resolves_absolute_folders_that_have_no_drive_letter()
+    {
+        string folder = Path.Combine(_root, "cache");
+        Directory.CreateDirectory(folder);
+
+        IReadOnlyList<string> resolved = CleanupTargets.Resolve([folder, folder + Path.DirectorySeparatorChar], Environment.GetEnvironmentVariable);
+
+        Assert.Equal([Path.GetFullPath(folder)], resolved);
+    }
+
+    [Fact]
+    public void Expands_a_wildcard_under_an_absolute_folder_that_has_no_drive_letter()
+    {
+        Directory.CreateDirectory(Path.Combine(_root, "profiles", "Default", "Cache"));
+        Directory.CreateDirectory(Path.Combine(_root, "profiles", "Profile 1", "Cache"));
+
+        IReadOnlyList<string> resolved = CleanupTargets.Resolve(
+            [Path.Combine(_root, "profiles", "*", "Cache")],
+            Environment.GetEnvironmentVariable);
+
+        Assert.Equal(2, resolved.Count);
+    }
+
     [Theory]
     [InlineData(@"C:\")]
     [InlineData(@"C:\Windows")]
