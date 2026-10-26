@@ -108,25 +108,38 @@ internal static class CleanupTargets
 internal static class SafetyGuard
 {
     /// <summary>
-    /// False for drive roots, the user profile itself, Windows and Program Files (and anything inside them).
+    /// False for drive roots, the user profile itself, Windows and Program Files (and anything inside
+    /// them). Also false when a location that always exists on Windows cannot be named: an unanswered
+    /// safety question is not a "yes", so a broken environment refuses everything rather than
+    /// protecting nothing.
     /// </summary>
     public static bool MayCleanInside(string folder, Func<string, string?> getEnvironmentVariable)
     {
         string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
-        if (Path.GetPathRoot(full) is { } root && string.Equals(Path.TrimEndingDirectorySeparator(root), full, StringComparison.OrdinalIgnoreCase))
+        if (IsDriveRoot(folder)
+            || (Path.GetPathRoot(full) is { } root && string.Equals(Path.TrimEndingDirectorySeparator(root), full, StringComparison.OrdinalIgnoreCase)))
         {
             return false;
         }
 
-        if (getEnvironmentVariable("USERPROFILE") is { Length: > 0 } profile
-            && string.Equals(Path.TrimEndingDirectorySeparator(profile), full, StringComparison.OrdinalIgnoreCase))
+        // These three always exist on Windows, so an environment that cannot name them cannot be
+        // trusted to say what is safe.
+        string? profile = getEnvironmentVariable("USERPROFILE");
+        string? windows = getEnvironmentVariable("SystemRoot");
+        string? programs = getEnvironmentVariable("ProgramFiles");
+        if (string.IsNullOrEmpty(profile) || string.IsNullOrEmpty(windows) || string.IsNullOrEmpty(programs))
         {
             return false;
         }
 
-        foreach (string variable in (string[])["SystemRoot", "ProgramFiles", "ProgramFiles(x86)", "ProgramW6432"])
+        if (string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(profile)), full, StringComparison.OrdinalIgnoreCase))
         {
-            if (getEnvironmentVariable(variable) is { Length: > 0 } protectedFolder && IsSameOrInside(full, protectedFolder))
+            return false;
+        }
+
+        foreach (string protectedFolder in ProtectedRoots(windows, programs, getEnvironmentVariable))
+        {
+            if (IsSameOrInside(full, protectedFolder))
             {
                 return false;
             }
@@ -135,10 +148,51 @@ internal static class SafetyGuard
         return true;
     }
 
+    /// <summary>
+    /// The folders nothing may be cleaned inside. On a 64-bit install "Program Files (x86)" sits
+    /// beside the Windows folder whether or not its variable reached this process, so it is derived
+    /// from the resolved Windows path rather than silently dropped. The variable itself is absent on
+    /// a 32-bit install, where the folder does not exist either.
+    /// </summary>
+    private static IEnumerable<string> ProtectedRoots(string windows, string programs, Func<string, string?> getEnvironmentVariable)
+    {
+        yield return windows;
+        yield return programs;
+
+        if (getEnvironmentVariable("ProgramFiles(x86)") is { Length: > 0 } programsX86)
+        {
+            yield return programsX86;
+        }
+        else
+        {
+            int cut = windows.LastIndexOfAny(['\\', '/']);
+            if (cut > 0)
+            {
+                yield return windows[..(cut + 1)] + @"Program Files (x86)";
+            }
+        }
+
+        if (getEnvironmentVariable("ProgramW6432") is { Length: > 0 } programs6432)
+        {
+            yield return programs6432;
+        }
+    }
+
+    /// <summary>
+    /// "C:" or "C:\", however the caller wrote it. Checked on the raw input so the answer does not
+    /// depend on how the host resolves a Windows path.
+    /// </summary>
+    private static bool IsDriveRoot(string folder)
+    {
+        string trimmed = folder.TrimEnd('\\', '/');
+        return trimmed.Length == 2 && trimmed[1] == ':' && char.IsAsciiLetter(trimmed[0]);
+    }
+
     private static bool IsSameOrInside(string path, string folder)
     {
         string parent = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
         return path.Equals(parent, StringComparison.OrdinalIgnoreCase)
-            || path.StartsWith(parent + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            || path.StartsWith(parent + '\\', StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith(parent + '/', StringComparison.OrdinalIgnoreCase);
     }
 }
