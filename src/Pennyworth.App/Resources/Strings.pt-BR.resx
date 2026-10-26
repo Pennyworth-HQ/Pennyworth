@@ -206,6 +206,7 @@
   <data name="DeclinedSub" xml:space="preserve"><value>Sigo no modo normal. Se mudar de ideia, está em Armazenamento.</value></data>
   <data name="UnlockedToast" xml:space="preserve"><value>Obrigado. Agora vejo tudo, inclusive o espaço oculto do sistema.</value></data>
   <data name="UnlockFailed" xml:space="preserve"><value>Não consegui medir o espaço oculto desta vez. O modo normal continua.</value></data>
+  <data name="ScanFailed" xml:space="preserve"><value>Não consegui terminar de ler {0}. Tente de novo ou escolha outro disco.</value></data>
   <data name="NavSpecs" xml:space="preserve"><value>Especificações</value></data>
   <data name="NavSpecsHint" xml:space="preserve"><value>Cada peça do seu PC</value></data>
   <data name="SpecsTitle" xml:space="preserve"><value>Seu PC em detalhes</value></data>

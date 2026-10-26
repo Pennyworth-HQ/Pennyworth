@@ -47,7 +47,18 @@ public sealed partial class App : Application
 
             // Live numbers once per second; the first sample right away.
             var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-            timer.Tick += async (_, _) => await viewModel.TickAsync();
+            timer.Tick += async (_, _) =>
+            {
+                try
+                {
+                    await viewModel.TickAsync();
+                }
+                catch (Exception)
+                {
+                    // A timer tick is an async void boundary: letting anything escape it terminates
+                    // the window. TickAsync already keeps the last numbers when sampling fails.
+                }
+            };
             timer.Start();
             _ = viewModel.TickAsync();
         }
