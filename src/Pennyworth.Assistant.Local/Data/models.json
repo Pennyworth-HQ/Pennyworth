@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "phi-4-mini-gpu",
+      "displayName": "Phi-4-mini (graphics card)",
+      "repo": "microsoft/Phi-4-mini-instruct-onnx",
+      "revision": "fc04c8f93df696602fd9f300a30d1bf2e3081347",
+      "folder": "gpu/gpu-int4-rtn-block-32",
+      "licence": "MIT",
+      "device": "Gpu",
+      "minRamGb": 8,
+      "minVideoMemoryGb": 6,
+      "stopStrings": [
+        "<|end|>",
+        "<|endoftext|>"
+      ],
+      "note": {
+        "en": "Fast on graphics cards with 6 GB or more of video memory.",
+        "pt-BR": "Rápido em placas de vídeo com 6 GB ou mais de memória de vídeo."
+      },
+      "files": [
+        {
+          "path": "added_tokens.json",
+          "size": 249,
+          "sha256": "d4f2aceb0f20b71dd1f4bcc7e052e4412946bf281840b8f83d39f259571af486"
+        },
+        {
+          "path": "config.json",
+          "size": 2504,
+          "sha256": "ac65d86061d3d0d704ee2511fd0eb8713ef19eb6eedba17c3080a4165d5b933b"
+        },
+        {
+          "path": "genai_config.json",
+          "size": 1568,
+          "sha256": "3cdbd2ff0b2cda7829b262cda331a72b99daaa758d55bb056bb4d098d22b1140"
+        },
+        {
+          "path": "merges.txt",
+          "size": 2418348,
+          "sha256": "856ce61180bb689282eed6b3a6838bb1f438399be23aefe9d20eb379791fb4ad"
+        },
+        {
+          "path": "model.onnx",
+          "size": 286690,
+          "sha256": "f8ff300b85719f79f1c220c88575626c62cc772a228244a6b96031d1a8d25250"
+        },
+        {
+          "path": "model.onnx.data",
+          "size": 3413194752,
+          "sha256": "b32f38f9211040b01c1483759cef7a6cce28df9f83b6b8bb91a474575d559d0f"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "size": 587,
+          "sha256": "aff38493227d813e29fcf8406e8e90062f1f031aa47d589325e9c31d89ac7cc3"
+        },
+        {
+          "path": "tokenizer.json",
+          "size": 15524095,
+          "sha256": "382cc235b56c725945e149cc25f191da667c836655efd0857b004320e90e91ea"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "size": 2960,
+          "sha256": "c565326a315fbe62cda093a59d298828c8f3f823122661325f41f3ba577a7dec"
+        },
+        {
+          "path": "vocab.json",
+          "size": 3910310,
+          "sha256": "6cb65a857824fa6615bb1782d95d882617a8bbce1da0317118586b36f39e98bd"
+        }
+      ]
+    },
+    {
+      "id": "phi-3.5-mini-cpu",
+      "displayName": "Phi-3.5-mini (processor)",
+      "repo": "microsoft/Phi-3.5-mini-instruct-onnx",
+      "revision": "7230dcd6c1dd28aab70f263ecc8734ec9d9bcb70",
+      "folder": "cpu_and_mobile/cpu-int4-awq-block-128-acc-level-4",
+      "licence": "MIT",
+      "device": "Cpu",
+      "minRamGb": 8,
+      "minVideoMemoryGb": 0,
+      "stopStrings": [
+        "<|end|>",
+        "<|endoftext|>"
+      ],
+      "note": {
+        "en": "Runs on the processor of any PC; answers take about half a minute.",
+        "pt-BR": "Roda no processador de qualquer PC; as respostas levam cerca de meio minuto."
+      },
+      "files": [
+        {
+          "path": "config.json",
+          "size": 3451,
+          "sha256": "224de4f6a15b9d2a89695ec04b7f7ab2dd93a008a506979925e5a88cb5804974"
+        },
+        {
+          "path": "genai_config.json",
+          "size": 1580,
+          "sha256": "d1036a44e904c816c864931b961483eccf18e985dbd6797eecb33e01b626f580"
+        },
+        {
+          "path": "phi-3.5-mini-instruct-cpu-int4-awq-block-128-acc-level-4.onnx",
+          "size": 52176615,
+          "sha256": "c4f05e6ef52f2588df181e566afbf5e8eeba097fece2fc8246770473a10225fd"
+        },
+        {
+          "path": "phi-3.5-mini-instruct-cpu-int4-awq-block-128-acc-level-4.onnx.data",
+          "size": 2728144896,
+          "sha256": "3351fe9cc669eba43e07fb3cec436078629d5145531a28bc36fe6d5ad7683eb8"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "size": 569,
+          "sha256": "474d699677e264edd3851559548cbbb61801ad8da6b249c81455007602313c34"
+        },
+        {
+          "path": "tokenizer.json",
+          "size": 1844436,
+          "sha256": "d0f067e1e15cd0a36ebef3668024882cb67a80b86fb4b7b4b128481f0d474db7"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "size": 3364,
+          "sha256": "a12badd3fb56adb29bc7cfe03cf6fa7e3e19dd3d7602b85ce6ed63d424f5f222"
+        }
+      ]
+    }
+  ]
+}

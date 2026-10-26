@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pennyworth.Assistant.Local.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Data\models.json" LogicalName="Pennyworth.Assistant.Local.models.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI.DirectML" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Pennyworth.Assistant\Pennyworth.Assistant.csproj" />
+  </ItemGroup>
+</Project>
