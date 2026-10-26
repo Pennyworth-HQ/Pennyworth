@@ -101,7 +101,10 @@ internal static class CleanupTargets
 internal static class SafetyGuard
 {
     /// <summary>
-    /// False for drive roots, the user profile itself, Windows and Program Files (and anything inside them).
+    /// False for drive roots, the user profile itself, Windows and Program Files (and anything inside
+    /// them). Also false when the profile or the Windows directory cannot be resolved: an unanswered
+    /// safety question is not a "yes", so a broken environment refuses everything rather than
+    /// protecting nothing.
     /// </summary>
     public static bool MayCleanInside(string folder, Func<string, string?> getEnvironmentVariable)
     {
@@ -111,8 +114,16 @@ internal static class SafetyGuard
             return false;
         }
 
-        if (getEnvironmentVariable("USERPROFILE") is { Length: > 0 } profile
-            && string.Equals(Path.TrimEndingDirectorySeparator(profile), full, StringComparison.OrdinalIgnoreCase))
+        // Always present on Windows. ProgramFiles and friends are not (ProgramFiles(x86) is absent on
+        // 32-bit installs), so only these two may veto the decision.
+        string? profile = getEnvironmentVariable("USERPROFILE");
+        string? windows = getEnvironmentVariable("SystemRoot");
+        if (string.IsNullOrEmpty(profile) || string.IsNullOrEmpty(windows))
+        {
+            return false;
+        }
+
+        if (string.Equals(Path.TrimEndingDirectorySeparator(profile), full, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }

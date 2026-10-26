@@ -205,6 +205,29 @@ public sealed class CleanupServiceTests : IDisposable
         Assert.False(SafetyGuard.MayCleanInside(folder, Env));
     }
 
+    [Theory]
+    [InlineData(@"C:\")]
+    [InlineData(@"C:\Windows\Temp")]
+    [InlineData(@"C:\Program Files\App\cache")]
+    [InlineData(@"C:\Users\Bob\AppData\Local\Temp")]
+    public void Guard_refuses_everything_when_the_environment_cannot_be_read(string folder)
+    {
+        Assert.False(SafetyGuard.MayCleanInside(folder, _ => null));
+    }
+
+    [Fact]
+    public void Guard_still_allows_caches_when_only_the_optional_variables_are_missing()
+    {
+        static string? OnlyRequired(string name) => name switch
+        {
+            "SystemRoot" => @"C:\Windows",
+            "USERPROFILE" => @"C:\Users\Bob",
+            _ => null,
+        };
+
+        Assert.True(SafetyGuard.MayCleanInside(@"C:\Users\Bob\AppData\Local\Temp", OnlyRequired));
+    }
+
     [Fact]
     public void Guard_allows_caches_in_the_user_profile()
     {
