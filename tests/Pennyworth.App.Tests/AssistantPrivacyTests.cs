@@ -16,6 +16,8 @@ namespace Pennyworth.App.Tests;
 /// Phase 6 privacy review, automated: a whole cloud conversation through the real view model,
 /// session, anonymiser and OpenAI client, with the HTTP request captured before it would leave.
 /// </summary>
+// The shell sets the process-wide language from settings, so these run apart from tests that switch it.
+[Collection(nameof(LanguageSwitching))]
 public sealed class AssistantPrivacyTests : IDisposable
 {
     private const string Key = "sk-live-very-secret-123";

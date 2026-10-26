@@ -12,6 +12,8 @@ using Pennyworth.Monitoring.Hardware;
 
 namespace Pennyworth.App.Tests;
 
+// The shell sets the process-wide language from settings, so these run apart from tests that switch it.
+[Collection(nameof(LanguageSwitching))]
 public sealed class AskViewModelTests : IDisposable
 {
     private readonly string _dir = Directory.CreateTempSubdirectory("pw-ask-").FullName;
