@@ -50,7 +50,8 @@ public sealed class CleanupServiceTests : IDisposable
         Assert.Equal(1, progress[^1]);
     }
 
-    [Fact]
+    // A file opened with FileShare.None blocks deleting it on Windows only; Linux locks are advisory.
+    [WindowsFact]
     public async Task Skips_files_in_use()
     {
         Write(Path.Combine("cache", "busy.bin"), 100);
