@@ -89,30 +89,66 @@ public static partial class HiddenSpace
             "[Console]::Out.Write($t)";
         try
         {
-            using var process = Process.Start(new ProcessStartInfo("powershell.exe")
-            {
-                ArgumentList = { "-NoProfile", "-NonInteractive", "-Command", script },
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            });
-            if (process is null)
-            {
-                return null;
-            }
-
-            string output = process.StandardOutput.ReadToEnd();
-            if (!process.WaitForExit(30_000) || process.ExitCode != 0)
-            {
-                return null;
-            }
-
-            return long.TryParse(output.Trim(), out long bytes) ? bytes : null;
+            string? output = RunCaptured(
+                "powershell.exe",
+                ["-NoProfile", "-NonInteractive", "-Command", script],
+                TimeSpan.FromSeconds(30));
+            return output is not null && long.TryParse(output.Trim(), out long bytes) ? bytes : null;
         }
         catch (System.ComponentModel.Win32Exception)
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Runs a process and returns its standard output, or null when it cannot start, exits non-zero or
+    /// outlives <paramref name="timeout"/>. Both pipes are drained while it runs: reading stdout to the
+    /// end first makes the timeout unreachable, and an undrained stderr pipe can block the child.
+    /// </summary>
+    internal static string? RunCaptured(string fileName, IEnumerable<string> arguments, TimeSpan timeout)
+    {
+        var start = new ProcessStartInfo(fileName)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+        foreach (string argument in arguments)
+        {
+            start.ArgumentList.Add(argument);
+        }
+
+        using var process = Process.Start(start);
+        if (process is null)
+        {
+            return null;
+        }
+
+        Task<string> output = process.StandardOutput.ReadToEndAsync();
+        Task<string> error = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit((int)timeout.TotalMilliseconds))
+        {
+            try
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
+            {
+                // It exited between the timeout and the kill.
+            }
+
+            return null;
+        }
+
+        // The child is gone, but a grandchild can hold a pipe open: never wait on one forever.
+        if (!Task.WaitAll([output, error], TimeSpan.FromSeconds(5)))
+        {
+            return null;
+        }
+
+        return process.ExitCode == 0 ? output.Result : null;
     }
 
     [GeneratedRegex("^[A-Za-z]:$")]
