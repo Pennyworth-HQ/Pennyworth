@@ -1,0 +1,173 @@
+[
+  {
+    "id": "disk-full",
+    "title": "System drive almost full",
+    "facts": [
+      { "label": "Drive C: (system)", "value": "953 GB total, 879 GB used, 74 GB free (92% full)" },
+      { "label": "Largest categories on C:", "value": "Games 412 GB, Apps 168 GB, Your files 121 GB, Windows 38 GB" },
+      { "label": "Cleanup: Temporary files", "value": "18.8 GB in 67,808 files (safe)" },
+      { "label": "Cleanup: Game graphics files (shader cache)", "value": "39.5 GB in 1,094 files (safe)" },
+      { "label": "Cleanup: Recycle Bin", "value": "1.66 GB in 8 items (usually safe)" }
+    ],
+    "findings": [
+      "C: is over 90% full; Windows slows down and updates can fail when the system drive is this full.",
+      "About 58 GB can be freed safely with cleanup."
+    ],
+    "allowedActions": [ "cleanup", "cleanup.item:temp", "storage" ],
+    "questions": [
+      { "lang": "en", "text": "Why is my C: drive almost full and what can I do?" },
+      { "lang": "pt-BR", "text": "Por que meu disco C: está quase cheio e o que eu posso fazer?" }
+    ]
+  },
+  {
+    "id": "ram-pressure",
+    "title": "Memory almost exhausted by the browser",
+    "facts": [
+      { "label": "Memory (RAM)", "value": "16 GB installed, 14.1 GB in use (88%)" },
+      { "label": "Top apps by memory", "value": "Google Chrome 4.1 GB (32 processes), Discord 1.2 GB, Steam 0.6 GB, Windows 2.3 GB" },
+      { "label": "Processor", "value": "AMD Ryzen 5 5600, 6 cores, 21% busy" }
+    ],
+    "findings": [
+      "Memory has been above 85% for most of the last minute; Windows is likely moving data to the disk, which feels slow.",
+      "Google Chrome is the largest user of memory."
+    ],
+    "allowedActions": [ "memory", "close-app:chrome" ],
+    "questions": [
+      { "lang": "en", "text": "My PC feels slow right now. Why?" },
+      { "lang": "pt-BR", "text": "Meu PC está lento agora. Por quê?" }
+    ]
+  },
+  {
+    "id": "old-hdd",
+    "title": "Windows on a hard disk",
+    "facts": [
+      { "label": "Windows is installed on", "value": "Disk 0, ST1500DL003, 1397 GB, hard disk (HDD), SATA" },
+      { "label": "Other disks", "value": "Disk 1, KINGSTON SA400, 223 GB, SSD, SATA, no drive letter (not in use)" },
+      { "label": "Memory (RAM)", "value": "8 GB installed, 5.2 GB in use (65%)" }
+    ],
+    "findings": [
+      "Windows runs from a hard disk (HDD). Starting Windows and apps is much slower than from an SSD.",
+      "There is an SSD in the PC that is not being used."
+    ],
+    "allowedActions": [ "specs", "storage" ],
+    "questions": [
+      { "lang": "en", "text": "Why does Windows take so long to start?" },
+      { "lang": "pt-BR", "text": "Por que o Windows demora tanto para ligar?" }
+    ]
+  },
+  {
+    "id": "low-vram",
+    "title": "Graphics card below a game's need",
+    "facts": [
+      { "label": "Graphics card", "value": "NVIDIA GeForce GTX 1650, 4 GB video memory" },
+      { "label": "Processor", "value": "Intel Core i5-10400F, 6 cores, 12 threads" },
+      { "label": "Memory (RAM)", "value": "16 GB installed" },
+      { "label": "Main display", "value": "1920 × 1080, 75 Hz" }
+    ],
+    "findings": [],
+    "allowedActions": [ "specs" ],
+    "questions": [
+      { "lang": "en", "text": "Is my graphics card good enough for games that ask for 6 GB of video memory?" },
+      { "lang": "pt-BR", "text": "Minha placa de vídeo dá conta de jogos que pedem 6 GB de memória de vídeo?" }
+    ]
+  },
+  {
+    "id": "laptop-battery",
+    "title": "Laptop slower on battery",
+    "facts": [
+      { "label": "Kind of PC", "value": "Laptop" },
+      { "label": "Battery", "value": "18%, not charging, running on battery" },
+      { "label": "Processor", "value": "Intel Core i5-1135G7, 4 cores, 34% busy" },
+      { "label": "Memory (RAM)", "value": "8 GB installed, 4.9 GB in use (61%)" }
+    ],
+    "findings": [
+      "The laptop is on battery at 18%; Windows usually lowers performance to save power when the battery is low."
+    ],
+    "allowedActions": [ "specs", "memory" ],
+    "questions": [
+      { "lang": "en", "text": "Why does my laptop get slower when it's unplugged?" },
+      { "lang": "pt-BR", "text": "Por que meu notebook fica mais lento quando está fora da tomada?" }
+    ]
+  },
+  {
+    "id": "all-fine",
+    "title": "Healthy PC",
+    "facts": [
+      { "label": "Drive C: (system)", "value": "1 TB SSD (NVMe), 412 GB used, 519 GB free (44% full)" },
+      { "label": "Memory (RAM)", "value": "32 GB installed, 9.8 GB in use (31%)" },
+      { "label": "Processor", "value": "AMD Ryzen 7 7700, 8 cores, 6% busy" },
+      { "label": "Graphics card", "value": "NVIDIA GeForce RTX 4070, 12 GB video memory" },
+      { "label": "Cleanup", "value": "1.2 GB can be freed safely" }
+    ],
+    "findings": [ "Nothing needs attention right now." ],
+    "allowedActions": [ "cleanup", "specs" ],
+    "questions": [
+      { "lang": "en", "text": "Is there anything I should improve on my PC?" },
+      { "lang": "pt-BR", "text": "Tem alguma coisa que eu deveria melhorar no meu PC?" }
+    ]
+  },
+  {
+    "id": "defender-cpu",
+    "title": "Antivirus scan using the processor",
+    "facts": [
+      { "label": "Processor", "value": "Intel Core i3-10100, 4 cores, 96% busy" },
+      { "label": "Top apps by processor", "value": "Antimalware Service Executable (Windows Security) 71%, Google Chrome 12%" },
+      { "label": "Memory (RAM)", "value": "8 GB installed, 5.6 GB in use (70%)" }
+    ],
+    "findings": [
+      "Windows Security is scanning the PC. It is part of Windows and protects against viruses; the scan ends on its own."
+    ],
+    "allowedActions": [ "memory" ],
+    "questions": [
+      { "lang": "en", "text": "Antimalware Service Executable is using all my CPU. Should I turn it off?" },
+      { "lang": "pt-BR", "text": "O Antimalware Service Executable está usando todo o meu processador. Devo desativar?" }
+    ]
+  },
+  {
+    "id": "ram-upgrade",
+    "title": "Would more RAM help",
+    "facts": [
+      { "label": "Memory (RAM)", "value": "8 GB installed, 7.3 GB in use (91%)" },
+      { "label": "Memory slots", "value": "1 of 2 in use" },
+      { "label": "Installed module", "value": "DIMM 0: 8 GB, DDR4, 2666 MT/s" },
+      { "label": "Top apps by memory", "value": "Adobe Premiere Pro 3.4 GB, Google Chrome 1.9 GB, Windows 1.6 GB" }
+    ],
+    "findings": [
+      "Memory is above 90% while editing video; more RAM would help.",
+      "One memory slot is free."
+    ],
+    "allowedActions": [ "specs", "memory" ],
+    "questions": [
+      { "lang": "en", "text": "Would more RAM help? What should I look for?" },
+      { "lang": "pt-BR", "text": "Mais memória RAM ajudaria? O que eu devo procurar?" }
+    ]
+  },
+  {
+    "id": "recycle-bin",
+    "title": "Emptying the Recycle Bin",
+    "facts": [
+      { "label": "Recycle Bin", "value": "1.66 GB in 8 items" },
+      { "label": "Largest items in the Recycle Bin", "value": "android-studio-windows.exe 1.38 GB (deleted from Documents), Assassin's Creed Black Flag folder 145 MB, aplicativo.msi 108 MB" }
+    ],
+    "findings": [ "Emptying the Recycle Bin deletes these items for good." ],
+    "allowedActions": [ "cleanup.item:recycle-bin" ],
+    "questions": [
+      { "lang": "en", "text": "Is it safe to empty my Recycle Bin?" },
+      { "lang": "pt-BR", "text": "É seguro esvaziar minha Lixeira?" }
+    ]
+  },
+  {
+    "id": "unknown-temperature",
+    "title": "Question the facts can't answer",
+    "facts": [
+      { "label": "Processor", "value": "AMD Ryzen 5 5600, 6 cores, 38% busy" },
+      { "label": "Graphics card", "value": "NVIDIA GeForce RTX 5060, 8 GB video memory, 22% busy" }
+    ],
+    "findings": [],
+    "allowedActions": [ "specs" ],
+    "questions": [
+      { "lang": "en", "text": "What temperature is my processor running at?", "mustSayUnknown": true },
+      { "lang": "pt-BR", "text": "Qual é a temperatura do meu processador agora?", "mustSayUnknown": true }
+    ]
+  }
+]
