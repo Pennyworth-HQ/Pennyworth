@@ -8,10 +8,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.AI" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI.DirectML" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pennyworth.Assistant\Pennyworth.Assistant.csproj" />
+    <ProjectReference Include="..\..\src\Pennyworth.Assistant.Local\Pennyworth.Assistant.Local.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Include="scenarios\*.json" CopyToOutputDirectory="PreserveNewest" />

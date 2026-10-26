@@ -9,12 +9,17 @@ namespace AssistantEval;
 public static class Backends
 {
     /// <summary>
-    /// <c>onnx</c>: a local ONNX GenAI model folder, on DirectML (<c>dml</c>) or CPU (<c>cpu</c>).
+    /// <c>local</c>: the app's own <c>LocalChatClient</c> on a downloaded catalogue model (<c>--model-id</c>).
+    /// <c>onnx</c>: any local ONNX GenAI model folder, on DirectML (<c>dml</c>) or CPU (<c>cpu</c>).
     /// <c>openai</c>: any OpenAI-compatible endpoint (OpenAI, Azure v1, Gemini, OpenRouter, Ollama, LM Studio).
     /// </summary>
     public static IChatClient Create(Options options) => options.Backend switch
     {
         "onnx" => Onnx(options.Model, options.Ep, options.ProviderOptions),
+        "local" => new Pennyworth.Assistant.Local.LocalChatClient(
+            options.Model,
+            Pennyworth.Assistant.Local.ModelCatalog.Load().Get(options.ModelId ?? "phi-3.5-mini-cpu"),
+            repetitionPenalty: options.RepetitionPenalty ?? Pennyworth.Assistant.Local.LocalChatClient.DefaultRepetitionPenalty),
         "openai" => new OpenAIClient(
                 new ApiKeyCredential(Environment.GetEnvironmentVariable(options.KeyEnv ?? "") ?? "none"),
                 new OpenAIClientOptions { Endpoint = new Uri(options.Endpoint ?? "https://api.openai.com/v1") })

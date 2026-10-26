@@ -1,5 +1,6 @@
 // Phase 0 evaluation harness for the Pennyworth assistant.
 //
+//   dotnet run --project tools/AssistantEval -- --backend local --model <folder> --model-id phi-4-mini-gpu --name phi-4-mini-local
 //   dotnet run --project tools/AssistantEval -- --backend onnx --model <folder> --ep dml --name phi-4-mini-dml
 //   dotnet run --project tools/AssistantEval -- --backend openai --endpoint <url> --model <id> --key-env MY_KEY --name gpt
 //
@@ -96,6 +97,12 @@ public sealed record Options(string Backend, string Model, string Ep, string? En
     /// <summary>"--provider-option key=value", e.g. enable_graph_capture=0 for models DirectML can't capture.</summary>
     public IReadOnlyList<(string Key, string Value)> ProviderOptions { get; init; } = [];
 
+    /// <summary>"--model-id phi-4-mini-gpu" for the <c>local</c> backend.</summary>
+    public string? ModelId { get; init; }
+
+    /// <summary>"--repetition-penalty 1.0" for the <c>local</c> backend.</summary>
+    public float? RepetitionPenalty { get; init; }
+
     public static Options Parse(string[] args)
     {
         string? Get(string name)
@@ -113,6 +120,8 @@ public sealed record Options(string Backend, string Model, string Ep, string? En
             only is null ? null : [.. only.Split(',')])
         {
             ProviderOptions = providerOption is null ? [] : [(providerOption.Split('=')[0], providerOption.Split('=')[1])],
+            ModelId = Get("model-id"),
+            RepetitionPenalty = Get("repetition-penalty") is { } penalty ? float.Parse(penalty, System.Globalization.CultureInfo.InvariantCulture) : null,
         };
     }
 }
