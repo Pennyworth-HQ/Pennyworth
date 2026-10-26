@@ -12,6 +12,7 @@ using System.Globalization;
 using System.Text;
 using AssistantEval;
 using Microsoft.Extensions.AI;
+using Pennyworth.Assistant;
 
 string scenariosPath = Path.Combine(AppContext.BaseDirectory, "scenarios", "scenarios.json");
 if (Array.IndexOf(args, "--rescore") is int r and >= 0)
@@ -36,7 +37,7 @@ foreach (Scenario scenario in scenarios)
 {
     foreach (Question question in scenario.Questions)
     {
-        List<ChatMessage> messages = [new(ChatRole.System, Prompt.System(scenario, question.Lang)), new(ChatRole.User, question.Text)];
+        List<ChatMessage> messages = [new(ChatRole.System, PersonaPrompt.Compose(Scenarios.Bundle(scenario, question))), new(ChatRole.User, question.Text)];
         var chat = new ChatOptions { Temperature = 0.2f, MaxOutputTokens = 350 };
         var answer = new StringBuilder();
         var watch = Stopwatch.StartNew();

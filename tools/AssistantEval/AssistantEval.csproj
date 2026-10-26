@@ -11,6 +11,9 @@
     <PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI.DirectML" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Pennyworth.Assistant\Pennyworth.Assistant.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="scenarios\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

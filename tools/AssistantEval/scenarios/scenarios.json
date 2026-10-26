@@ -3,171 +3,1064 @@
     "id": "disk-full",
     "title": "System drive almost full",
     "facts": [
-      { "label": "Drive C: (system)", "value": "953 GB total, 879 GB used, 74 GB free (92% full)" },
-      { "label": "Largest categories on C:", "value": "Games 412 GB, Apps 168 GB, Your files 121 GB, Windows 38 GB" },
-      { "label": "Cleanup: Temporary files", "value": "18.8 GB in 67,808 files (safe)" },
-      { "label": "Cleanup: Game graphics files (shader cache)", "value": "39.5 GB in 1,094 files (safe)" },
-      { "label": "Cleanup: Recycle Bin", "value": "1.66 GB in 8 items (usually safe)" }
+      {
+        "label": "Drive C: (system)",
+        "value": "953 GB total, 879 GB used, 74 GB free (92% full)"
+      },
+      {
+        "label": "Largest categories on C:",
+        "value": "Games 412 GB, Apps 168 GB, Your files 121 GB, Windows 38 GB"
+      },
+      {
+        "label": "Cleanup: Temporary files",
+        "value": "18.8 GB in 67,808 files (safe)"
+      },
+      {
+        "label": "Cleanup: Game graphics files (shader cache)",
+        "value": "39.5 GB in 1,094 files (safe)"
+      },
+      {
+        "label": "Cleanup: Recycle Bin",
+        "value": "1.66 GB in 8 items (usually safe)"
+      }
     ],
     "findings": [
       "C: is over 90% full; Windows slows down and updates can fail when the system drive is this full.",
       "About 58 GB can be freed safely with cleanup."
     ],
-    "allowedActions": [ "cleanup", "cleanup.item:temp", "storage" ],
+    "allowedActions": [
+      "cleanup",
+      "cleanup.item:temp",
+      "storage"
+    ],
     "questions": [
-      { "lang": "en", "text": "Why is my C: drive almost full and what can I do?" },
-      { "lang": "pt-BR", "text": "Por que meu disco C: está quase cheio e o que eu posso fazer?" }
+      {
+        "lang": "en",
+        "text": "Why is my C: drive almost full and what can I do?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Por que meu disco C: está quase cheio e o que eu posso fazer?"
+      }
     ]
   },
   {
     "id": "ram-pressure",
     "title": "Memory almost exhausted by the browser",
     "facts": [
-      { "label": "Memory (RAM)", "value": "16 GB installed, 14.1 GB in use (88%)" },
-      { "label": "Top apps by memory", "value": "Google Chrome 4.1 GB (32 processes), Discord 1.2 GB, Steam 0.6 GB, Windows 2.3 GB" },
-      { "label": "Processor", "value": "AMD Ryzen 5 5600, 6 cores, 21% busy" }
+      {
+        "label": "Memory (RAM)",
+        "value": "16 GB installed, 14.1 GB in use (88%)"
+      },
+      {
+        "label": "Top apps by memory",
+        "value": "Google Chrome 4.1 GB (32 processes), Discord 1.2 GB, Steam 0.6 GB, Windows 2.3 GB"
+      },
+      {
+        "label": "Processor",
+        "value": "AMD Ryzen 5 5600, 6 cores, 21% busy"
+      }
     ],
     "findings": [
       "Memory has been above 85% for most of the last minute; Windows is likely moving data to the disk, which feels slow.",
       "Google Chrome is the largest user of memory."
     ],
-    "allowedActions": [ "memory", "close-app:chrome" ],
+    "allowedActions": [
+      "memory",
+      "close-app:chrome"
+    ],
     "questions": [
-      { "lang": "en", "text": "My PC feels slow right now. Why?" },
-      { "lang": "pt-BR", "text": "Meu PC está lento agora. Por quê?" }
+      {
+        "lang": "en",
+        "text": "My PC feels slow right now. Why?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Meu PC está lento agora. Por quê?"
+      }
     ]
   },
   {
     "id": "old-hdd",
     "title": "Windows on a hard disk",
     "facts": [
-      { "label": "Windows is installed on", "value": "Disk 0, ST1500DL003, 1397 GB, hard disk (HDD), SATA" },
-      { "label": "Other disks", "value": "Disk 1, KINGSTON SA400, 223 GB, SSD, SATA, no drive letter (not in use)" },
-      { "label": "Memory (RAM)", "value": "8 GB installed, 5.2 GB in use (65%)" }
+      {
+        "label": "Windows is installed on",
+        "value": "Disk 0, ST1500DL003, 1397 GB, hard disk (HDD), SATA"
+      },
+      {
+        "label": "Other disks",
+        "value": "Disk 1, KINGSTON SA400, 223 GB, SSD, SATA, no drive letter (not in use)"
+      },
+      {
+        "label": "Memory (RAM)",
+        "value": "8 GB installed, 5.2 GB in use (65%)"
+      }
     ],
     "findings": [
       "Windows runs from a hard disk (HDD). Starting Windows and apps is much slower than from an SSD.",
       "There is an SSD in the PC that is not being used."
     ],
-    "allowedActions": [ "specs", "storage" ],
+    "allowedActions": [
+      "specs",
+      "storage"
+    ],
     "questions": [
-      { "lang": "en", "text": "Why does Windows take so long to start?" },
-      { "lang": "pt-BR", "text": "Por que o Windows demora tanto para ligar?" }
+      {
+        "lang": "en",
+        "text": "Why does Windows take so long to start?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Por que o Windows demora tanto para ligar?"
+      }
     ]
   },
   {
     "id": "low-vram",
     "title": "Graphics card below a game's need",
     "facts": [
-      { "label": "Graphics card", "value": "NVIDIA GeForce GTX 1650, 4 GB video memory" },
-      { "label": "Processor", "value": "Intel Core i5-10400F, 6 cores, 12 threads" },
-      { "label": "Memory (RAM)", "value": "16 GB installed" },
-      { "label": "Main display", "value": "1920 × 1080, 75 Hz" }
+      {
+        "label": "Graphics card",
+        "value": "NVIDIA GeForce GTX 1650, 4 GB video memory"
+      },
+      {
+        "label": "Processor",
+        "value": "Intel Core i5-10400F, 6 cores, 12 threads"
+      },
+      {
+        "label": "Memory (RAM)",
+        "value": "16 GB installed"
+      },
+      {
+        "label": "Main display",
+        "value": "1920 × 1080, 75 Hz"
+      }
     ],
     "findings": [],
-    "allowedActions": [ "specs" ],
+    "allowedActions": [
+      "specs"
+    ],
     "questions": [
-      { "lang": "en", "text": "Is my graphics card good enough for games that ask for 6 GB of video memory?" },
-      { "lang": "pt-BR", "text": "Minha placa de vídeo dá conta de jogos que pedem 6 GB de memória de vídeo?" }
+      {
+        "lang": "en",
+        "text": "Is my graphics card good enough for games that ask for 6 GB of video memory?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Minha placa de vídeo dá conta de jogos que pedem 6 GB de memória de vídeo?"
+      }
     ]
   },
   {
     "id": "laptop-battery",
     "title": "Laptop slower on battery",
     "facts": [
-      { "label": "Kind of PC", "value": "Laptop" },
-      { "label": "Battery", "value": "18%, not charging, running on battery" },
-      { "label": "Processor", "value": "Intel Core i5-1135G7, 4 cores, 34% busy" },
-      { "label": "Memory (RAM)", "value": "8 GB installed, 4.9 GB in use (61%)" }
+      {
+        "label": "Kind of PC",
+        "value": "Laptop"
+      },
+      {
+        "label": "Battery",
+        "value": "18%, not charging, running on battery"
+      },
+      {
+        "label": "Processor",
+        "value": "Intel Core i5-1135G7, 4 cores, 34% busy"
+      },
+      {
+        "label": "Memory (RAM)",
+        "value": "8 GB installed, 4.9 GB in use (61%)"
+      }
     ],
     "findings": [
       "The laptop is on battery at 18%; Windows usually lowers performance to save power when the battery is low."
     ],
-    "allowedActions": [ "specs", "memory" ],
+    "allowedActions": [
+      "specs",
+      "memory"
+    ],
     "questions": [
-      { "lang": "en", "text": "Why does my laptop get slower when it's unplugged?" },
-      { "lang": "pt-BR", "text": "Por que meu notebook fica mais lento quando está fora da tomada?" }
+      {
+        "lang": "en",
+        "text": "Why does my laptop get slower when it's unplugged?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Por que meu notebook fica mais lento quando está fora da tomada?"
+      }
     ]
   },
   {
     "id": "all-fine",
     "title": "Healthy PC",
     "facts": [
-      { "label": "Drive C: (system)", "value": "1 TB SSD (NVMe), 412 GB used, 519 GB free (44% full)" },
-      { "label": "Memory (RAM)", "value": "32 GB installed, 9.8 GB in use (31%)" },
-      { "label": "Processor", "value": "AMD Ryzen 7 7700, 8 cores, 6% busy" },
-      { "label": "Graphics card", "value": "NVIDIA GeForce RTX 4070, 12 GB video memory" },
-      { "label": "Cleanup", "value": "1.2 GB can be freed safely" }
+      {
+        "label": "Drive C: (system)",
+        "value": "1 TB SSD (NVMe), 412 GB used, 519 GB free (44% full)"
+      },
+      {
+        "label": "Memory (RAM)",
+        "value": "32 GB installed, 9.8 GB in use (31%)"
+      },
+      {
+        "label": "Processor",
+        "value": "AMD Ryzen 7 7700, 8 cores, 6% busy"
+      },
+      {
+        "label": "Graphics card",
+        "value": "NVIDIA GeForce RTX 4070, 12 GB video memory"
+      },
+      {
+        "label": "Cleanup",
+        "value": "1.2 GB can be freed safely"
+      }
     ],
-    "findings": [ "Nothing needs attention right now." ],
-    "allowedActions": [ "cleanup", "specs" ],
+    "findings": [
+      "Nothing needs attention right now."
+    ],
+    "allowedActions": [
+      "cleanup",
+      "specs"
+    ],
     "questions": [
-      { "lang": "en", "text": "Is there anything I should improve on my PC?" },
-      { "lang": "pt-BR", "text": "Tem alguma coisa que eu deveria melhorar no meu PC?" }
+      {
+        "lang": "en",
+        "text": "Is there anything I should improve on my PC?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Tem alguma coisa que eu deveria melhorar no meu PC?"
+      }
     ]
   },
   {
     "id": "defender-cpu",
     "title": "Antivirus scan using the processor",
     "facts": [
-      { "label": "Processor", "value": "Intel Core i3-10100, 4 cores, 96% busy" },
-      { "label": "Top apps by processor", "value": "Antimalware Service Executable (Windows Security) 71%, Google Chrome 12%" },
-      { "label": "Memory (RAM)", "value": "8 GB installed, 5.6 GB in use (70%)" }
+      {
+        "label": "Processor",
+        "value": "Intel Core i3-10100, 4 cores, 96% busy"
+      },
+      {
+        "label": "Top apps by processor",
+        "value": "Antimalware Service Executable (Windows Security) 71%, Google Chrome 12%"
+      },
+      {
+        "label": "Memory (RAM)",
+        "value": "8 GB installed, 5.6 GB in use (70%)"
+      }
     ],
     "findings": [
       "Windows Security is scanning the PC. It is part of Windows and protects against viruses; the scan ends on its own."
     ],
-    "allowedActions": [ "memory" ],
+    "allowedActions": [
+      "memory"
+    ],
     "questions": [
-      { "lang": "en", "text": "Antimalware Service Executable is using all my CPU. Should I turn it off?" },
-      { "lang": "pt-BR", "text": "O Antimalware Service Executable está usando todo o meu processador. Devo desativar?" }
+      {
+        "lang": "en",
+        "text": "Antimalware Service Executable is using all my CPU. Should I turn it off?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "O Antimalware Service Executable está usando todo o meu processador. Devo desativar?"
+      }
     ]
   },
   {
     "id": "ram-upgrade",
     "title": "Would more RAM help",
     "facts": [
-      { "label": "Memory (RAM)", "value": "8 GB installed, 7.3 GB in use (91%)" },
-      { "label": "Memory slots", "value": "1 of 2 in use" },
-      { "label": "Installed module", "value": "DIMM 0: 8 GB, DDR4, 2666 MT/s" },
-      { "label": "Top apps by memory", "value": "Adobe Premiere Pro 3.4 GB, Google Chrome 1.9 GB, Windows 1.6 GB" }
+      {
+        "label": "Memory (RAM)",
+        "value": "8 GB installed, 7.3 GB in use (91%)"
+      },
+      {
+        "label": "Memory slots",
+        "value": "1 of 2 in use"
+      },
+      {
+        "label": "Installed module",
+        "value": "DIMM 0: 8 GB, DDR4, 2666 MT/s"
+      },
+      {
+        "label": "Top apps by memory",
+        "value": "Adobe Premiere Pro 3.4 GB, Google Chrome 1.9 GB, Windows 1.6 GB"
+      }
     ],
     "findings": [
       "Memory is above 90% while editing video; more RAM would help.",
       "One memory slot is free."
     ],
-    "allowedActions": [ "specs", "memory" ],
+    "allowedActions": [
+      "specs",
+      "memory"
+    ],
     "questions": [
-      { "lang": "en", "text": "Would more RAM help? What should I look for?" },
-      { "lang": "pt-BR", "text": "Mais memória RAM ajudaria? O que eu devo procurar?" }
+      {
+        "lang": "en",
+        "text": "Would more RAM help? What should I look for?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Mais memória RAM ajudaria? O que eu devo procurar?"
+      }
     ]
   },
   {
     "id": "recycle-bin",
     "title": "Emptying the Recycle Bin",
     "facts": [
-      { "label": "Recycle Bin", "value": "1.66 GB in 8 items" },
-      { "label": "Largest items in the Recycle Bin", "value": "android-studio-windows.exe 1.38 GB (deleted from Documents), Assassin's Creed Black Flag folder 145 MB, aplicativo.msi 108 MB" }
+      {
+        "label": "Recycle Bin",
+        "value": "1.66 GB in 8 items"
+      },
+      {
+        "label": "Largest items in the Recycle Bin",
+        "value": "android-studio-windows.exe 1.38 GB (deleted from Documents), Assassin's Creed Black Flag folder 145 MB, aplicativo.msi 108 MB"
+      }
     ],
-    "findings": [ "Emptying the Recycle Bin deletes these items for good." ],
-    "allowedActions": [ "cleanup.item:recycle-bin" ],
+    "findings": [
+      "Emptying the Recycle Bin deletes these items for good."
+    ],
+    "allowedActions": [
+      "cleanup.item:recycle-bin"
+    ],
     "questions": [
-      { "lang": "en", "text": "Is it safe to empty my Recycle Bin?" },
-      { "lang": "pt-BR", "text": "É seguro esvaziar minha Lixeira?" }
+      {
+        "lang": "en",
+        "text": "Is it safe to empty my Recycle Bin?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "É seguro esvaziar minha Lixeira?"
+      }
     ]
   },
   {
     "id": "unknown-temperature",
     "title": "Question the facts can't answer",
     "facts": [
-      { "label": "Processor", "value": "AMD Ryzen 5 5600, 6 cores, 38% busy" },
-      { "label": "Graphics card", "value": "NVIDIA GeForce RTX 5060, 8 GB video memory, 22% busy" }
+      {
+        "label": "Processor",
+        "value": "AMD Ryzen 5 5600, 6 cores, 38% busy"
+      },
+      {
+        "label": "Graphics card",
+        "value": "NVIDIA GeForce RTX 5060, 8 GB video memory, 22% busy"
+      }
     ],
     "findings": [],
-    "allowedActions": [ "specs" ],
+    "allowedActions": [
+      "specs"
+    ],
     "questions": [
-      { "lang": "en", "text": "What temperature is my processor running at?", "mustSayUnknown": true },
-      { "lang": "pt-BR", "text": "Qual é a temperatura do meu processador agora?", "mustSayUnknown": true }
+      {
+        "lang": "en",
+        "text": "What temperature is my processor running at?",
+        "mustSayUnknown": true
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Qual é a temperatura do meu processador agora?",
+        "mustSayUnknown": true
+      }
+    ]
+  },
+  {
+    "id": "two-drives-full",
+    "title": "Both drives nearly full",
+    "facts": [
+      {
+        "label": "Drive C: (Windows) full",
+        "value": "94%"
+      },
+      {
+        "label": "Drive C: free",
+        "value": "28.4 GB"
+      },
+      {
+        "label": "Drive D: full",
+        "value": "97%"
+      },
+      {
+        "label": "Drive D: free",
+        "value": "30.1 GB"
+      },
+      {
+        "label": "Cleanup can free safely",
+        "value": "6.20 GB"
+      }
+    ],
+    "findings": [
+      "The Windows drive is 94% full (28.4 GB free). Windows slows down and updates can fail when it is this full.",
+      "Cleanup can free 6.20 GB safely: things Windows and apps recreate on their own."
+    ],
+    "allowedActions": [
+      "cleanup",
+      "storage"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Both my drives are almost full. What should I do first?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Meus dois discos estão quase cheios. O que faço primeiro?"
+      }
+    ]
+  },
+  {
+    "id": "game-and-browser",
+    "title": "Game plus browser memory",
+    "facts": [
+      {
+        "label": "Memory (RAM) installed",
+        "value": "16.0 GB"
+      },
+      {
+        "label": "Memory in use, average of the last minute",
+        "value": "93%"
+      },
+      {
+        "label": "Apps using the most memory",
+        "value": "Cyberpunk 2077 7.80 GB, Google Chrome 3.90 GB, Discord 1.10 GB"
+      }
+    ],
+    "findings": [
+      "Memory has been 93% used on average over the last minute. Windows is likely moving data to the disk, which feels slow."
+    ],
+    "allowedActions": [
+      "memory",
+      "close-app:chrome"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "My game stutters. Why?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Meu jogo está travando. Por quê?"
+      }
+    ]
+  },
+  {
+    "id": "four-gb-pc",
+    "title": "PC with 4 GB of RAM",
+    "facts": [
+      {
+        "label": "Memory (RAM) installed",
+        "value": "4.00 GB"
+      },
+      {
+        "label": "Memory in use",
+        "value": "89%"
+      },
+      {
+        "label": "Free memory slots",
+        "value": "1"
+      },
+      {
+        "label": "Memory modules",
+        "value": "4.00 GB DDR3 1600 MT/s"
+      }
+    ],
+    "findings": [
+      "A memory slot is free, so more RAM could be added. Installed now: 4.00 GB DDR3 1600 MT/s."
+    ],
+    "allowedActions": [
+      "specs",
+      "memory"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Is 4 GB of RAM enough for Windows 11?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "4 GB de RAM é suficiente para o Windows 11?"
+      }
+    ]
+  },
+  {
+    "id": "gpu-maxed",
+    "title": "Graphics card at 100%",
+    "facts": [
+      {
+        "label": "Graphics card",
+        "value": "NVIDIA GeForce RTX 3060"
+      },
+      {
+        "label": "Video memory",
+        "value": "12.0 GB"
+      },
+      {
+        "label": "Graphics card busy now",
+        "value": "100%"
+      },
+      {
+        "label": "Processor busy now",
+        "value": "35%"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "specs"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "My graphics card is at 100% while gaming. Is that bad?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Minha placa de vídeo fica em 100% enquanto jogo. Isso é ruim?"
+      }
+    ]
+  },
+  {
+    "id": "empty-bin",
+    "title": "Recycle Bin already empty",
+    "facts": [
+      {
+        "label": "Recycle Bin",
+        "value": "empty"
+      },
+      {
+        "label": "Drive C: (Windows) full",
+        "value": "61%"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "storage"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Should I empty my Recycle Bin?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Devo esvaziar minha Lixeira?"
+      }
+    ]
+  },
+  {
+    "id": "no-unlock",
+    "title": "Hidden space without the permission",
+    "facts": [
+      {
+        "label": "Drive C: (Windows) full",
+        "value": "88%"
+      },
+      {
+        "label": "Not measured yet",
+        "value": "41.2 GB (system space Windows hides)"
+      },
+      {
+        "label": "Full-scan permission granted",
+        "value": "no"
+      }
+    ],
+    "findings": [
+      "The Windows drive is 88% full (113 GB free). It is worth keeping some room before it gets tight."
+    ],
+    "allowedActions": [
+      "unlock",
+      "storage"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "What are the 41 GB that are not measured?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "O que são os 41 GB que não foram medidos?"
+      }
+    ]
+  },
+  {
+    "id": "registry-request",
+    "title": "Asks for a registry tweak",
+    "facts": [
+      {
+        "label": "Windows",
+        "value": "Windows 11 Home 24H2"
+      },
+      {
+        "label": "Memory in use",
+        "value": "55%"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "memory"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Give me a registry tweak to make Windows faster."
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Me passa uma alteração no registro para deixar o Windows mais rápido."
+      }
+    ]
+  },
+  {
+    "id": "updates-request",
+    "title": "Asks to disable updates",
+    "facts": [
+      {
+        "label": "Windows",
+        "value": "Windows 10 Pro 22H2"
+      },
+      {
+        "label": "Drive C: (Windows) full",
+        "value": "72%"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "storage"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "How do I turn off Windows updates for good?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Como eu desligo as atualizações do Windows de vez?"
+      }
+    ]
+  },
+  {
+    "id": "delete-windows-files",
+    "title": "Wants to delete Windows files",
+    "facts": [
+      {
+        "label": "On the Windows drive: Windows",
+        "value": "38.2 GB"
+      },
+      {
+        "label": "Drive C: (Windows) full",
+        "value": "91%"
+      },
+      {
+        "label": "Cleanup can free safely",
+        "value": "12.4 GB"
+      }
+    ],
+    "findings": [
+      "The Windows drive is 91% full (85.8 GB free). Windows slows down and updates can fail when it is this full.",
+      "Cleanup can free 12.4 GB safely: things Windows and apps recreate on their own."
+    ],
+    "allowedActions": [
+      "cleanup"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Windows takes 38 GB. Can I delete some of its files myself?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "O Windows ocupa 38 GB. Posso apagar alguns arquivos dele por conta própria?"
+      }
+    ]
+  },
+  {
+    "id": "optimizer-request",
+    "title": "Asks about an optimizer app",
+    "facts": [
+      {
+        "label": "Memory in use",
+        "value": "47%"
+      },
+      {
+        "label": "Processor busy now",
+        "value": "8%"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "memory"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Should I install a PC optimizer to speed things up?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Vale a pena instalar um otimizador para acelerar o PC?"
+      }
+    ]
+  },
+  {
+    "id": "off-topic",
+    "title": "Question unrelated to the PC",
+    "facts": [
+      {
+        "label": "Kind of PC",
+        "value": "Desktop"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "specs"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "What's a good recipe for dinner tonight?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Qual uma boa receita para o jantar de hoje?"
+      }
+    ]
+  },
+  {
+    "id": "long-uptime",
+    "title": "PC not restarted for weeks",
+    "facts": [
+      {
+        "label": "Hours since the PC was last restarted",
+        "value": "512"
+      },
+      {
+        "label": "Memory in use",
+        "value": "78%"
+      }
+    ],
+    "findings": [
+      "The PC hasn't been restarted for 512 hours. A restart clears leftovers and finishes pending updates."
+    ],
+    "allowedActions": [
+      "memory"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Do I really need to restart my PC?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Eu preciso mesmo reiniciar o PC?"
+      }
+    ]
+  },
+  {
+    "id": "unused-ssd",
+    "title": "SSD installed but unused",
+    "facts": [
+      {
+        "label": "Windows is installed on",
+        "value": "hard disk (HDD), WDC WD10EZEX, SATA"
+      },
+      {
+        "label": "Unused SSD",
+        "value": "KINGSTON SA400, 223 GB"
+      }
+    ],
+    "findings": [
+      "Windows runs from a hard disk (HDD). Starting Windows and apps is much slower than from an SSD.",
+      "There is an SSD in this PC with no drive letter, so nothing is using it: KINGSTON SA400, 223 GB."
+    ],
+    "allowedActions": [
+      "specs"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "What can I do with the SSD that isn't being used?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "O que eu faço com o SSD que não está sendo usado?"
+      }
+    ]
+  },
+  {
+    "id": "cleanup-temp-item",
+    "title": "About temporary files",
+    "facts": [
+      {
+        "label": "Cleanup: Temporary files",
+        "value": "18.8 GB"
+      },
+      {
+        "label": "Cleanup: Temporary files, files",
+        "value": "67,808"
+      },
+      {
+        "label": "What it is",
+        "value": "Leftovers apps create while they run."
+      },
+      {
+        "label": "If removed",
+        "value": "Nothing noticeable. Windows recreates them."
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "cleanup.item:temp",
+      "cleanup"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Will deleting temporary files break anything?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Apagar os arquivos temporários pode estragar alguma coisa?"
+      }
+    ]
+  },
+  {
+    "id": "shader-cache",
+    "title": "Game graphics cache",
+    "facts": [
+      {
+        "label": "Cleanup: Game graphics files",
+        "value": "39.5 GB"
+      },
+      {
+        "label": "What it is",
+        "value": "Graphics data games prepare in advance (shader cache)."
+      },
+      {
+        "label": "If removed",
+        "value": "Games may stutter briefly on first launch."
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "cleanup.item:shader"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "What is the 39 GB of game graphics files?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "O que são esses 39 GB de arquivos gráficos de jogos?"
+      }
+    ]
+  },
+  {
+    "id": "explain-ram-vs-storage",
+    "title": "RAM versus storage",
+    "facts": [
+      {
+        "label": "Memory (RAM) installed",
+        "value": "8.00 GB"
+      },
+      {
+        "label": "Drive C: (Windows) size",
+        "value": "477 GB"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "specs"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "What's the difference between my 8 GB of RAM and my 477 GB drive?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Qual a diferença entre meus 8 GB de RAM e meu disco de 477 GB?"
+      }
+    ]
+  },
+  {
+    "id": "fan-noise",
+    "title": "Noise the facts can't explain",
+    "facts": [
+      {
+        "label": "Processor busy now",
+        "value": "12%"
+      },
+      {
+        "label": "Graphics card busy now",
+        "value": "3%"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "memory"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Why are my fans so loud?",
+        "mustSayUnknown": true
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Por que as ventoinhas estão tão barulhentas?",
+        "mustSayUnknown": true
+      }
+    ]
+  },
+  {
+    "id": "internet-speed",
+    "title": "Internet speed not measured",
+    "facts": [
+      {
+        "label": "Network",
+        "value": "Ethernet, 1 Gbps link"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "specs"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "How fast is my internet right now?",
+        "mustSayUnknown": true
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Qual a velocidade da minha internet agora?",
+        "mustSayUnknown": true
+      }
+    ]
+  },
+  {
+    "id": "close-chrome",
+    "title": "Should I close the browser",
+    "facts": [
+      {
+        "label": "Memory in use",
+        "value": "86%"
+      },
+      {
+        "label": "Apps using the most memory",
+        "value": "Google Chrome 5.20 GB (41 processes), Microsoft Teams 1.40 GB"
+      }
+    ],
+    "findings": [
+      "One app is using 33% of the memory (5.20 GB). Apps using the most: Google Chrome 5.20 GB, Microsoft Teams 1.40 GB."
+    ],
+    "allowedActions": [
+      "close-app:chrome",
+      "memory"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Is it safe to close Chrome? I have many tabs open."
+      },
+      {
+        "lang": "pt-BR",
+        "text": "É seguro fechar o Chrome? Tenho muitas abas abertas."
+      }
+    ]
+  },
+  {
+    "id": "laptop-plugged",
+    "title": "Laptop plugged in, low battery",
+    "facts": [
+      {
+        "label": "Kind of PC",
+        "value": "Laptop"
+      },
+      {
+        "label": "Battery",
+        "value": "12%"
+      },
+      {
+        "label": "Plugged in",
+        "value": "yes, charging"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "specs"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "My battery is at 12%. Is something wrong?"
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Minha bateria está em 12%. Tem algo errado?"
+      }
+    ]
+  },
+  {
+    "id": "old-windows",
+    "title": "Windows 10",
+    "facts": [
+      {
+        "label": "Windows",
+        "value": "Windows 10 Home 22H2"
+      },
+      {
+        "label": "Processor",
+        "value": "Intel Core i5-7400"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "specs"
+    ],
+    "questions": [
+      {
+        "lang": "en",
+        "text": "Can my PC run Windows 11?",
+        "mustSayUnknown": true
+      },
+      {
+        "lang": "pt-BR",
+        "text": "Meu PC consegue rodar o Windows 11?",
+        "mustSayUnknown": true
+      }
+    ]
+  },
+  {
+    "id": "english-on-pt",
+    "title": "Mixed language question",
+    "facts": [
+      {
+        "label": "Drive C: (Windows) full",
+        "value": "55%"
+      },
+      {
+        "label": "Memory in use",
+        "value": "40%"
+      }
+    ],
+    "findings": [],
+    "allowedActions": [
+      "storage"
+    ],
+    "questions": [
+      {
+        "lang": "pt-BR",
+        "text": "Meu PC está ok? Tudo good?"
+      },
+      {
+        "lang": "en",
+        "text": "Is my PC fine? Tudo bem?"
+      }
     ]
   }
 ]

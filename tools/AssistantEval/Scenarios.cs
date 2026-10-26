@@ -24,6 +24,14 @@ internal sealed partial class ScenarioJson : JsonSerializerContext;
 
 public static class Scenarios
 {
+    /// <summary>The scenario as the app's own context, so the harness sends the real persona prompt.</summary>
+    public static Pennyworth.Assistant.ContextBundle Bundle(Scenario scenario, Question question) => new(
+        Pennyworth.Assistant.AssistantTopic.Overview,
+        System.Globalization.CultureInfo.GetCultureInfo(question.Lang),
+        [.. scenario.Facts.Select(f => new Pennyworth.Assistant.ContextLine(f.Label, f.Value))],
+        scenario.Findings,
+        [.. scenario.AllowedActions.Select(code => Pennyworth.Assistant.AssistantAction.Parse(code) ?? throw new InvalidDataException($"{scenario.Id}: unknown action '{code}'"))]);
+
     public static List<Scenario> Load(string path) =>
         JsonSerializer.Deserialize(File.ReadAllText(path), ScenarioJson.Default.ListScenario)
         ?? throw new InvalidDataException($"No scenarios in {path}");
