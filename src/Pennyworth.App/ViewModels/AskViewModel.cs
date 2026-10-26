@@ -126,12 +126,15 @@ public sealed partial class AskViewModel : ObservableObject
     // ── Setup: local model ────────────────────────────────────────────────────────────
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(LocalSubtitle), nameof(DownloadLabel), nameof(IsInstalled))]
+    [NotifyPropertyChangedFor(nameof(LocalModelName), nameof(LocalSubtitle), nameof(DownloadLabel), nameof(IsInstalled))]
     public partial LocalModel RecommendedModel { get; private set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(VerdictTitle), nameof(VerdictReasons), nameof(IsVerdictWarning))]
     public partial HardwareVerdict? Verdict { get; private set; }
+
+    /// <summary>"Phi-4-mini on the graphics card".</summary>
+    public string LocalModelName => string.Format(CultureInfo.CurrentCulture, RecommendedModel.Device == ModelDevice.Gpu ? Strings.DeviceGpu : Strings.DeviceCpu, RecommendedModel.DisplayName);
 
     public string LocalSubtitle => string.Format(CultureInfo.CurrentCulture, Strings.SetupLocalSub, ByteSize.Format(RecommendedModel.Size));
 

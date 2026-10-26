@@ -74,7 +74,7 @@
           <Border Classes="card" Padding="22,20" VerticalAlignment="Stretch">
             <StackPanel Spacing="12">
               <TextBlock Classes="label" Text="{l:Tr SetupLocalTitle, Upper=True}" />
-              <TextBlock FontSize="17" FontWeight="Medium" Text="{Binding RecommendedModel.DisplayName}" />
+              <TextBlock FontSize="17" FontWeight="Medium" TextWrapping="Wrap" Text="{Binding LocalModelName}" />
               <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{Binding LocalSubtitle}" />
               <Border Classes="badge fit" Classes.warning="{Binding IsVerdictWarning}" HorizontalAlignment="Left" Padding="8,3">
                 <TextBlock Text="{Binding VerdictTitle}" />

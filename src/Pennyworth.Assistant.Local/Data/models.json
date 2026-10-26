@@ -3,7 +3,7 @@
   "models": [
     {
       "id": "phi-4-mini-gpu",
-      "displayName": "Phi-4-mini (graphics card)",
+      "displayName": "Phi-4-mini",
       "repo": "microsoft/Phi-4-mini-instruct-onnx",
       "revision": "fc04c8f93df696602fd9f300a30d1bf2e3081347",
       "folder": "gpu/gpu-int4-rtn-block-32",
@@ -74,7 +74,7 @@
     },
     {
       "id": "phi-3.5-mini-cpu",
-      "displayName": "Phi-3.5-mini (processor)",
+      "displayName": "Phi-3.5-mini",
       "repo": "microsoft/Phi-3.5-mini-instruct-onnx",
       "revision": "7230dcd6c1dd28aab70f263ecc8734ec9d9bcb70",
       "folder": "cpu_and_mobile/cpu-int4-awq-block-128-acc-level-4",
