@@ -16,6 +16,7 @@ want — a discreet butler who answers questions about your own PC.
 | 05 Folders | A folder browser sorted by size |
 | 06 Specs | Every part of the PC in plain words, with "Copy all" |
 | 07 Ask | The assistant: answers from what Pennyworth measured, never changes anything by itself |
+| 08 History | CPU, memory, disk and GPU over the last 24 hours or 7 days (average and busiest second per minute), the spikes out of the ordinary, and the Windows Event Log, which the assistant can decipher |
 | 3D | An ASCII PC you can rotate, with live status per part |
 
 ## The assistant (07 Ask)
@@ -31,6 +32,9 @@ want — a discreet butler who answers questions about your own PC.
   in the Windows Credential Manager. Conversations stay on the PC and can be deleted.
 - **Safe:** advice such as editing the registry or disabling Windows Security is replaced
   before you see it.
+- **Reads the system log with you:** on 08 History, Pennyworth reads the warnings and errors
+  of the Windows Event Log (System and Application) for the chosen range, groups repeats, hides
+  account IDs, and lets the assistant line them up with the usage spikes.
 - Nothing about the assistant runs, downloads or connects until you set it up.
 
 Design and decisions: `docs/superpowers/specs/2026-10-25-ai-assistant-design.md`.
