@@ -13,6 +13,7 @@ public sealed class TelemetryStore(string folder)
 
     private const string Extension = ".tsv";
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+    private static readonly Encoding NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
     public static string DefaultFolder => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Pennyworth", "telemetry");
