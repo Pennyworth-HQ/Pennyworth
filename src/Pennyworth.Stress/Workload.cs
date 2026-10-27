@@ -18,6 +18,9 @@ public abstract class Workload
     /// <summary>Memory or file size under test; 0 when it does not apply.</summary>
     public virtual long Bytes => 0;
 
+    /// <summary>The device under test, when it has a name worth showing (the graphics card).</summary>
+    public virtual string? Device => null;
+
     public WorkloadFailure Failure { get; private set; }
 
     public string? FailureDetail { get; private set; }
@@ -31,7 +34,7 @@ public abstract class Workload
     public long Errors => Interlocked.Read(ref _errors);
 
     public WorkloadSnapshot Read() =>
-        new(Kind, Interlocked.Read(ref _operations), Errors, Phase, Threads, Bytes, Failure, FailureDetail);
+        new(Kind, Interlocked.Read(ref _operations), Errors, Phase, Threads, Bytes, Failure, FailureDetail, Device);
 
     /// <summary>Prepares on the calling thread pool, then runs <see cref="Threads"/> threads until cancelled.</summary>
     public Task RunAsync(CancellationToken token) => Task.Run(() => Run(token), CancellationToken.None);

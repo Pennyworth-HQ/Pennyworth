@@ -145,8 +145,113 @@ public sealed class StressTests
     [Fact]
     public void Options_choose_the_tests()
     {
-        var runner = new StressRunner(new StressOptions(StressKind.Cpu | StressKind.Disk, Short, DiskFolder: Path.GetTempPath(), DiskBytes: 1024));
+        var runner = new StressRunner(new StressOptions(StressKind.Cpu | StressKind.Disk | StressKind.Gpu, Short, DiskFolder: Path.GetTempPath(), DiskBytes: 1024));
 
-        Assert.Equal([StressKind.Cpu, StressKind.Disk], runner.Workloads.Select(w => w.Kind));
+        Assert.Equal([StressKind.Cpu, StressKind.Disk, StressKind.Gpu], runner.Workloads.Select(w => w.Kind));
+    }
+
+    [Fact]
+    public async Task Gpu_answers_are_checked_against_the_first_ones()
+    {
+        var card = new FakeGpu();
+        var gpu = new GpuWorkload(() => card);
+        var runner = new StressRunner(new StressOptions(StressKind.Gpu, Short), [gpu]);
+
+        Assert.Equal(StressOutcome.Passed, await runner.RunAsync(TestContext.Current.CancellationToken));
+        WorkloadSnapshot snapshot = runner.Read()[StressKind.Gpu]!;
+        Assert.True(snapshot.Operations > 0);
+        Assert.Equal(0, snapshot.Errors);
+        Assert.Equal("Fake card", snapshot.Device);
+        Assert.True(card.Disposed);
+    }
+
+    [Fact]
+    public async Task A_wrong_gpu_answer_is_found()
+    {
+        int units = 0;
+        var gpu = new GpuWorkload(() => new FakeGpu())
+        {
+            Tamper = results =>
+            {
+                if (Interlocked.Increment(ref units) == 3)
+                {
+                    results[7] ^= 1;
+                    results[9] ^= 1;
+                }
+            },
+        };
+        var runner = new StressRunner(new StressOptions(StressKind.Gpu, TimeSpan.FromSeconds(30)), [gpu]);
+
+        Assert.Equal(StressOutcome.ErrorFound, await runner.RunAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(2, runner.Read().Errors);
+    }
+
+    [Fact]
+    public async Task A_driver_reset_counts_as_an_error()
+    {
+        var gpu = new GpuWorkload(() => new FakeGpu { LoseAfter = 2 });
+        var runner = new StressRunner(new StressOptions(StressKind.Gpu, TimeSpan.FromSeconds(30)), [gpu]);
+
+        Assert.Equal(StressOutcome.ErrorFound, await runner.RunAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task No_graphics_card_fails_the_run()
+    {
+        var runner = new StressRunner(new StressOptions(StressKind.Gpu, TimeSpan.FromSeconds(30)), [new GpuWorkload(() => null)]);
+
+        Assert.Equal(StressOutcome.Failed, await runner.RunAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(WorkloadFailure.NoGpu, runner.Read()[StressKind.Gpu]!.Failure);
+    }
+
+    [Fact]
+    public async Task The_real_graphics_card_gives_repeatable_answers()
+    {
+        var gpu = new GpuWorkload();
+        var runner = new StressRunner(new StressOptions(StressKind.Gpu, TimeSpan.FromSeconds(2)), [gpu]);
+
+        StressOutcome outcome = await runner.RunAsync(TestContext.Current.CancellationToken);
+
+        WorkloadSnapshot snapshot = runner.Read()[StressKind.Gpu]!;
+        if (snapshot.Failure == WorkloadFailure.NoGpu)
+        {
+            Assert.Skip("No Direct3D 11 graphics card on this machine.");
+        }
+
+        Assert.Equal(StressOutcome.Passed, outcome);
+        Assert.True(snapshot.Operations > 0);
+        Assert.False(string.IsNullOrWhiteSpace(snapshot.Device));
+    }
+
+    private sealed class FakeGpu : IGpuCompute
+    {
+        private int _units;
+
+        public string Name => "Fake card";
+
+        public int Width => 16;
+
+        public long OperationsPerUnit => 1000;
+
+        public int LoseAfter { get; init; } = int.MaxValue;
+
+        public bool Disposed { get; private set; }
+
+        public void Run(Span<uint> results)
+        {
+            if (++_units > LoseAfter)
+            {
+                throw new GpuLostException(unchecked((int)0x887A0005));
+            }
+
+            for (int i = 0; i < results.Length; i++)
+            {
+                results[i] = (uint)(i * 2654435761);
+            }
+
+            Thread.Sleep(1);
+        }
+
+        public void Dispose() => Disposed = true;
     }
 }

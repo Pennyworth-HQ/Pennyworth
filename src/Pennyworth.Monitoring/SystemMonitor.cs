@@ -9,15 +9,20 @@ namespace Pennyworth.Monitoring;
 /// <param name="CpuPercent">Whole-machine load, 0 to 100.</param>
 /// <param name="GpuPercent">Busiest GPU engine, 0 to 100, or null when unavailable.</param>
 /// <param name="Apps">Processes grouped by app, largest memory first.</param>
-/// <param name="PowerWatts">Processor package (or whole system) power, or null when the PC doesn't report it.</param>
+/// <param name="PowerWatts">
+/// Processor package (or whole system) power; estimated from the load when the PC doesn't report
+/// it (see <paramref name="PowerIsEstimate"/>); null when it can't be estimated either.
+/// </param>
 /// <param name="TemperatureCelsius">Hottest ACPI thermal zone, or null when the PC doesn't report one.</param>
+/// <param name="PowerIsEstimate">True when <paramref name="PowerWatts"/> is a <see cref="PowerEstimate"/>, not a measurement.</param>
 public sealed record MonitorSample(
     MemoryStatus Memory,
     double CpuPercent,
     double? GpuPercent,
     IReadOnlyList<AppGroup> Apps,
     double? PowerWatts = null,
-    double? TemperatureCelsius = null);
+    double? TemperatureCelsius = null,
+    bool PowerIsEstimate = false);
 
 public interface ISystemMonitor
 {
@@ -35,6 +40,7 @@ public sealed class SystemMonitor : ISystemMonitor, IDisposable
     private readonly MemoryCounters _memory = new();
     private readonly SensorCounters _sensors = new();
     private readonly Stopwatch _clock = Stopwatch.StartNew();
+    private readonly double? _tdpWatts = PowerEstimate.TdpWatts(ProcessorName());
     private TimeSpan _lastSample;
 
     public SystemMonitor(IEnumerable<ProcessExplanation> explanations)
@@ -59,7 +65,19 @@ public sealed class SystemMonitor : ISystemMonitor, IDisposable
 
         long compressed = processes.FirstOrDefault(p => p.Name == "Memory Compression").WorkingSet;
         var (watts, celsius) = _sensors.Sample();
-        return new MonitorSample(ProcessReader.ReadMemory(compressed, _memory.ReadFree()), total, _gpu.Sample(), _grouper.Group(processes, cpuByPid), watts, celsius);
+        bool estimate = watts is null && _tdpWatts is not null;
+        if (estimate)
+        {
+            watts = PowerEstimate.Watts(_tdpWatts!.Value, total);
+        }
+
+        return new MonitorSample(ProcessReader.ReadMemory(compressed, _memory.ReadFree()), total, _gpu.Sample(), _grouper.Group(processes, cpuByPid), watts, celsius, estimate);
+    }
+
+    private static string ProcessorName()
+    {
+        using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
+        return key?.GetValue("ProcessorNameString") as string ?? "";
     }
 
     public void Dispose()

@@ -8,6 +8,7 @@ public enum StressKind
     Cpu = 1,
     Memory = 2,
     Disk = 4,
+    Gpu = 8,
 }
 
 /// <summary>How the processor is loaded, after the classic stress tools.</summary>
@@ -72,14 +73,18 @@ public enum WorkloadFailure
     None,
     NotEnoughMemory,
     NotEnoughDiskSpace,
+
+    /// <summary>No graphics card that runs Direct3D 11 compute shaders.</summary>
+    NoGpu,
     Crashed,
 }
 
 /// <summary>One test's counters at one moment. Rates come from differencing two snapshots.</summary>
-/// <param name="Operations">CPU: arithmetic operations; memory and disk: bytes moved.</param>
+/// <param name="Operations">CPU and graphics card: arithmetic operations; memory and disk: bytes moved.</param>
 /// <param name="Errors">Wrong results found so far.</param>
 /// <param name="Threads">Threads the test runs on.</param>
 /// <param name="Bytes">Memory or file size under test; 0 for the CPU.</param>
+/// <param name="Device">The graphics card's name; null for the other tests.</param>
 public sealed record WorkloadSnapshot(
     StressKind Kind,
     long Operations,
@@ -88,7 +93,8 @@ public sealed record WorkloadSnapshot(
     int Threads,
     long Bytes,
     WorkloadFailure Failure,
-    string? FailureDetail);
+    string? FailureDetail,
+    string? Device = null);
 
 public sealed record StressSnapshot(TimeSpan Elapsed, IReadOnlyList<WorkloadSnapshot> Workloads)
 {

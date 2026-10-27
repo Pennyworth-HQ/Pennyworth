@@ -112,6 +112,11 @@ public sealed class StressRunner : IStressRunner
             workloads.Add(new DiskWorkload(folder, options.DiskBytes));
         }
 
+        if (options.Kinds.HasFlag(StressKind.Gpu))
+        {
+            workloads.Add(new GpuWorkload());
+        }
+
         return workloads;
     }
 }

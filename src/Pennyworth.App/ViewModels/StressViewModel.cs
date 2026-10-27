@@ -63,10 +63,12 @@ public sealed partial class StressViewModel : ObservableObject
     private int _hotSamples;
     private bool _tooHot;
     private double _maxDiskRate;
+    private double _maxGpuRate;
     private double _maxWatts = ReferenceWatts;
     private double _peakCpu;
     private double? _peakCelsius;
     private double? _peakWatts;
+    private bool _peakWattsIsEstimate;
 
     public StressViewModel(LiveViewModel live, IDialogHost host, Func<StressOptions, IStressRunner>? createRunner = null, Func<DateTimeOffset>? clock = null)
     {
@@ -115,6 +117,10 @@ public sealed partial class StressViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(StartCommand))]
     public partial bool IncludeDisk { get; set; }
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+    public partial bool IncludeGpu { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsFloatMode), nameof(IsIntegerMode), nameof(IsMixedMode))]
@@ -200,7 +206,7 @@ public sealed partial class StressViewModel : ObservableObject
         new(Strings.StressStatDuration, Clock(Elapsed)),
         new(Strings.StressStatPeakCpu, $"{Math.Round(_peakCpu):0}%"),
         new(Strings.StressStatPeakTemp, Celsius(_peakCelsius)),
-        new(Strings.StressStatPeakPower, Watts(_peakWatts)),
+        new(Strings.StressStatPeakPower, (_peakWattsIsEstimate && _peakWatts is not null ? "~" : "") + Watts(_peakWatts)),
         new(Strings.StressErrors, TotalErrors.ToString("N0", CultureInfo.CurrentCulture)),
     ];
 
@@ -262,7 +268,8 @@ public sealed partial class StressViewModel : ObservableObject
     {
         var kinds = (IncludeCpu ? StressKind.Cpu : StressKind.None)
             | (IncludeMemory ? StressKind.Memory : StressKind.None)
-            | (IncludeDisk ? StressKind.Disk : StressKind.None);
+            | (IncludeDisk ? StressKind.Disk : StressKind.None)
+            | (IncludeGpu ? StressKind.Gpu : StressKind.None);
         var options = new StressOptions(
             kinds,
             TimeSpan.FromMinutes(DurationMinutes),
@@ -279,9 +286,11 @@ public sealed partial class StressViewModel : ObservableObject
         _hotSamples = 0;
         _tooHot = false;
         _maxDiskRate = 0;
+        _maxGpuRate = 0;
         _peakCpu = 0;
         _peakCelsius = null;
         _peakWatts = null;
+        _peakWattsIsEstimate = false;
         foreach (StressMeterViewModel meter in Meters)
         {
             meter.Reset();
@@ -298,7 +307,7 @@ public sealed partial class StressViewModel : ObservableObject
         Update();
     }
 
-    private bool CanStart() => !IsRunning && (IncludeCpu || IncludeMemory || IncludeDisk);
+    private bool CanStart() => !IsRunning && (IncludeCpu || IncludeMemory || IncludeDisk || IncludeGpu);
 
     [RelayCommand(CanExecute = nameof(IsRunning))]
     private void Stop()
@@ -338,7 +347,7 @@ public sealed partial class StressViewModel : ObservableObject
         UpdateCpu(now[StressKind.Cpu], running ? Rate(StressKind.Cpu) : 0, running);
         UpdateMemory(now[StressKind.Memory], running ? Rate(StressKind.Memory) : 0, running);
         UpdateDisk(now[StressKind.Disk], running ? Rate(StressKind.Disk) : 0, running);
-        UpdateGpu();
+        UpdateGpu(now[StressKind.Gpu], running ? Rate(StressKind.Gpu) : 0, running);
         UpdateSensors(running);
 
         if (running)
@@ -408,15 +417,35 @@ public sealed partial class StressViewModel : ObservableObject
         Disk.Set(_maxDiskRate <= 0 ? 0 : rate / _maxDiskRate, size[0], $"{size[^1]}/s", $"{Phase(work!)} · {ByteSize.Format(work!.Bytes)}", true, work.Errors);
     }
 
-    private void UpdateGpu()
+    private void UpdateGpu(WorkloadSnapshot? work, double rate, bool running)
     {
+        bool tested = running && work is not null;
+        if (!tested)
+        {
+            if (_live.Gpu is { } usage)
+            {
+                Gpu.Set(usage / 100, $"{Math.Round(usage):0}", "%", Strings.StressGpuNote, false, work?.Errors ?? 0);
+            }
+            else
+            {
+                Gpu.Set(0, "—", "", Strings.StressNotReported, false, work?.Errors ?? 0);
+            }
+
+            return;
+        }
+
+        string detail = work!.Phase == WorkPhase.Preparing
+            ? Strings.StressPreparing
+            : $"{Rate(rate / 1e9)} GFLOP/s · {work.Device}";
         if (_live.Gpu is { } gpu)
         {
-            Gpu.Set(gpu / 100, $"{Math.Round(gpu):0}", "%", Strings.StressGpuNote);
+            Gpu.Set(gpu / 100, $"{Math.Round(gpu):0}", "%", detail, true, work.Errors);
         }
         else
         {
-            Gpu.Set(0, "—", "", Strings.StressNotReported);
+            // Without Windows' usage counter, the dial is relative to the fastest second of this run.
+            _maxGpuRate = Math.Max(_maxGpuRate, rate);
+            Gpu.Set(_maxGpuRate <= 0 ? 0 : rate / _maxGpuRate, Rate(rate / 1e9), "GFLOP/s", detail, true, work.Errors);
         }
     }
 
@@ -444,11 +473,14 @@ public sealed partial class StressViewModel : ObservableObject
 
         if (_live.Sample?.PowerWatts is { } watts)
         {
+            // An estimate is marked with "~" everywhere it shows, and its own caption says how it is made.
+            bool estimate = _live.Sample.PowerIsEstimate;
             _maxWatts = Math.Max(_maxWatts, watts);
-            Power.Set(watts / _maxWatts, $"{Math.Round(watts):0}", "W", Strings.StressSensorPower);
+            Power.Set(watts / _maxWatts, $"{(estimate ? "~" : "")}{Math.Round(watts):0}", "W", estimate ? Strings.StressSensorPowerEstimate : Strings.StressSensorPower);
             if (running)
             {
                 _peakWatts = Math.Max(_peakWatts ?? watts, watts);
+                _peakWattsIsEstimate = estimate;
             }
         }
         else
@@ -471,11 +503,13 @@ public sealed partial class StressViewModel : ObservableObject
             {
                 WorkloadFailure.NotEnoughMemory => Strings.StressLogNoMemory,
                 WorkloadFailure.NotEnoughDiskSpace => Strings.StressLogNoDisk,
+                WorkloadFailure.NoGpu => Strings.StressLogNoGpu,
                 WorkloadFailure.Crashed => string.Format(CultureInfo.CurrentCulture, Strings.StressLogCrashed, Title(work.Kind)),
                 _ when work.Errors > 0 => work.Kind switch
                 {
                     StressKind.Cpu => Strings.StressLogCpuError,
                     StressKind.Memory => Strings.StressLogMemoryError,
+                    StressKind.Gpu => Strings.StressLogGpuError,
                     _ => Strings.StressLogDiskError,
                 },
                 _ => null,
@@ -553,6 +587,11 @@ public sealed partial class StressViewModel : ObservableObject
             parts.Add($"{Strings.StressDisk} {ByteSize.Format(options.DiskBytes)}");
         }
 
+        if (options.Kinds.HasFlag(StressKind.Gpu))
+        {
+            parts.Add(Strings.StressGpu);
+        }
+
         parts.Add($"{options.Duration.TotalMinutes:0} min");
         return string.Join(" · ", parts);
     }
@@ -583,6 +622,7 @@ public sealed partial class StressViewModel : ObservableObject
     {
         StressKind.Cpu => Strings.StressCpu,
         StressKind.Memory => Strings.StressMemory,
+        StressKind.Gpu => Strings.StressGpu,
         _ => Strings.StressDisk,
     };
 
@@ -634,7 +674,7 @@ public sealed partial class StressMeterViewModel(string kind, Func<string> title
 
     public bool HasErrors => Errors > 0;
 
-    /// <summary>Only parts with a check (processor, memory, disk) under test show an error count.</summary>
+    /// <summary>Only parts with a check (processor, memory, disk, graphics card) under test show an error count.</summary>
     public bool ShowErrors => IsUnderTest || HasErrors;
 
     public string ErrorsText => Errors == 0 ? Strings.StressNoErrors : string.Format(CultureInfo.CurrentCulture, Strings.StressErrorsCount, "", Errors);

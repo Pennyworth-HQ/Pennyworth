@@ -128,6 +128,14 @@
                     <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding DiskHint}" />
                   </StackPanel>
                 </Grid>
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
+                  <CheckBox IsChecked="{Binding IncludeGpu}" VerticalAlignment="Top" />
+                  <controls:ComponentIcon Grid.Column="1" Kind="Gpu" Width="22" Height="22" VerticalAlignment="Top" Margin="0,4,0,0" />
+                  <StackPanel Grid.Column="2" Spacing="2" Margin="0,4,0,0">
+                    <TextBlock Text="{l:Tr StressGpu}" />
+                    <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr StressGpuHint}" />
+                  </StackPanel>
+                </Grid>
               </StackPanel>
 
               <StackPanel Spacing="8" IsEnabled="{Binding CanChoose}">
