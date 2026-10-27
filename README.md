@@ -16,6 +16,7 @@ want — a discreet butler who answers questions about your own PC.
 | 05 Folders | A folder browser sorted by size |
 | 06 Specs | Every part of the PC in plain words, with "Copy all" |
 | 07 Ask | The assistant: answers from what Pennyworth measured, never changes anything by itself |
+| 08 Stress test | Loads processor, memory and disk like OCCT, Prime95 and HeavyLoad, checks every result, and shows a load radar, dials, stress level, power and temperature |
 | 3D | An ASCII PC you can rotate, with live status per part |
 
 ## The assistant (07 Ask)
@@ -62,7 +63,8 @@ dotnet publish src/Pennyworth.App -c Release -r win-x64 -p:PublishAot=true -o pu
 | `Pennyworth.Insights` | Path classification |
 | `Pennyworth.Scanning` | Drive scanning |
 | `Pennyworth.Cleanup` | Measuring and cleaning, Recycle Bin |
-| `Pennyworth.Monitoring` | Live memory/CPU/GPU and hardware specs |
+| `Pennyworth.Monitoring` | Live memory/CPU/GPU, power and temperature (when Windows reports them) and hardware specs |
+| `Pennyworth.Stress` | Stress test workloads (processor, memory, disk) with result verification |
 | `Pennyworth.Assistant` | Facts, diagnosis, context, persona prompt, action links, advice filter, anonymiser, session, history, usage |
 | `Pennyworth.Assistant.Providers` | Cloud chat clients, API keys in the Credential Manager, test connection |
 | `Pennyworth.Assistant.Local` | Model catalogue, hardware check, verified download, on-PC ONNX model |

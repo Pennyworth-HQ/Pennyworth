@@ -9,7 +9,15 @@ namespace Pennyworth.Monitoring;
 /// <param name="CpuPercent">Whole-machine load, 0 to 100.</param>
 /// <param name="GpuPercent">Busiest GPU engine, 0 to 100, or null when unavailable.</param>
 /// <param name="Apps">Processes grouped by app, largest memory first.</param>
-public sealed record MonitorSample(MemoryStatus Memory, double CpuPercent, double? GpuPercent, IReadOnlyList<AppGroup> Apps);
+/// <param name="PowerWatts">Processor package (or whole system) power, or null when the PC doesn't report it.</param>
+/// <param name="TemperatureCelsius">Hottest ACPI thermal zone, or null when the PC doesn't report one.</param>
+public sealed record MonitorSample(
+    MemoryStatus Memory,
+    double CpuPercent,
+    double? GpuPercent,
+    IReadOnlyList<AppGroup> Apps,
+    double? PowerWatts = null,
+    double? TemperatureCelsius = null);
 
 public interface ISystemMonitor
 {
@@ -25,6 +33,7 @@ public sealed class SystemMonitor : ISystemMonitor, IDisposable
     private readonly AppGrouper _grouper;
     private readonly GpuMeter _gpu = new();
     private readonly MemoryCounters _memory = new();
+    private readonly SensorCounters _sensors = new();
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private TimeSpan _lastSample;
 
@@ -49,13 +58,15 @@ public sealed class SystemMonitor : ISystemMonitor, IDisposable
         double total = _cpu.UpdateSystem(idle, kernel, user);
 
         long compressed = processes.FirstOrDefault(p => p.Name == "Memory Compression").WorkingSet;
-        return new MonitorSample(ProcessReader.ReadMemory(compressed, _memory.ReadFree()), total, _gpu.Sample(), _grouper.Group(processes, cpuByPid));
+        var (watts, celsius) = _sensors.Sample();
+        return new MonitorSample(ProcessReader.ReadMemory(compressed, _memory.ReadFree()), total, _gpu.Sample(), _grouper.Group(processes, cpuByPid), watts, celsius);
     }
 
     public void Dispose()
     {
         _gpu.Dispose();
         _memory.Dispose();
+        _sensors.Dispose();
     }
 
     /// <summary>Caches what doesn't change while a process lives.</summary>
