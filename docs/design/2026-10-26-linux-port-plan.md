@@ -570,6 +570,8 @@ needs a scoped `NoWarn` with that justification, or the publish fails.
 | Unaccounted / system space | `IHiddenSpaceService` | `ElevatedHiddenSpaceService` (UAC) | `LinuxSystemSpaceService` — measures only, never elevates (D1) |
 | File manager | `IExplorerLauncher` | `ExplorerLauncher` | `XdgFileManager` |
 | Close processes | `IProcessCloser` | `ProcessCloser` | `SignalProcessCloser` |
+| System log (History screen) | `IPlatform.Logs` → `ISystemLogReader` | `WindowsEventLogReader` (`wevtutil`, System + Application) | `JournalLogReader` (`journalctl -o json -p warning`; already written and tested in `Pennyworth.Monitoring/Logs`, to move into `Pennyworth.Platform.Linux`) |
+| Disk activity | `MonitorSample.DiskPercent` | PDH `PhysicalDisk(_Total)\% Idle Time` | `/proc/diskstats` time-in-I/O delta |
 | App-local AI | `AssistantServices` | `CreateDefault` | `CreateLinuxDefault` |
 | Inference engine | `IChatClient` (unchanged) | ONNX Runtime Gen AI + DirectML | llama.cpp via LLamaSharp, backend chosen by deployed package (§6.3) |
 | Model choice | `HardwareCheck.Recommend(…, backend)` | VRAM only | backend-aware, GGUF catalogue (§6.4) |
