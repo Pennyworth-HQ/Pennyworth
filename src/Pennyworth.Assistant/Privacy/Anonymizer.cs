@@ -29,17 +29,19 @@ public sealed partial class Anonymizer
     private readonly Dictionary<string, string> _placeholders = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _originals = new(StringComparer.Ordinal);
     private readonly Dictionary<string, int> _counters = [];
+    private readonly int _profileDepth;
 
     /// <param name="profilePath">"C:\Users\ana".</param>
     /// <param name="isKnownFolder">Whether a folder name under the profile is safe to send; defaults to <see cref="CommonFolders"/>.</param>
     public Anonymizer(string userName, string profilePath, string machineName, Func<string, bool>? isKnownFolder = null)
     {
         _profile = Path.TrimEndingDirectorySeparator(profilePath);
+        _profileDepth = Split(_profile).Length;
         _isKnownFolder = isKnownFolder ?? CommonFolders.Contains;
         _originals["<profile>"] = _profile;
 
         var names = new List<(string Value, string Placeholder)>();
-        string leaf = Path.GetFileName(_profile);
+        string leaf = Split(_profile).LastOrDefault() ?? "";
         foreach (var (value, placeholder) in new[] { (userName, "<user>"), (leaf, "<user>"), (machineName, "<pc>") })
         {
             if (value.Trim().Length >= 2 && !names.Any(n => string.Equals(n.Value, value, StringComparison.OrdinalIgnoreCase)))
@@ -80,9 +82,23 @@ public sealed partial class Anonymizer
         return sb.ToString();
     }
 
-    /// <summary>Puts the original names back, for showing the answer to the person.</summary>
-    public string Restore(string text) =>
-        PlaceholderPattern().Replace(text, match => _originals.TryGetValue(match.Value, out string? original) ? original : match.Value);
+    /// <summary>
+    /// Puts the original names back, for showing the answer to the person. A path sent with forward
+    /// slashes comes back with forward slashes: the restored text matches what was sent instead of
+    /// mixing separators.
+    /// </summary>
+    public string Restore(string text) => PlaceholderPattern().Replace(text, match =>
+    {
+        if (!_originals.TryGetValue(match.Value, out string? original))
+        {
+            return match.Value;
+        }
+
+        int after = match.Index + match.Length;
+        return match.Value == "<profile>" && after < text.Length && text[after] == '/'
+            ? original.Replace('\\', '/')
+            : original;
+    });
 
     private string Outside(string text)
     {
@@ -92,13 +108,14 @@ public sealed partial class Anonymizer
 
     private string AnonymizePath(string path)
     {
-        string[] segments = path[_profile.Length..].Split('\\', StringSplitOptions.RemoveEmptyEntries);
+        string[] segments = Split(path);
+        char separator = path.Contains('\\') ? '\\' : '/';
         var sb = new StringBuilder("<profile>");
-        for (int i = 0; i < segments.Length; i++)
+        for (int i = Math.Min(_profileDepth, segments.Length); i < segments.Length; i++)
         {
             string segment = segments[i];
             bool isFile = i == segments.Length - 1 && Path.HasExtension(segment) && !_isKnownFolder(segment);
-            sb.Append('\\').Append(_isKnownFolder(segment) ? segment : PlaceholderFor(segment, isFile ? "file" : "folder"));
+            sb.Append(separator).Append(_isKnownFolder(segment) ? segment : PlaceholderFor(segment, isFile ? "file" : "folder"));
         }
 
         return sb.ToString();
@@ -118,14 +135,24 @@ public sealed partial class Anonymizer
     }
 
     /// <summary>
-    /// The profile path and the segments after it. A segment runs until a backslash, a line break,
-    /// "," ";" "(" ")" quotes, " · ", or a period followed by a space or the end; spaces are kept
-    /// inside segments so a name like "Ana Souza" is hidden whole.
+    /// The profile path and the segments after it, with either separator: a path pasted from a URL,
+    /// a log line or a POSIX machine must be hidden exactly like a Windows one. A segment runs until
+    /// a separator, a line break, "," ";" "(" ")" quotes, " · ", or a period followed by a space or
+    /// the end; spaces are kept inside segments so a name like "Ana Souza" is hidden whole.
     /// </summary>
-    private static Regex ProfilePathPattern(string profile) => new(
-        Regex.Escape(profile) + @"(?![^\\\s,;()<>""|?*.])(?:\\(?:[^\\\r\n,;()<>""|?*·.]|\.(?!\s|$))+)*",
-        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
-        TimeSpan.FromMilliseconds(200));
+    private static Regex ProfilePathPattern(string profile)
+    {
+        string[] segments = Split(profile);
+        string head = (profile.Length > 0 && profile[0] is '/' or '\\' ? @"[\\/]" : "")
+            + string.Join(@"[\\/]", segments.Select(Regex.Escape));
+        return new Regex(
+            head + @"(?![^\\/\s,;()<>""|?*.])(?:[\\/](?:[^\\/\r\n,;()<>""|?*·.]|\.(?!\s|$))+)*",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+            TimeSpan.FromMilliseconds(200));
+    }
+
+    private static string[] Split(string path) =>
+        path.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
 
     [GeneratedRegex(@"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")]
     private static partial Regex EmailPattern();

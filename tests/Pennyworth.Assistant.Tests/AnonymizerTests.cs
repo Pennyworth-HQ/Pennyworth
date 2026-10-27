@@ -63,6 +63,59 @@ public class AnonymizerTests
         Assert.DoesNotContain("Vercillo", sent);
     }
 
+    [Theory]
+    [InlineData(@"C:\Users\ana\Divórcio-2026\pensão.docx", @"<profile>\<folder-1>\<file-1>")]
+    [InlineData("C:/Users/ana/Divórcio-2026/pensão.docx", "<profile>/<folder-1>/<file-1>")]
+    public void Hides_personal_folders_whatever_the_path_separator(string input, string expected)
+    {
+        var anonymizer = new Anonymizer("ana", @"C:\Users\ana", "PC1");
+
+        Assert.Equal(expected, anonymizer.Anonymize(input));
+    }
+
+    [Fact]
+    public void Hides_a_posix_profile()
+    {
+        var anonymizer = new Anonymizer("ana", "/home/ana", "PC1");
+
+        Assert.Equal("<profile>/<folder-1>/<file-1>", anonymizer.Anonymize("/home/ana/Divórcio-2026/pensão.docx"));
+    }
+
+    [Fact]
+    public void Hides_the_profile_itself_whatever_the_separator()
+    {
+        var anonymizer = new Anonymizer("ana", @"C:\Users\ana", "PC1");
+
+        Assert.Equal("See <profile> now", anonymizer.Anonymize("See C:/Users/ana now"));
+    }
+
+    [Theory]
+    [InlineData(@"C:\Users\ana\Divórcio-2026\pensão.docx")]
+    [InlineData("C:/Users/ana/Divórcio-2026/pensão.docx")]
+    public void Round_trips_what_the_person_sent(string input)
+    {
+        var anonymizer = new Anonymizer("ana", @"C:\Users\ana", "PC1");
+
+        Assert.Equal(input, anonymizer.Restore(anonymizer.Anonymize(input)));
+    }
+
+    [Fact]
+    public void Round_trips_a_posix_profile()
+    {
+        var anonymizer = new Anonymizer("ana", "/home/ana", "PC1");
+        const string Input = "/home/ana/Divórcio-2026/pensão.docx";
+
+        Assert.Equal(Input, anonymizer.Restore(anonymizer.Anonymize(Input)));
+    }
+
+    [Fact]
+    public void Mixed_separators_still_hide_personal_folders()
+    {
+        string text = new Anonymizer("ana", @"C:\Users\ana", "PC1").Anonymize(@"C:\Users\ana/Divórcio-2026/doc.docx");
+
+        Assert.DoesNotContain("Divórcio", text);
+    }
+
     [Fact]
     public void OneDrive_and_other_profile_paths_work_the_same()
     {
