@@ -1,6 +1,7 @@
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using Microsoft.Win32;
 
 namespace Pennyworth.Monitoring.Hardware;
@@ -9,6 +10,7 @@ namespace Pennyworth.Monitoring.Hardware;
 /// Reads the hardware from the firmware tables, Windows' own registry entries and a few
 /// device queries. No admin rights, no WMI, nothing leaves the PC.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public sealed class WindowsSpecsReader : ISpecsReader
 {
     private const string CurrentVersionKey = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion";

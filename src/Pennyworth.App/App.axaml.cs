@@ -3,14 +3,14 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Pennyworth.App.Services;
+using Pennyworth.App.Services.Windows;
 using Pennyworth.App.ViewModels;
 using Pennyworth.App.Views;
 using Pennyworth.Cleanup;
 using Pennyworth.Insights.Classification;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
-using Pennyworth.Monitoring.Hardware;
-using Pennyworth.Scanning;
+using Pennyworth.Platform;
 
 namespace Pennyworth.App;
 
@@ -22,27 +22,29 @@ public sealed partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Composition root: the only place concrete services are created.
-            var classifier = new RuleClassifier(KnowledgeBaseLoader.LoadEmbedded().Locations);
-            var monitor = new SystemMonitor(KnowledgeBaseLoader.LoadProcesses().Processes);
+            // Composition root: the only place concrete services are created, and the only place that
+            // asks which operating system this is.
+            IPlatform platform = CreatePlatform();
+            var classifier = new RuleClassifier(KnowledgeBaseLoader.LoadEmbedded().Locations, platform.ResolveVariable);
+            ISystemMonitor? monitor = platform.CreateMonitor(KnowledgeBaseLoader.LoadProcesses().Processes);
             var viewModel = new MainWindowViewModel(new AppServices(
-                new WindowsDriveService(),
-                new DirectoryScanner(),
+                platform.Drives,
+                platform.Scanner,
                 classifier,
                 new KnowledgeBaseLocationInfo(classifier),
-                new ExplorerLauncher(),
-                new CleanupService(KnowledgeBaseLoader.LoadCleanupRules().Rules),
-                new ElevatedHiddenSpaceService(),
-                new FileSettingsStore(FileSettingsStore.DefaultPath),
+                platform.Explorer,
+                platform.CreateCleanup(KnowledgeBaseLoader.LoadCleanupRules().Rules),
+                platform.HiddenSpace,
+                new FileSettingsStore(platform.SettingsPath),
+                platform.Specs,
                 monitor,
-                new ProcessCloser(),
-                new CleanupHistory(CleanupHistory.DefaultPath),
-                Specs: new WindowsSpecsReader(),
+                platform.Closer,
+                new CleanupHistory(platform.CleanupHistoryPath),
                 Clipboard: new AvaloniaClipboardService(() => desktop.MainWindow),
-                Assistant: AssistantServices.CreateDefault(() => monitor.Sample().Memory.Available)));
+                Assistant: platform.CreateAssistant(() => monitor?.Sample().Memory.Available ?? 0)));
 
             desktop.MainWindow = new MainWindow { DataContext = viewModel };
-            desktop.Exit += (_, _) => monitor.Dispose();
+            desktop.Exit += (_, _) => (monitor as IDisposable)?.Dispose();
             viewModel.Initialize();
 
             // Live numbers once per second; the first sample right away.
@@ -65,4 +67,9 @@ public sealed partial class App : Application
 
         base.OnFrameworkInitializationCompleted();
     }
+
+    private static IPlatform CreatePlatform() => OperatingSystem.IsWindows()
+        ? new WindowsPlatform()
+        : throw new PlatformNotSupportedException(
+            "Pennyworth does not run on this operating system yet. Only Windows is supported.");
 }

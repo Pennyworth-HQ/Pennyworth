@@ -1,6 +1,7 @@
 using Pennyworth.App.Services;
 using Pennyworth.App.ViewModels;
 using Pennyworth.Core.Storage;
+using Pennyworth.Platform;
 using static Pennyworth.App.Tests.SampleTrees;
 
 namespace Pennyworth.App.Tests;

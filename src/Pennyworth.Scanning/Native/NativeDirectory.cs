@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Pennyworth.Scanning.Native;
 
@@ -7,6 +8,7 @@ internal readonly record struct DirectoryEntry(string Name, FileAttributes Attri
     public bool IsDirectory => (Attributes & FileAttributes.Directory) != 0;
 }
 
+[SupportedOSPlatform("windows")]
 internal static unsafe class NativeDirectory
 {
     /// <summary>

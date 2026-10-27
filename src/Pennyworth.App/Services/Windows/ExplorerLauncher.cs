@@ -1,12 +1,10 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
+using Pennyworth.Platform;
 
-namespace Pennyworth.App.Services;
+namespace Pennyworth.App.Services.Windows;
 
-public interface IExplorerLauncher
-{
-    void ShowInExplorer(string path);
-}
-
+[SupportedOSPlatform("windows")]
 public sealed class ExplorerLauncher : IExplorerLauncher
 {
     public void ShowInExplorer(string path)

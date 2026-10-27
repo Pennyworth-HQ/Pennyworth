@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Security.Principal;
 using System.Text;
 
@@ -9,6 +10,7 @@ namespace Pennyworth.Cleanup;
 /// <c>X:\$Recycle.Bin\&lt;user SID&gt;</c>: <c>$R…</c> holds the item and <c>$I…</c> records its
 /// original path, size and deletion time.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public static partial class RecycleBin
 {
     [LibraryImport("shell32.dll")]
@@ -132,4 +134,15 @@ public static partial class RecycleBin
 
     /// <summary>Lets Explorer redraw the Recycle Bin icon (full or empty).</summary>
     internal static void RefreshIcon() => SHUpdateRecycleBinIcon();
+}
+
+/// <summary>The Windows Recycle Bin behind the <see cref="IRecycleBin"/> seam.</summary>
+[SupportedOSPlatform("windows")]
+public sealed class WindowsRecycleBin : IRecycleBin
+{
+    public IReadOnlyList<CleanupFile> List() => RecycleBin.List();
+
+    public bool Delete(CleanupFile item) => RecycleBin.Delete(item);
+
+    public void RefreshIcon() => RecycleBin.RefreshIcon();
 }

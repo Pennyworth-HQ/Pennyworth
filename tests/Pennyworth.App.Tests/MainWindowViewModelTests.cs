@@ -3,6 +3,7 @@ using Pennyworth.App.Services;
 using Pennyworth.App.ViewModels;
 using Pennyworth.Core.Storage;
 using Pennyworth.Monitoring;
+using Pennyworth.Platform;
 using Pennyworth.Scanning;
 using static Pennyworth.App.Tests.SampleTrees;
 

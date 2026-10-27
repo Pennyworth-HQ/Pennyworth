@@ -1,5 +1,5 @@
 using Avalonia;
-using Pennyworth.Scanning;
+using Pennyworth.App.Services.Windows;
 
 namespace Pennyworth.App;
 
@@ -10,15 +10,9 @@ internal static class Program
     public static int Main(string[] args)
     {
         // The short-lived elevated copy started by "Unlock full scan": measure, write, exit. No window.
-        if (args is [HiddenSpace.Argument, string drive, string reportPath])
+        if (OperatingSystem.IsWindows() && ElevatedHiddenSpaceService.TryRunHelper(args, out int exitCode))
         {
-            if (!HiddenSpace.IsDriveLetter(drive))
-            {
-                return 2;
-            }
-
-            HiddenSpace.WriteReport(HiddenSpace.Measure(drive), reportPath);
-            return 0;
+            return exitCode;
         }
 
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

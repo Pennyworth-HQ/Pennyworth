@@ -1,8 +1,10 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Pennyworth.Monitoring.Native;
 
 /// <summary>Windows performance counters (PDH), readable without admin rights.</summary>
+[SupportedOSPlatform("windows")]
 internal static unsafe partial class Pdh
 {
     public const uint FmtDouble = 0x00000200;
@@ -47,6 +49,7 @@ internal static unsafe partial class Pdh
 /// Free memory as Task Manager counts it (free and zeroed pages). Everything else that is
 /// "available" is standby cache, which Windows hands back instantly.
 /// </summary>
+[SupportedOSPlatform("windows")]
 internal sealed class MemoryCounters : IDisposable
 {
     private nint _query;

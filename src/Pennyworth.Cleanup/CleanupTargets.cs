@@ -5,11 +5,13 @@ internal static class CleanupTargets
 {
     /// <summary>
     /// Expands <c>%VAR%</c> (patterns with an undefined variable are skipped) and <c>*</c>
-    /// (any one folder name). Returns existing, distinct folders.
+    /// (any one folder name). Returns existing, distinct folders; two paths are the same folder
+    /// when <paramref name="pathComparison"/> says so (ignoring case unless the file system cares).
     /// </summary>
-    public static IReadOnlyList<string> Resolve(IEnumerable<string> patterns, Func<string, string?> getEnvironmentVariable)
+    public static IReadOnlyList<string> Resolve(
+        IEnumerable<string> patterns, Func<string, string?> getEnvironmentVariable, StringComparer? pathComparison = null)
     {
-        var folders = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        var folders = new SortedSet<string>(pathComparison ?? StringComparer.OrdinalIgnoreCase);
         foreach (string pattern in patterns)
         {
             string? expanded = Expand(pattern, getEnvironmentVariable);

@@ -1,17 +1,9 @@
-namespace Pennyworth.App.Services;
+using System.Runtime.Versioning;
+using Pennyworth.Platform;
 
-public sealed record DriveSummary(string RootPath, string Label, long TotalBytes, long FreeBytes)
-{
-    public long UsedBytes => TotalBytes - FreeBytes;
-}
+namespace Pennyworth.App.Services.Windows;
 
-public interface IDriveService
-{
-    IReadOnlyList<DriveSummary> GetDrives();
-
-    string SystemDriveRoot { get; }
-}
-
+[SupportedOSPlatform("windows")]
 public sealed class WindowsDriveService : IDriveService
 {
     public string SystemDriveRoot => Path.GetPathRoot(Environment.SystemDirectory) ?? @"C:\";

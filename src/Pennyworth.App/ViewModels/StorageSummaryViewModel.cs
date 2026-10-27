@@ -3,6 +3,7 @@ using Pennyworth.App.Resources;
 using Pennyworth.App.Services;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
+using Pennyworth.Platform;
 using Pennyworth.Scanning;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

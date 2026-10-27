@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using System.Text;
 using Pennyworth.KnowledgeBase;
+using Pennyworth.Tests;
 
 namespace Pennyworth.Cleanup.Tests;
 
@@ -64,7 +66,7 @@ public sealed class CleanupServiceTests : IDisposable
         Assert.True(File.Exists(Path.Combine(_root, @"cache\busy.bin")));
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task Never_follows_junctions_out_of_the_folder()
     {
         Write(@"precious\photo.jpg", 100);
@@ -149,7 +151,8 @@ public sealed class CleanupServiceTests : IDisposable
         Assert.Equal(1, result.Skipped);
     }
 
-    [Fact]
+    [SupportedOSPlatform("windows")]
+    [WindowsFact]
     public void Reads_recycle_bin_records()
     {
         var deleted = new DateTime(2026, 10, 1, 12, 0, 0, DateTimeKind.Utc);

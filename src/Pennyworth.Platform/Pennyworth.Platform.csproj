@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+  <!-- The seams only: what the app asks of an operating system. No implementation, no Avalonia. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
+    <ProjectReference Include="..\Pennyworth.KnowledgeBase\Pennyworth.KnowledgeBase.csproj" />
+    <ProjectReference Include="..\Pennyworth.Scanning\Pennyworth.Scanning.csproj" />
+    <ProjectReference Include="..\Pennyworth.Cleanup\Pennyworth.Cleanup.csproj" />
+    <ProjectReference Include="..\Pennyworth.Monitoring\Pennyworth.Monitoring.csproj" />
+    <ProjectReference Include="..\Pennyworth.Assistant.Providers\Pennyworth.Assistant.Providers.csproj" />
+    <ProjectReference Include="..\Pennyworth.Assistant.Local\Pennyworth.Assistant.Local.csproj" />
+  </ItemGroup>
+</Project>

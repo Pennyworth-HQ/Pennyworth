@@ -9,6 +9,7 @@ using Pennyworth.Assistant.Local;
 using Pennyworth.Assistant.Providers;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring.Hardware;
+using Pennyworth.Platform;
 
 namespace Pennyworth.App.Tests;
 

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 
 namespace Pennyworth.Assistant.Providers;
@@ -17,6 +18,7 @@ public interface ICredentialStore
 /// API keys in the Windows Credential Manager (generic credentials, this user, this PC), under
 /// <c>Pennyworth/Assistant/&lt;profile id&gt;</c>. Windows protects them with the user's sign-in.
 /// </summary>
+[SupportedOSPlatform("windows")]
 public sealed unsafe partial class WindowsCredentialStore(string prefix = WindowsCredentialStore.DefaultPrefix) : ICredentialStore
 {
     public const string DefaultPrefix = "Pennyworth/Assistant/";

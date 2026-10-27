@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Pennyworth.Monitoring.Native;
 
@@ -7,6 +8,7 @@ namespace Pennyworth.Monitoring.Native;
 /// Reads every process with one NtQuerySystemInformation call: no handles are opened,
 /// so it works without admin rights and also sees protected processes.
 /// </summary>
+[SupportedOSPlatform("windows")]
 internal static unsafe class ProcessReader
 {
     // SYSTEM_PROCESS_INFORMATION field offsets on 64-bit Windows (x64 and ARM64).

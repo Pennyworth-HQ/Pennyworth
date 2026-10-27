@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.Versioning;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring.Native;
 
@@ -17,6 +18,7 @@ public interface ISystemMonitor
 }
 
 /// <summary>Live memory, CPU, GPU and per-app usage, without admin rights.</summary>
+[SupportedOSPlatform("windows")]
 public sealed class SystemMonitor : ISystemMonitor, IDisposable
 {
     private readonly CpuTracker _cpu = new();

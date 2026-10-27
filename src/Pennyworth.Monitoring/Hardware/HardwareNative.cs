@@ -1,8 +1,10 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Pennyworth.Monitoring.Hardware;
 
 /// <summary>Windows calls for the Specs screen. None of them need admin rights.</summary>
+[SupportedOSPlatform("windows")]
 internal static unsafe partial class HardwareNative
 {
     private const uint Rsmb = 0x52534D42; // 'RSMB': the raw SMBIOS table.
