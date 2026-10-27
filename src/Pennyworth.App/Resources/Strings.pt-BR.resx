@@ -243,6 +243,7 @@
   <data name="SpecVideoMemory" xml:space="preserve"><value>Memória de vídeo</value></data>
   <data name="SpecDriver" xml:space="preserve"><value>Driver</value></data>
   <data name="SpecDisplay" xml:space="preserve"><value>Tela {0}</value></data>
+  <data name="SpecCompositor" xml:space="preserve"><value>Compositor</value></data>
   <data name="SpecMainDisplay" xml:space="preserve"><value>principal</value></data>
   <data name="SpecDisk" xml:space="preserve"><value>Disco {0}</value></data>
   <data name="SpecDisksHeadline" xml:space="preserve"><value>{0} · {1:N0} discos</value></data>

@@ -187,6 +187,11 @@ public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host
                 Join(" · ", $"{display.Width} × {display.Height}", $"{display.RefreshHz} Hz", display.IsPrimary ? Strings.SpecMainDisplay : null)));
         }
 
+        if (specs.Compositor is { } compositor)
+        {
+            rows.Add(new(Strings.SpecCompositor, compositor.Text));
+        }
+
         return new SpecSection("04", Strings.Spec_Graphics, specs.Gpus.FirstOrDefault()?.Name ?? Unknown, rows);
     }
 

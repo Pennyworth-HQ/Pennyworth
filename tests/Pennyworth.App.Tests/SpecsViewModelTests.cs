@@ -63,6 +63,30 @@ public class SpecsViewModelTests
     }
 
     [Fact]
+    public void Graphics_lists_the_compositor_after_the_displays_and_Windows_has_none()
+    {
+        var withCompositor = SpecsViewModel.Build(SamplePc() with { Compositor = new CompositorSpecs("Wayland", "KWin", "6.8.1") })[3];
+        var windows = SpecsViewModel.Build(SamplePc())[3];
+
+        Assert.Equal(["Display 1", "Display 2"], withCompositor.Rows.Skip(withCompositor.Rows.Count - 3).Take(2).Select(r => r.Label));
+        Assert.Equal(new SpecRow("Compositor", "KWin 6.8.1 (Wayland)"), withCompositor.Rows[^1]);
+        Assert.DoesNotContain(windows.Rows, r => r.Label == "Compositor");
+    }
+
+    [Fact]
+    public async Task Copy_all_includes_the_compositor_in_both_languages()
+    {
+        var clipboard = new FakeClipboard();
+        var specs = new SpecsViewModel(new FakeReader(SamplePc() with { Compositor = new CompositorSpecs("Wayland", "Mutter", "47.1", "GNOME Shell") }), new NullHost(), clipboard);
+        await specs.EnsureLoaded();
+
+        await specs.CopyCommand.ExecuteAsync(null);
+
+        Assert.Contains("  Compositor: Mutter 47.1 (GNOME Shell, Wayland)", clipboard.Text);
+        Assert.Equal("Compositor", Pennyworth.App.Resources.Strings.ResourceManager.GetString("SpecCompositor", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")));
+    }
+
+    [Fact]
     public void Shows_the_battery_on_laptops()
     {
         var power = SpecsViewModel.Build(SamplePc(new BatterySpecs(81, IsCharging: true, OnAcPower: true)))[7];
