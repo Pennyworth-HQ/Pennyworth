@@ -10,8 +10,17 @@ namespace Pennyworth.App.Controls;
 public sealed record AsciiFrame(char[][] Layers, IReadOnlyList<AsciiLabel> Labels);
 
 /// <param name="Column">Centre of the label, in character columns.</param>
-/// <param name="Row">Bottom of the label, in character rows.</param>
-public sealed record AsciiLabel(PcPart Part, double Column, double Row, bool IsHighlighted);
+/// <param name="Row">Bottom of the label, in character rows; its middle when <paramref name="OnFront"/>.</param>
+/// <param name="Text">Overrides the part's name (a disk's own name).</param>
+/// <param name="OnFront">Sits on the part's front face, smaller, instead of floating above it.</param>
+/// <param name="Disk">Which disk, for a drive label.</param>
+public sealed record AsciiLabel(PcPart Part, double Column, double Row, bool IsHighlighted, string? Text = null, bool OnFront = false, int Disk = 0);
+
+/// <summary>A part of the 3D PC, and for the drive which of the disks (index into the disks drawn).</summary>
+public readonly record struct PcPick(PcPart Part, int Disk = 0)
+{
+    public static implicit operator PcPick(PcPart part) => new(part);
+}
 
 /// <summary>
 /// The design's text-mode 3D PC: boxes projected with perspective into a character grid with a
@@ -38,7 +47,7 @@ public sealed class AsciiPcRenderer
     private readonly char[][] _layers = Enumerable.Range(0, 4).Select(_ => new char[Columns * Rows]).ToArray();
     private readonly byte[] _layerOf = new byte[Columns * Rows];
     private readonly float[] _depth = new float[Columns * Rows];
-    private readonly List<(PcPart Part, double X0, double X1, double Y0, double Y1, double Area)> _hits = [];
+    private readonly List<(PcPick Pick, double X0, double X1, double Y0, double Y1, double Area)> _hits = [];
 
     private double _angle = -0.9;
     private double _tilt = 0.32;
@@ -55,12 +64,20 @@ public sealed class AsciiPcRenderer
         (PcPart.Processor, [[0.4, 1.75, 1.3, 3.1, -1.9, -0.2], [1.45, 1.75, 1.7, 2.7, -1.5, -0.6]]),
         (PcPart.Memory, [[1.0, 1.75, 1.1, 3.5, 0.3, 0.5], [1.0, 1.75, 1.1, 3.5, 0.75, 0.95], [1.0, 1.75, 1.1, 3.5, 1.2, 1.4], [1.0, 1.75, 1.1, 3.5, 1.65, 1.85]]),
         (PcPart.Graphics, [[-0.9, 1.75, -1.3, -0.5, -4.2, 1.8]]),
-        (PcPart.Drive, [[-1.9, -0.2, -2.7, -2.2, -4.4, -2.6]]),
         (PcPart.Trash, [[3.2, 4.6, -4.2, -2.4, -0.7, 0.7], [3.1, 4.7, -2.4, -2.2, -0.8, 0.8]]),
     ];
 
+    /// <summary>The drive drawn while the disks aren't known yet.</summary>
+    private static readonly double[] DefaultDrive = [-1.9, -0.2, -2.7, -2.2, -4.4, -2.6];
+
+    /// <summary>The drive bay: front bottom of the case, under the graphics card and before the power supply.</summary>
+    private const double BayTop = -1.5, BayBottom = -4.0, BayFront = -4.4, BayCentre = -1.05, BayGap = 0.18;
+
     /// <summary>The zoom the view eases toward (0.5 to 2.6).</summary>
     public double ZoomTarget { get; set; } = 1;
+
+    /// <summary>The disks inside the PC, stacked top to bottom in this order; empty draws one generic drive.</summary>
+    public IReadOnlyList<PcDisk> Disks { get; set; } = [];
 
     public double Angle => _angle;
 
@@ -97,16 +114,16 @@ public sealed class AsciiPcRenderer
         _idle = 0;
     }
 
-    /// <summary>The smallest part under a grid position from the last frame (a little slack around it).</summary>
-    public PcPart? HitTest(double column, double row)
+    /// <summary>The smallest part (or disk) under a grid position from the last frame (a little slack around it).</summary>
+    public PcPick? HitTest(double column, double row)
     {
-        PcPart? best = null;
+        PcPick? best = null;
         double bestArea = double.MaxValue;
         foreach (var hit in _hits)
         {
             if (column >= hit.X0 - Density && column <= hit.X1 + Density && row >= hit.Y0 - Density && row <= hit.Y1 + Density && hit.Area < bestArea)
             {
-                best = hit.Part;
+                best = hit.Pick;
                 bestArea = hit.Area;
             }
         }
@@ -115,7 +132,7 @@ public sealed class AsciiPcRenderer
     }
 
     /// <param name="seconds">Time, for the scan plane and the rain.</param>
-    public AsciiFrame Render(double seconds, PcPart selected, PcPart? hovered, bool rain)
+    public AsciiFrame Render(double seconds, PcPick selected, PcPick? hovered, bool rain)
     {
         foreach (char[] layer in _layers)
         {
@@ -126,9 +143,11 @@ public sealed class AsciiPcRenderer
         Array.Fill(_depth, float.MaxValue);
         _hits.Clear();
         var labels = new List<AsciiLabel>();
+        selected = Known(selected);
+        hovered = hovered is { } h ? Known(h) : null;
 
         var view = new View(_angle, _tilt, _zoom);
-        foreach (var (part, boxes) in Model)
+        foreach (var (part, boxes, name) in Pieces())
         {
             byte layer = part is null ? (byte)1 : part == selected || part == hovered ? (byte)3 : (byte)2;
             if (part == selected)
@@ -157,11 +176,21 @@ public sealed class AsciiPcRenderer
             }
 
             double[] first = boxes[0];
-            var top = view.Project((first[0] + first[1]) / 2, boxes.Max(b => b[3]), (first[4] + first[5]) / 2);
-            double labelRow = Math.Round(y0 - (2 * Density));
-            double labelColumn = Math.Round(top.X - (6 * Density));
-            labels.Add(new AsciiLabel(id, top.X, labelRow, layer == 3));
-            _hits.Add((id, Math.Min(x0, labelColumn), Math.Max(x1, labelColumn + (12 * Density)), Math.Min(y0, labelRow), y1, (x1 - x0) * (y1 - y0)));
+            if (name is not null)
+            {
+                // A disk's name on its front face, so the stack reads like labelled bays.
+                var front = view.Project((first[0] + first[1]) / 2, (first[2] + first[3]) / 2, first[4]);
+                labels.Add(new AsciiLabel(id.Part, front.X, front.Y, layer == 3, name, OnFront: true, Disk: id.Disk));
+                _hits.Add((id, x0, x1, y0, y1, (x1 - x0) * (y1 - y0)));
+            }
+            else
+            {
+                var top = view.Project((first[0] + first[1]) / 2, boxes.Max(b => b[3]), (first[4] + first[5]) / 2);
+                double labelRow = Math.Round(y0 - (2 * Density));
+                double labelColumn = Math.Round(top.X - (6 * Density));
+                labels.Add(new AsciiLabel(id.Part, top.X, labelRow, layer == 3));
+                _hits.Add((id, Math.Min(x0, labelColumn), Math.Max(x1, labelColumn + (12 * Density)), Math.Min(y0, labelRow), y1, (x1 - x0) * (y1 - y0)));
+            }
 
             if (id == selected)
             {
@@ -176,6 +205,67 @@ public sealed class AsciiPcRenderer
 
         return new AsciiFrame(_layers, labels);
     }
+
+    /// <summary>
+    /// Everything to draw: the fixed parts, then each disk as a piece of its own with its name
+    /// (or one generic drive while the disks aren't known).
+    /// </summary>
+    private IEnumerable<(PcPick? Pick, double[][] Boxes, string? Name)> Pieces()
+    {
+        foreach (var (part, boxes) in Model)
+        {
+            yield return (part is { } p ? new PcPick(p) : null, boxes, null);
+        }
+
+        double[][] drives = DriveBoxes();
+        if (Disks.Count == 0)
+        {
+            yield return (new PcPick(PcPart.Drive), drives, null);
+            yield break;
+        }
+
+        for (int i = 0; i < Disks.Count; i++)
+        {
+            yield return (new PcPick(PcPart.Drive, i), [drives[i]], Disks[i].Name);
+        }
+    }
+
+    /// <summary>A pick of a disk that isn't drawn (or of no disk) means the first, or the generic drive.</summary>
+    private PcPick Known(PcPick pick) =>
+        pick.Part == PcPart.Drive && pick.Disk > 0 && pick.Disk < Disks.Count ? pick : new PcPick(pick.Part);
+
+    /// <summary>
+    /// One box per disk, stacked down the bay: a hard disk is a big 3.5" box, an SSD a smaller 2.5" one.
+    /// All sit flush with the front; a stack taller than the bay is squeezed to fit.
+    /// </summary>
+    private double[][] DriveBoxes()
+    {
+        if (Disks.Count == 0)
+        {
+            return [DefaultDrive];
+        }
+
+        var sizes = Disks.Select(DiskSize).ToArray();
+        double total = sizes.Sum(s => s.Height) + (BayGap * (sizes.Length - 1));
+        double scale = Math.Min(1, (BayTop - BayBottom) / total);
+
+        // Starts where the single drive always was, and rises only as far as the stack needs.
+        double y = Math.Max(DefaultDrive[3], BayBottom + (total * scale));
+        var boxes = new double[sizes.Length][];
+        for (int i = 0; i < sizes.Length; i++)
+        {
+            var (width, height, depth) = sizes[i];
+            height *= scale;
+            boxes[i] = [BayCentre - (width / 2), BayCentre + (width / 2), y - height, y, BayFront, BayFront + depth];
+            y -= height + (BayGap * scale);
+        }
+
+        return boxes;
+    }
+
+    /// <summary>A disk whose kind is unknown is drawn as a hard disk.</summary>
+    private static (double Width, double Height, double Depth) DiskSize(PcDisk disk) =>
+        disk.IsSsd == true ? (1.1, 0.28, 1.5) : (1.7, 0.5, 2.4);
 
     private IEnumerable<(double X, double Y, double Z)> DrawBox(View view, double[] box, byte layer)
     {

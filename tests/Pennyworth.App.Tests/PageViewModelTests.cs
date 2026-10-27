@@ -1,8 +1,11 @@
+using Pennyworth.App.Controls;
 using Pennyworth.App.ViewModels;
 using Pennyworth.Cleanup;
+using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
+using Pennyworth.Monitoring.Hardware;
 using static Pennyworth.App.Tests.SampleTrees;
 
 namespace Pennyworth.App.Tests;
@@ -336,6 +339,87 @@ public class PcViewModelTests
         Assert.Equal(1, pc.DriveArtProgress);
         Assert.Contains("100%", pc.DriveArt);
         Assert.Contains(pc.DriveLegend, line => line.Mark == "#" && line.Name == "Games");
+    }
+
+    [Fact]
+    public async Task Three_d_mode_draws_the_disks_with_partitions_named_by_their_letters()
+    {
+        var viewModel = new MainWindowViewModel(TestApp.Services());
+        Assert.Empty(viewModel.Pc.Disks);
+
+        viewModel.Set3dModeCommand.Execute(null);
+        await viewModel.Specs.CurrentLoad;
+
+        // The sample's SSD has no drive letter, so only the hard disk is drawn.
+        Assert.Equal([new PcDisk("D:", IsSsd: false)], viewModel.Pc.Disks);
+    }
+
+    [Fact]
+    public void Disks_stack_top_to_bottom_with_their_names_on_the_front()
+    {
+        var renderer = new AsciiPcRenderer { Disks = [new PcDisk("C:", false), new PcDisk("D:", true), new PcDisk("E: F:", false)] };
+
+        var labels = renderer.Render(0, PcPart.Memory, null, rain: false).Labels.Where(l => l.Part == PcPart.Drive).ToArray();
+
+        Assert.Equal(["C:", "D:", "E: F:"], labels.Select(l => l.Text));
+        Assert.All(labels, l => Assert.True(l.OnFront));
+        Assert.True(labels[0].Row < labels[1].Row && labels[1].Row < labels[2].Row);
+    }
+
+    [Fact]
+    public void Each_disk_is_picked_and_highlighted_on_its_own()
+    {
+        var renderer = new AsciiPcRenderer { Disks = [new PcDisk("C:", true), new PcDisk("D:", false)] };
+
+        var labels = renderer.Render(0, new PcPick(PcPart.Drive, 1), null, rain: false).Labels.Where(l => l.Part == PcPart.Drive).ToArray();
+
+        Assert.False(labels[0].IsHighlighted);
+        Assert.True(labels[1].IsHighlighted);
+        Assert.Equal(new PcPick(PcPart.Drive, 0), renderer.HitTest(labels[0].Column, labels[0].Row));
+        Assert.Equal(new PcPick(PcPart.Drive, 1), renderer.HitTest(labels[1].Column, labels[1].Row));
+    }
+
+    [Fact]
+    public async Task The_drive_panel_sums_up_the_selected_disk()
+    {
+        PcSpecs specs = SpecsViewModelTests.SamplePc() with
+        {
+            Disks = [new DiskSpecs(0, "ST1500DL003", 1397 * Gb, "SATA", false, ["D:"]), new DiskSpecs(1, "KINGSTON SA400", 223 * Gb, "NVMe", true, ["C:"])],
+        };
+        var viewModel = new MainWindowViewModel(TestApp.Services() with { Specs = new FixedSpecs(specs) });
+        viewModel.Initialize();
+        await viewModel.CurrentScan;
+        viewModel.Set3dModeCommand.Execute(null);
+        await viewModel.Specs.CurrentLoad;
+        var pc = viewModel.Pc;
+
+        // The Windows disk comes first, and its scanned partition fills the panel.
+        Assert.Equal([new PcDisk("C:", true), new PcDisk("D:", false)], pc.Disks);
+        Assert.Equal("SSD · KINGSTON SA400 · " + ByteSize.Format(223 * Gb), pc.DiskTitle);
+        Assert.Contains(ByteSize.Format(100 * Gb), pc.DriveFreeText);
+        Assert.True(pc.HasTopFolders);
+
+        pc.SelectedDisk = 1;
+
+        Assert.Equal("HDD · ST1500DL003 · " + ByteSize.Format(1397 * Gb), pc.DiskTitle);
+        Assert.Contains(ByteSize.Format(400 * Gb), pc.DriveFreeText);
+        Assert.False(pc.HasTopFolders); // D: hasn't been scanned
+        Assert.Equal(["#", "."], pc.DriveLegend.Select(l => l.Mark));
+    }
+
+    private sealed class FixedSpecs(PcSpecs specs) : ISpecsReader
+    {
+        public PcSpecs Read() => specs;
+    }
+
+    [Fact]
+    public void Without_known_disks_the_pc_has_one_generic_drive()
+    {
+        var labels = new AsciiPcRenderer().Render(0, PcPart.Memory, null, rain: false).Labels;
+
+        var drive = Assert.Single(labels, l => l.Part == PcPart.Drive);
+        Assert.Null(drive.Text);
+        Assert.False(drive.OnFront);
     }
 
     [Fact]

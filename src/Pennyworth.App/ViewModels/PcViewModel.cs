@@ -3,6 +3,7 @@ using Pennyworth.App.Resources;
 using Pennyworth.Assistant;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
+using Pennyworth.Monitoring.Hardware;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -86,23 +87,74 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
 
     public string MachineText => string.Format(Strings.Machine, shell.SystemDrive?.Letter ?? "C:", Live.HasSample ? Live.MemoryTotalText : "—");
 
-    // Drive
-    public string DriveUsedText => shell.SystemDrive is { } d ? ByteSize.Format(d.Summary.UsedBytes) : "—";
+    /// <summary>
+    /// The disks inside the PC that hold a partition, the system disk first, once the specs have been
+    /// read; external USB and SD ones aren't part of the case.
+    /// </summary>
+    public IReadOnlyList<PcDisk> Disks => DisksInPc.Select(disk => new PcDisk(string.Join(" ", disk.Letters), disk.IsSsd)).ToArray();
 
-    public string DriveFreeText => shell.SystemDrive is { } d
-        ? $"{string.Format(Strings.DriveFree, ByteSize.Format(d.Summary.FreeBytes))} · {ByteSize.Format(d.Summary.TotalBytes)}"
+    private DiskSpecs[] DisksInPc => shell.Specs.Specs?.Disks
+        .Where(disk => disk.Bus is not ("USB" or "SD") && disk.Letters.Count > 0)
+        .OrderByDescending(disk => disk.Letters.Contains(shell.SystemDrive?.Letter ?? "", StringComparer.OrdinalIgnoreCase))
+        .ThenBy(disk => disk.Number)
+        .ToArray() ?? [];
+
+    // Drive: the disk picked in the 3D view, or just the Windows drive while the disks aren't known.
+
+    /// <summary>Which of <see cref="Disks"/> the drive panel describes.</summary>
+    [ObservableProperty]
+    public partial int SelectedDisk { get; set; }
+
+    private DiskSpecs? CurrentDisk => DisksInPc.ElementAtOrDefault(SelectedDisk);
+
+    /// <summary>The partitions on the selected disk.</summary>
+    private DriveViewModel[] DiskDrives => CurrentDisk is { } disk
+        ? shell.Drives.Where(d => disk.Letters.Contains(d.Letter, StringComparer.OrdinalIgnoreCase)).ToArray()
+        : shell.SystemDrive is { } system ? [system] : [];
+
+    /// <summary>The partition whose scan the panel shows: Windows' when it's on this disk, else the first.</summary>
+    private DriveViewModel? MainDrive => DiskDrives.FirstOrDefault(d => d == shell.SystemDrive) ?? DiskDrives.FirstOrDefault();
+
+    private StorageSummaryViewModel? MainSummary => MainDrive is { } drive ? shell.SummaryOf(drive) : null;
+
+    public bool HasDiskTitle => CurrentDisk is not null;
+
+    /// <summary>"SSD · KINGSTON SA400 · 224 GB".</summary>
+    public string DiskTitle => CurrentDisk is { } disk
+        ? string.Join(" · ", new[] { disk.IsSsd switch { true => "SSD", false => "HDD", null => null }, disk.Model.Trim(), ByteSize.Format(disk.Size) }
+            .Where(s => !string.IsNullOrEmpty(s)))
         : "";
 
+    public string DriveUsedText => DiskDrives.Length > 0 ? ByteSize.Format(DiskDrives.Sum(d => d.Summary.UsedBytes)) : "—";
+
+    public string DriveFreeText => DiskDrives.Length > 0
+        ? $"{string.Format(Strings.DriveFree, ByteSize.Format(DiskDrives.Sum(d => d.Summary.FreeBytes)))} · {ByteSize.Format(DiskDrives.Sum(d => d.Summary.TotalBytes))}"
+        : "";
+
+    /// <summary>Each partition with its use, when the disk has more than one.</summary>
+    public IReadOnlyList<LegendLine> DiskPartitions => DiskDrives.Length > 1
+        ? DiskDrives.Select(d => new LegendLine(d.Letter, d.Label, d.UsedText)).ToArray()
+        : [];
+
+    public bool HasPartitions => DiskPartitions.Count > 0;
+
+    /// <summary>What fills the main partition once it's been scanned; until then, how full the disk is.</summary>
     public string DriveArt
     {
         get
         {
-            var summary = shell.SystemSummary;
-            long total = Math.Max(shell.SystemDrive?.Summary.TotalBytes ?? 1, 1);
-            var parts = summary is null ? [] : summary.Categories
-                .Select(row => (CategoryChars[row.Category!.Value], (double)row.Bytes / total))
-                .Append(('-', (double)summary.Unaccounted.Bytes / total));
-            return Ascii.DriveArt(parts, DriveArtProgress, (shell.SystemDrive?.Letter ?? "C:") + "\\");
+            if (MainSummary is { } summary)
+            {
+                long total = Math.Max(summary.Drive.TotalBytes, 1);
+                var parts = summary.Categories
+                    .Select(row => (CategoryChars[row.Category!.Value], (double)row.Bytes / total))
+                    .Append(('-', (double)summary.Unaccounted.Bytes / total));
+                return Ascii.DriveArt(parts, DriveArtProgress, (MainDrive?.Letter ?? "C:") + "\\");
+            }
+
+            long size = Math.Max(DiskDrives.Sum(d => d.Summary.TotalBytes), 1);
+            string letters = DiskDrives.Length > 0 ? string.Join(" ", DiskDrives.Select(d => d.Letter + "\\")) : "C:\\";
+            return Ascii.DriveArt([('#', (double)DiskDrives.Sum(d => d.Summary.UsedBytes) / size)], DriveArtProgress, letters);
         }
     }
 
@@ -110,9 +162,13 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
     {
         get
         {
-            if (shell.SystemSummary is not { } summary)
+            if (MainSummary is not { } summary)
             {
-                return [];
+                return DiskDrives.Length == 0 ? [] :
+                [
+                    new("#", Strings.InUse, DriveUsedText),
+                    new(".", Strings.MemFree, ByteSize.Format(DiskDrives.Sum(d => d.Summary.FreeBytes))),
+                ];
             }
 
             return summary.Categories
@@ -128,11 +184,13 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
     {
         get
         {
-            var places = shell.SystemSummary?.Categories.SelectMany(row => row.Areas).OrderByDescending(a => a.Bytes).Take(5).ToArray() ?? [];
+            var places = MainSummary?.Categories.SelectMany(row => row.Areas).OrderByDescending(a => a.Bytes).Take(5).ToArray() ?? [];
             long largest = Math.Max(places.FirstOrDefault()?.Bytes ?? 1, 1);
             return places.Select(place => new BarLine(place.Title, Ascii.Bar((double)place.Bytes / largest, 16), place.SizeText)).ToArray();
         }
     }
+
+    public bool HasTopFolders => TopFolders.Count > 0;
 
     // Memory
     public string MemoryAscii
@@ -218,6 +276,16 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
         DriveArtProgress = 1 - Math.Pow(1 - t, 3);
     }
 
+    partial void OnSelectedDiskChanged(int value)
+    {
+        DriveArtProgress = 0;
+        foreach (string name in (string[])[nameof(HasDiskTitle), nameof(DiskTitle), nameof(DriveUsedText), nameof(DriveFreeText),
+            nameof(DiskPartitions), nameof(HasPartitions), nameof(DriveArt), nameof(DriveLegend), nameof(TopFolders), nameof(HasTopFolders)])
+        {
+            OnPropertyChanged(name);
+        }
+    }
+
     partial void OnPartChanged(PcPart value)
     {
         ShowHint = false;
@@ -256,7 +324,17 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
     private void ZoomReset() => Zoom = 1;
 
     [RelayCommand]
-    private void OpenStorage() => shell.ShowStorageCategory(null);
+    private void OpenStorage()
+    {
+        if (MainDrive is { } drive)
+        {
+            shell.ShowDrive(drive);
+        }
+        else
+        {
+            shell.ShowStorageCategory(null);
+        }
+    }
 
     [RelayCommand]
     private void OpenHidden() => shell.ShowStorageCategory(StorageCategory.HiddenSystem);
@@ -273,6 +351,11 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
     private static string Label(PcPart part) =>
         (Strings.ResourceManager.GetString($"PartLabel_{part}", Strings.Culture) ?? part.ToString()).ToUpper(CultureInfo.CurrentCulture);
 }
+
+/// <summary>A disk inside the PC, as the 3D view draws it.</summary>
+/// <param name="Name">Its label: the partitions on it, "C:" or "D: E:".</param>
+/// <param name="IsSsd">Null when Windows can't tell.</param>
+public sealed record PcDisk(string Name, bool? IsSsd);
 
 public sealed record PartChipViewModel(PcPart Part, string Index, string Label, bool IsSelected);
 

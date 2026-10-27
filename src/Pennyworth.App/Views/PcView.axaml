@@ -50,7 +50,7 @@
     <Grid RowDefinitions="*,52">
       <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,1,0">
         <Panel>
-          <controls:AsciiPcView Margin="16,40,16,16" SelectedPart="{Binding Part}" Zoom="{Binding Zoom}" Labels="{Binding PartLabels}" />
+          <controls:AsciiPcView Margin="16,40,16,16" SelectedPart="{Binding Part}" Zoom="{Binding Zoom}" Labels="{Binding PartLabels}" Disks="{Binding Disks}" SelectedDisk="{Binding SelectedDisk}" />
           <Grid ColumnDefinitions="*,Auto" Margin="20,16,20,0" VerticalAlignment="Top" IsHitTestVisible="False">
             <TextBlock Classes="label" Text="{l:Tr Hint3d, Upper=True}" />
             <TextBlock Grid.Column="1" Classes="label" Text="{Binding MachineText, Converter={x:Static controls:TextCase.Upper}}" />
@@ -120,11 +120,25 @@
         <!-- Drive -->
         <StackPanel Classes="panel" Spacing="16" IsVisible="{Binding IsDrive}">
           <Border Classes="top">
-            <Grid ColumnDefinitions="Auto,*">
-              <TextBlock Classes="number" FontSize="28" Text="{Binding DriveUsedText}" />
-              <TextBlock Grid.Column="1" Classes="secondary" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,4" Text="{Binding DriveFreeText}" />
-            </Grid>
+            <StackPanel Spacing="10">
+              <TextBlock Classes="label" TextWrapping="Wrap" Text="{Binding DiskTitle}" IsVisible="{Binding HasDiskTitle}" />
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Classes="number" FontSize="28" Text="{Binding DriveUsedText}" />
+                <TextBlock Grid.Column="1" Classes="secondary" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,4" Text="{Binding DriveFreeText}" />
+              </Grid>
+            </StackPanel>
           </Border>
+          <ItemsControl ItemsSource="{Binding DiskPartitions}" IsVisible="{Binding HasPartitions}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:LegendLine">
+                <Grid ColumnDefinitions="28,*,Auto" ColumnSpacing="10" Margin="0,2">
+                  <TextBlock Classes="mono" Text="{Binding Mark}" />
+                  <TextBlock Grid.Column="1" FontSize="12.5" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                  <TextBlock Grid.Column="2" Classes="secondary" FontSize="12.5" Text="{Binding Value}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
           <TextBlock Classes="mono" FontSize="10.5" LineHeight="12.5" Text="{Binding DriveArt}" />
           <ItemsControl ItemsSource="{Binding DriveLegend}">
             <ItemsControl.ItemTemplate>
@@ -137,7 +151,7 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <Border Classes="top">
+          <Border Classes="top" IsVisible="{Binding HasTopFolders}">
             <StackPanel Spacing="6">
               <TextBlock Classes="label" FontSize="10" Text="{l:Tr TopFolders, Upper=True}" />
               <ItemsControl ItemsSource="{Binding TopFolders}">
