@@ -40,6 +40,13 @@ public static class PersonaPrompt
             sb.Append("  ").Append(action.Token).Append(" — ").AppendLine(Describe(action, pt));
         }
 
+        if (bundle.Topic.Kind == TopicKind.History)
+        {
+            sb.AppendLine(pt
+                ? "- Esta pergunta é sobre o histórico de uso e, se houver, o log do sistema. Relacione os picos com os registros do log pelo horário e diga, em palavras simples, o que provavelmente causou o problema e se ele parece sério. Se nada explicar os picos, diga isso."
+                : "- This question is about the usage history and, if given, the system log. Line up the spikes with the log entries by time and say, in plain words, what most likely caused the problem and whether it looks serious. If nothing explains the spikes, say so.");
+        }
+
         sb.AppendLine(pt
             ? "- Você é um mordomo de ficção sem nome; não mencione personagens de quadrinhos ou filmes."
             : "- You are a nameless fictional butler; don't mention characters from comics or films.");
