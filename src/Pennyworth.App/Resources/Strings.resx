@@ -402,4 +402,43 @@
   <data name="ActionUnlock" xml:space="preserve"><value>Unlock full scan</value></data>
   <data name="DeviceGpu" xml:space="preserve"><value>{0} on the graphics card</value></data>
   <data name="DeviceCpu" xml:space="preserve"><value>{0} on the processor</value></data>
+  <data name="NavHistory" xml:space="preserve"><value>History</value></data>
+  <data name="NavHistoryHint" xml:space="preserve"><value>Spikes over hours and days</value></data>
+  <data name="HistoryTitle" xml:space="preserve"><value>Usage history</value></data>
+  <data name="HistorySub" xml:space="preserve"><value>Every minute Pennyworth notes the average and the busiest second of CPU, memory, disk and GPU, so short spikes don't slip by. It stays on this PC for 7 days.</value></data>
+  <data name="Range24h" xml:space="preserve"><value>24 hours</value></data>
+  <data name="Range7d" xml:space="preserve"><value>7 days</value></data>
+  <data name="HistoryRecorded" xml:space="preserve"><value>Recorded {0} of the last {1:N0} hours. Pennyworth only records while it is open.</value></data>
+  <data name="HistoryEmpty" xml:space="preserve"><value>Nothing recorded yet. The first point appears within a minute; leave Pennyworth open to catch spikes through the day.</value></data>
+  <data name="MetricDisk" xml:space="preserve"><value>Disk (active time)</value></data>
+  <data name="Average" xml:space="preserve"><value>avg</value></data>
+  <data name="Peak" xml:space="preserve"><value>peak</value></data>
+  <data name="NotRecorded" xml:space="preserve"><value>not recorded</value></data>
+  <data name="MinutesAtLimit" xml:space="preserve"><value>{0} min at the limit</value></data>
+  <data name="Days" xml:space="preserve"><value>{0} days</value></data>
+  <data name="ChartLegend" xml:space="preserve"><value>Bars: busiest second · line: average · dashed: limit</value></data>
+  <data name="SpikesTitle" xml:space="preserve"><value>Spikes out of the ordinary</value></data>
+  <data name="SpikesNone" xml:space="preserve"><value>No unusual spikes in this range.</value></data>
+  <data name="SpikeUsual" xml:space="preserve"><value>usual {0}</value></data>
+  <data name="SpikeAppCpu" xml:space="preserve"><value>Most CPU: {0}</value></data>
+  <data name="SpikeAppMemory" xml:space="preserve"><value>Most memory: {0}</value></data>
+  <data name="AskSpikes" xml:space="preserve"><value>Ask about these spikes</value></data>
+  <data name="AskSpikesDay" xml:space="preserve"><value>What could be causing the usage spikes in the last 24 hours?</value></data>
+  <data name="AskSpikesWeek" xml:space="preserve"><value>What could be causing the usage spikes in the last 7 days?</value></data>
+  <data name="LogsTitle" xml:space="preserve"><value>System log</value></data>
+  <data name="LogsSub" xml:space="preserve"><value>Warnings and errors from the {0} over this range. Read them here, then let the assistant decipher them.</value></data>
+  <data name="ReadLogs" xml:space="preserve"><value>Read system log</value></data>
+  <data name="ReadingLogs" xml:space="preserve"><value>Reading the system log…</value></data>
+  <data name="LogsFailed" xml:space="preserve"><value>Couldn't read the system log.</value></data>
+  <data name="LogsNone" xml:space="preserve"><value>No warnings or errors in this range.</value></data>
+  <data name="LogsCount" xml:space="preserve"><value>{0:N0} entries, grouped into {1:N0} problems.</value></data>
+  <data name="LogTimes" xml:space="preserve"><value>{1:N0}× · last {0}</value></data>
+  <data name="AskLogs" xml:space="preserve"><value>Decipher with the assistant</value></data>
+  <data name="AskLogsDay" xml:space="preserve"><value>Read the system log of the last 24 hours with the usage spikes and help me understand what is wrong with my PC.</value></data>
+  <data name="AskLogsWeek" xml:space="preserve"><value>Read the system log of the last 7 days with the usage spikes and help me understand what is wrong with my PC.</value></data>
+  <data name="LogsPrivacy" xml:space="preserve"><value>Before anything goes to a cloud assistant you see exactly what will be sent, with names, paths and account IDs hidden.</value></data>
+  <data name="SeverityCritical" xml:space="preserve"><value>Critical</value></data>
+  <data name="SeverityError" xml:space="preserve"><value>Error</value></data>
+  <data name="SeverityWarning" xml:space="preserve"><value>Warning</value></data>
+  <data name="AxisNow" xml:space="preserve"><value>now</value></data>
 </root>

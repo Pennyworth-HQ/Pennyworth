@@ -9,6 +9,8 @@ using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
 using Pennyworth.Monitoring;
 using Pennyworth.Monitoring.Hardware;
+using Pennyworth.Monitoring.History;
+using Pennyworth.Monitoring.Logs;
 using Pennyworth.Platform;
 using Pennyworth.Scanning;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -32,7 +34,9 @@ public sealed record AppServices(
     CleanupHistory? CleanupHistory = null,
     Func<DateTimeOffset>? Clock = null,
     IClipboardService? Clipboard = null,
-    AssistantServices? Assistant = null);
+    AssistantServices? Assistant = null,
+    TelemetryStore? Telemetry = null,
+    ISystemLogReader? Logs = null);
 
 public enum Page
 {
@@ -44,6 +48,7 @@ public enum Page
     Folders,
     Specs,
     Ask,
+    History,
 }
 
 /// <summary>
@@ -62,6 +67,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     private CancellationTokenSource? _scanCancellation;
     private int _toastVersion;
     private readonly Queue<MonitorSample> _recentSamples = new();
+    private readonly TelemetryRecorder _recorder = new();
 
     public MainWindowViewModel(AppServices services)
     {
@@ -85,12 +91,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Folders = new FolderBrowserViewModel(this);
         Pc = new PcViewModel(this);
         Specs = new SpecsViewModel(services.Specs, this, services.Clipboard);
+        History = new HistoryViewModel(services.Telemetry, services.Logs, _clock);
         Ask = services.Assistant is { } assistant ? new AskViewModel(assistant, this, _clock) : null;
         if (Ask is not null)
         {
             Memory.AskAbout = AskAbout;
             Cleanup.AskAbout = AskAbout;
             Specs.AskAbout = AskAbout;
+            History.AskAbout = AskAbout;
         }
         Page = _settings.WelcomeSeen ? Page.Home : Page.Welcome;
         Localizer.Instance.LanguageChanged += (_, _) => RefreshTexts();
@@ -111,6 +119,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public PcViewModel Pc { get; }
 
     public SpecsViewModel Specs { get; }
+
+    /// <summary>Usage over hours and days, its spikes, and the system log.</summary>
+    public HistoryViewModel History { get; }
 
     /// <summary>The assistant screen; null when the app runs without assistant services (some tests).</summary>
     public AskViewModel? Ask { get; }
@@ -156,7 +167,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentPage), nameof(MainContent), nameof(ShowSidebar),
-        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage))]
+        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage), nameof(IsHistoryPage))]
     public partial Page Page { get; private set; }
 
     /// <summary>3D mode replaces the pages with the ASCII PC.</summary>
@@ -174,6 +185,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Page.Memory => Memory,
         Page.Specs => Specs,
         Page.Ask => Ask,
+        Page.History => History,
         _ => Folders,
     };
 
@@ -195,6 +207,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public bool IsSpecsPage => Page == Page.Specs;
 
     public bool IsAskPage => Page == Page.Ask;
+
+    public bool IsHistoryPage => Page == Page.History;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RescanCommand))]
@@ -273,7 +287,53 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
         SelectedDrive = SystemDrive;
         _ = MeasureCleanupAsync();
+        _ = StartHistoryAsync();
         RefreshPages();
+    }
+
+    /// <summary>Forgets the days that fell out of the history, then loads the rest for the charts.</summary>
+    private async Task StartHistoryAsync()
+    {
+        if (_services.Telemetry is { } store)
+        {
+            DateTimeOffset now = _clock();
+            await Task.Run(() =>
+            {
+                try
+                {
+                    store.Prune(now);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    Debug.WriteLine(ex);
+                }
+            });
+        }
+
+        await History.EnsureLoaded();
+    }
+
+    /// <summary>Folds the sample into the current minute; a finished minute is saved and charted.</summary>
+    private void Record(MonitorSample sample)
+    {
+        if (_recorder.Add(sample, _clock()) is not { } minute)
+        {
+            return;
+        }
+
+        History.Add(minute);
+        if (_services.Telemetry is { } store)
+        {
+            try
+            {
+                store.Append(minute);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // A full or locked disk loses one minute of history, nothing more.
+                Debug.WriteLine(ex);
+            }
+        }
     }
 
     private async Task MeasureCleanupAsync()
@@ -296,6 +356,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
                 {
                     _recentSamples.Dequeue();
                 }
+
+                Record(sample);
             }
             catch (Exception ex)
             {
@@ -497,6 +559,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     }
 
     [RelayCommand]
+    private void GoHistory()
+    {
+        Navigate(Page.History);
+        _ = History.EnsureLoaded();
+    }
+
+    [RelayCommand]
     private void GoAsk()
     {
         if (Ask is { } ask)
@@ -532,6 +601,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             // The specs are optional; the assistant answers from the rest.
         }
 
+        await History.EnsureLoaded();
         StorageTree? tree = SystemSummary is { IsComplete: true, Tree: { } t } ? t : null;
         return new PcSnapshot(
             Specs.Specs,
@@ -539,7 +609,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             [.. Drives.Select(d => new DriveFact(d.Summary.RootPath, d.Summary.Label, d.Summary.TotalBytes, d.Summary.FreeBytes, d == SystemDrive))],
             tree is null ? null : StorageCategories.All.ToDictionary(c => c, tree.GetCategoryBytes),
             [.. Cleanup.Items.Select(i => i.Estimate)],
-            IsUnlocked);
+            IsUnlocked,
+            History.Report());
     }
 
     /// <summary>The screen or dialog an assistant answer points to.</summary>
@@ -754,6 +825,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Cleanup.RefreshTexts();
         Memory.RefreshTexts();
         Specs.RefreshTexts();
+        History.RefreshTexts();
         Ask?.RefreshTexts();
         Welcome.Refresh();
         RefreshPages();

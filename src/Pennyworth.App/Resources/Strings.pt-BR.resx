@@ -402,4 +402,43 @@
   <data name="ActionUnlock" xml:space="preserve"><value>Liberar verificação completa</value></data>
   <data name="DeviceGpu" xml:space="preserve"><value>{0} na placa de vídeo</value></data>
   <data name="DeviceCpu" xml:space="preserve"><value>{0} no processador</value></data>
+  <data name="NavHistory" xml:space="preserve"><value>Histórico</value></data>
+  <data name="NavHistoryHint" xml:space="preserve"><value>Picos ao longo de horas e dias</value></data>
+  <data name="HistoryTitle" xml:space="preserve"><value>Histórico de uso</value></data>
+  <data name="HistorySub" xml:space="preserve"><value>A cada minuto o Pennyworth anota a média e o segundo mais pesado de CPU, memória, disco e GPU, para que picos curtos não passem despercebidos. Fica só neste PC, por 7 dias.</value></data>
+  <data name="Range24h" xml:space="preserve"><value>24 horas</value></data>
+  <data name="Range7d" xml:space="preserve"><value>7 dias</value></data>
+  <data name="HistoryRecorded" xml:space="preserve"><value>Gravado: {0} das últimas {1:N0} horas. O Pennyworth só grava enquanto está aberto.</value></data>
+  <data name="HistoryEmpty" xml:space="preserve"><value>Nada gravado ainda. O primeiro ponto aparece em até um minuto; deixe o Pennyworth aberto para pegar os picos ao longo do dia.</value></data>
+  <data name="MetricDisk" xml:space="preserve"><value>Disco (tempo ativo)</value></data>
+  <data name="Average" xml:space="preserve"><value>média</value></data>
+  <data name="Peak" xml:space="preserve"><value>pico</value></data>
+  <data name="NotRecorded" xml:space="preserve"><value>não gravado</value></data>
+  <data name="MinutesAtLimit" xml:space="preserve"><value>{0} min no limite</value></data>
+  <data name="Days" xml:space="preserve"><value>{0} dias</value></data>
+  <data name="ChartLegend" xml:space="preserve"><value>Barras: segundo mais pesado · linha: média · tracejado: limite</value></data>
+  <data name="SpikesTitle" xml:space="preserve"><value>Picos fora do normal</value></data>
+  <data name="SpikesNone" xml:space="preserve"><value>Nenhum pico fora do normal neste período.</value></data>
+  <data name="SpikeUsual" xml:space="preserve"><value>normal {0}</value></data>
+  <data name="SpikeAppCpu" xml:space="preserve"><value>Mais CPU: {0}</value></data>
+  <data name="SpikeAppMemory" xml:space="preserve"><value>Mais memória: {0}</value></data>
+  <data name="AskSpikes" xml:space="preserve"><value>Perguntar sobre os picos</value></data>
+  <data name="AskSpikesDay" xml:space="preserve"><value>O que pode estar causando os picos de uso nas últimas 24 horas?</value></data>
+  <data name="AskSpikesWeek" xml:space="preserve"><value>O que pode estar causando os picos de uso nos últimos 7 dias?</value></data>
+  <data name="LogsTitle" xml:space="preserve"><value>Log do sistema</value></data>
+  <data name="LogsSub" xml:space="preserve"><value>Avisos e erros do {0} neste período. Leia aqui e depois deixe o assistente decifrá-los.</value></data>
+  <data name="ReadLogs" xml:space="preserve"><value>Ler log do sistema</value></data>
+  <data name="ReadingLogs" xml:space="preserve"><value>Lendo o log do sistema…</value></data>
+  <data name="LogsFailed" xml:space="preserve"><value>Não foi possível ler o log do sistema.</value></data>
+  <data name="LogsNone" xml:space="preserve"><value>Nenhum aviso ou erro neste período.</value></data>
+  <data name="LogsCount" xml:space="preserve"><value>{0:N0} registros, agrupados em {1:N0} problemas.</value></data>
+  <data name="LogTimes" xml:space="preserve"><value>{1:N0}× · último {0}</value></data>
+  <data name="AskLogs" xml:space="preserve"><value>Decifrar com o assistente</value></data>
+  <data name="AskLogsDay" xml:space="preserve"><value>Leia o log do sistema das últimas 24 horas junto com os picos de uso e me ajude a entender o que há de errado com meu PC.</value></data>
+  <data name="AskLogsWeek" xml:space="preserve"><value>Leia o log do sistema dos últimos 7 dias junto com os picos de uso e me ajude a entender o que há de errado com meu PC.</value></data>
+  <data name="LogsPrivacy" xml:space="preserve"><value>Antes de qualquer envio a um assistente na nuvem você vê exatamente o que vai, com nomes, pastas e IDs de conta escondidos.</value></data>
+  <data name="SeverityCritical" xml:space="preserve"><value>Crítico</value></data>
+  <data name="SeverityError" xml:space="preserve"><value>Erro</value></data>
+  <data name="SeverityWarning" xml:space="preserve"><value>Aviso</value></data>
+  <data name="AxisNow" xml:space="preserve"><value>agora</value></data>
 </root>
