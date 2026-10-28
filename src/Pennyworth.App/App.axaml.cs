@@ -58,10 +58,16 @@ public sealed partial class App : Application
             };
             viewModel.Initialize();
 
+            PetWindow pet = ShowPet(viewModel);
+            desktop.Exit += (_, _) => pet.Close();
+
             if (tray is null)
             {
+                // The pet's window must not keep the app alive once the main one is closed.
+                desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
                 desktop.MainWindow = window;
                 SingleInstance.ShowRequested = () => Dispatcher.UIThread.Post(window.Activate);
+                viewModel.ShowWindowRequested += (_, _) => window.Activate();
             }
             else
             {
@@ -148,7 +154,7 @@ public sealed partial class App : Application
             viewModel.InBackground = true;
             if (viewModel.TakeBackgroundHint())
             {
-                tray.Notify(Strings.BackgroundHintTitle, Strings.BackgroundHintBody);
+                viewModel.Alerts.Notify(Strings.BackgroundHintTitle, Strings.BackgroundHintBody);
             }
         };
         window.Closed += (_, _) => Exit();
@@ -161,6 +167,45 @@ public sealed partial class App : Application
         {
             Show();
         }
+    }
+
+    /// <summary>
+    /// The pet's window follows the pet chosen on the alerts screen: shown with one, hidden with
+    /// none, and animated only while it is on the screen.
+    /// </summary>
+    private static PetWindow ShowPet(MainWindowViewModel viewModel)
+    {
+        PetViewModel pet = viewModel.Alerts.Pet;
+        pet.ReduceMotion = OperatingSystem.IsWindows() && WindowsAnimations.AreOff();
+        var window = new PetWindow { DataContext = pet };
+        window.OpenRequested += (_, _) => viewModel.RequestShowWindow();
+
+        var timer = new DispatcherTimer { Interval = PetViewModel.TickInterval };
+        timer.Tick += (_, _) => pet.Tick();
+
+        void Sync()
+        {
+            if (pet.IsVisible)
+            {
+                window.Show();
+                timer.Start();
+            }
+            else
+            {
+                timer.Stop();
+                window.Hide();
+            }
+        }
+
+        pet.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(PetViewModel.IsVisible))
+            {
+                Sync();
+            }
+        };
+        Sync();
+        return window;
     }
 
     private static ITray? CreateTray(IPlatform platform)

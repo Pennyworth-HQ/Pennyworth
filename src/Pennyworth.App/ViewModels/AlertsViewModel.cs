@@ -61,6 +61,8 @@ public sealed partial class AlertsViewModel : ObservableObject
         Enabled = settings.Enabled;
         RunInBackground = settings.RunInBackground;
         StartWithWindows = ReadStartup();
+        Pet = new PetViewModel(settings.Pet, _clock);
+        PetChoices = [.. PetArt.All.Select(kind => new PetChoiceViewModel(kind) { IsSelected = kind == settings.Pet })];
         foreach (AlertRule rule in settings.Rules)
         {
             Rules.Add(new AlertRuleViewModel(rule, Save));
@@ -75,6 +77,11 @@ public sealed partial class AlertsViewModel : ObservableObject
     public ObservableCollection<AlertLogEntry> Recent { get; } = [];
 
     public bool HasRecent => Recent.Count > 0;
+
+    /// <summary>The pet on the desktop that says the notifications, when one is chosen.</summary>
+    public PetViewModel Pet { get; }
+
+    public IReadOnlyList<PetChoiceViewModel> PetChoices { get; }
 
     /// <summary>False where the OS has no tray: alerts then only show inside the window.</summary>
     public bool HasNotifications => _notifier is not null;
@@ -195,6 +202,25 @@ public sealed partial class AlertsViewModel : ObservableObject
         Save();
     }
 
+    /// <summary>Choosing a pet puts it on the desktop, where it says hello; None hides it.</summary>
+    [RelayCommand]
+    private void ChoosePet(PetKind kind)
+    {
+        if (kind == Pet.Kind)
+        {
+            return;
+        }
+
+        Pet.Kind = kind;
+        foreach (PetChoiceViewModel choice in PetChoices)
+        {
+            choice.IsSelected = choice.Kind == kind;
+        }
+
+        Save();
+        Pet.Say(string.Format(CultureInfo.CurrentCulture, Strings.PetHelloTitle, PetArt.Name(kind)), Strings.PetHelloBody);
+    }
+
     [RelayCommand]
     private void SendTest() => Send(Strings.AlertTestTitle, Strings.AlertTestBody, null);
 
@@ -204,19 +230,35 @@ public sealed partial class AlertsViewModel : ObservableObject
         {
             rule.RefreshTexts();
         }
+
+        foreach (PetChoiceViewModel choice in PetChoices)
+        {
+            choice.RefreshTexts();
+        }
     }
 
-    private void Send(string title, string message, AlertComponent? component)
+    /// <summary>
+    /// Every notification goes through here: said by the pet when there is one, else a Windows
+    /// notification, else a toast inside the window.
+    /// </summary>
+    public void Notify(string title, string message, Action? onClick = null)
     {
-        if (_notifier is { } notifier)
+        if (Pet.IsVisible)
         {
-            notifier.Notify(title, message, component is { } c ? () => _host.OpenFromAlert(c) : null);
+            Pet.Say(title, message, onClick);
+        }
+        else if (_notifier is { } notifier)
+        {
+            notifier.Notify(title, message, onClick);
         }
         else
         {
             _host.ShowToast($"{title}: {message}");
         }
     }
+
+    private void Send(string title, string message, AlertComponent? component) =>
+        Notify(title, message, component is { } c ? () => _host.OpenFromAlert(c) : null);
 
     private bool ReadStartup()
     {
@@ -242,6 +284,7 @@ public sealed partial class AlertsViewModel : ObservableObject
         {
             Enabled = Enabled,
             RunInBackground = RunInBackground,
+            Pet = Pet.Kind,
             Rules = [.. Rules.Select(r => r.Rule)],
         });
     }

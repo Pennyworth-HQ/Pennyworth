@@ -148,6 +148,40 @@ public sealed class AlertsViewModelTests : IDisposable
     }
 
     [Fact]
+    public void With_a_pet_the_alerts_come_as_its_speech()
+    {
+        var alerts = Create();
+
+        alerts.ChoosePetCommand.Execute(PetKind.Owl);
+
+        Assert.Equal(PetKind.Owl, _host.AlertSettings.Pet);
+        Assert.Equal([PetKind.Owl], alerts.PetChoices.Where(c => c.IsSelected).Select(c => c.Kind));
+        Assert.Equal("Hi! Owl here.", alerts.Pet.Speech!.Title);
+        alerts.Pet.DismissCommand.Execute(null);
+
+        alerts.Check(Busy);
+
+        Assert.Empty(_notifier.Sent);
+        Assert.Equal("Processor at 99%", alerts.Pet.Speech!.Title);
+        alerts.Pet.OpenSpeechCommand.Execute(null);
+        Assert.Equal([AlertComponent.Cpu], _host.Opened);
+    }
+
+    [Fact]
+    public void Without_a_pet_the_alerts_go_back_to_windows()
+    {
+        var alerts = Create();
+        alerts.ChoosePetCommand.Execute(PetKind.Cat);
+
+        alerts.ChoosePetCommand.Execute(PetKind.None);
+        alerts.Check(Busy);
+
+        Assert.False(alerts.Pet.IsVisible);
+        Assert.Single(_notifier.Sent);
+        Assert.Equal(PetKind.None, _host.AlertSettings.Pet);
+    }
+
+    [Fact]
     public void Settings_from_before_alerts_get_the_default_rules()
     {
         string path = Path.Combine(Path.GetTempPath(), $"pennyworth-{Guid.NewGuid():N}.json");

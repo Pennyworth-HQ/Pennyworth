@@ -440,4 +440,17 @@
   <data name="AlertNameCpu" xml:space="preserve"><value>Processor</value></data>
   <data name="AlertNameMemory" xml:space="preserve"><value>Memory</value></data>
   <data name="AlertNameGpu" xml:space="preserve"><value>Graphics card</value></data>
+  <data name="AlertsPet" xml:space="preserve"><value>Pet</value></data>
+  <data name="AlertsPetHint" xml:space="preserve"><value>Pick a companion to sit in the corner of the screen. It says the alerts in a speech bubble instead of a Windows notification. Drag it anywhere; double-click it to open Pennyworth.</value></data>
+  <data name="PetNone" xml:space="preserve"><value>No pet</value></data>
+  <data name="PetCat" xml:space="preserve"><value>Cat</value></data>
+  <data name="PetDog" xml:space="preserve"><value>Dog</value></data>
+  <data name="PetOwl" xml:space="preserve"><value>Owl</value></data>
+  <data name="PetBunny" xml:space="preserve"><value>Bunny</value></data>
+  <data name="PetRobot" xml:space="preserve"><value>Robot</value></data>
+  <data name="PetGhost" xml:space="preserve"><value>Ghost</value></data>
+  <data name="PetHelloTitle" xml:space="preserve"><value>Hi! {0} here.</value></data>
+  <data name="PetHelloBody" xml:space="preserve"><value>I'll keep an eye on the PC and tell you here when something runs hot.</value></data>
+  <data name="PetDismiss" xml:space="preserve"><value>Dismiss</value></data>
+  <data name="PetTip" xml:space="preserve"><value>Drag to move · double-click to open Pennyworth</value></data>
 </root>

@@ -542,8 +542,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             Navigate(Page.Memory);
         }
 
-        ShowWindowRequested?.Invoke(this, EventArgs.Empty);
+        RequestShowWindow();
     }
+
+    /// <summary>Brings the window back, from the tray or from behind other apps.</summary>
+    public void RequestShowWindow() => ShowWindowRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>True the first time the window hides in the tray, so the person learns where it went.</summary>
     public bool TakeBackgroundHint()

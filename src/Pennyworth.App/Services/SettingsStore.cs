@@ -13,6 +13,18 @@ public enum ThemePreference
     Dark,
 }
 
+/// <summary>The companion that sits on the desktop and says the notifications. None sends them as Windows toasts.</summary>
+public enum PetKind
+{
+    None,
+    Cat,
+    Dog,
+    Owl,
+    Bunny,
+    Robot,
+    Ghost,
+}
+
 public sealed record AppSettings
 {
     public LanguagePreference Language { get; init; } = LanguagePreference.System;
@@ -78,14 +90,18 @@ public sealed record AlertSettings
     /// <summary>Missing in older files means the defaults; an empty list means the person removed them all.</summary>
     public IReadOnlyList<AlertRule> Rules { get => field ?? AlertRule.Defaults; init; }
 
+    /// <summary>The pet that says the notifications instead of Windows; None by default.</summary>
+    public PetKind Pet { get; init; }
+
     public bool Equals(AlertSettings? other) =>
         other is not null
         && Enabled == other.Enabled
         && RunInBackground == other.RunInBackground
         && BackgroundHintShown == other.BackgroundHintShown
+        && Pet == other.Pet
         && Rules.SequenceEqual(other.Rules);
 
-    public override int GetHashCode() => HashCode.Combine(Enabled, RunInBackground, Rules.Count);
+    public override int GetHashCode() => HashCode.Combine(Enabled, RunInBackground, Pet, Rules.Count);
 }
 
 public interface ISettingsStore
