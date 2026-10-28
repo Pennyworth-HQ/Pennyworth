@@ -1,3 +1,4 @@
+using Pennyworth.Tests;
 using System.Text;
 using Pennyworth.Monitoring.Hardware;
 
@@ -35,7 +36,7 @@ public class MemoryModuleTests
 
     // ---- the synthetic table, through the reader Windows uses ----
 
-    [Fact]
+    [LinuxFact]
     public void The_table_gives_the_fields_Windows_shows()
     {
         SmbiosInfo info = Smbios.ParseStructures(SmbiosTable.ThreeSlots());
@@ -46,7 +47,7 @@ public class MemoryModuleTests
         Assert.Equal(new MemoryModule("DIMM_B1", 32L << 30, "DDR5", 6000, 4800, null, "CMK32GX5M1B6000", "SO-DIMM"), info.Modules[1]);
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_headerless_table_and_the_Windows_blob_read_the_same_modules()
     {
         byte[] table = SmbiosTable.ThreeSlots();
@@ -56,7 +57,7 @@ public class MemoryModuleTests
         Assert.Equal(Smbios.ParseStructures(table).Modules, windows.Modules);
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_dmidecode_text_gives_the_same_modules_as_the_table()
     {
         (IReadOnlyList<MemoryModule> modules, int? slots) = DmidecodeMemory.Parse(SmbiosTable.ThreeSlotsDmidecode);
@@ -66,7 +67,7 @@ public class MemoryModuleTests
         Assert.Equal(table.MemorySlots, slots);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Older_dmidecode_text_reads_sizes_in_MB_and_speeds_in_MHz()
     {
         const string text = """
@@ -94,7 +95,7 @@ public class MemoryModuleTests
         Assert.Equal(512L << 10, modules[1].Size);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("not dmidecode output at all")]
     [InlineData("Handle 0x0000, DMI type 0, 24 bytes\nBIOS Information\n\tVendor: AMI\n")]
@@ -106,7 +107,7 @@ public class MemoryModuleTests
         Assert.Null(slots);
     }
 
-    [Fact]
+    [LinuxFact]
     public void No_prefix_of_the_table_breaks_the_parser()
     {
         byte[] table = SmbiosTable.ThreeSlots();
@@ -120,7 +121,7 @@ public class MemoryModuleTests
 
     // ---- the outcome of the elevated read ----
 
-    [Fact]
+    [LinuxFact]
     public async Task Reads_the_table_through_pkexec_cat_by_absolute_paths()
     {
         var runner = new FakeRunner(Exit(0, SmbiosTable.ThreeSlots()));
@@ -133,7 +134,7 @@ public class MemoryModuleTests
         Assert.Equal([$"{Pkexec} /usr/bin/cat /sys/firmware/dmi/tables/DMI"], runner.Calls); // one prompt, no PATH lookup, no sudo
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData(126)] // the dialog was dismissed
     [InlineData(127)] // not authorised, or no agent to ask
     public async Task A_dismissed_or_refused_prompt_is_cancelled_and_is_not_asked_again(int exitCode)
@@ -147,7 +148,7 @@ public class MemoryModuleTests
         Assert.Single(runner.Calls);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Without_pkexec_there_is_no_way_to_ask()
     {
         var runner = new FakeRunner();
@@ -158,7 +159,7 @@ public class MemoryModuleTests
         Assert.Empty(runner.Calls);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("NotStarted")]
     [InlineData("TimedOut")] // nobody answered the prompt in time
     [InlineData("TooLarge")]
@@ -172,7 +173,7 @@ public class MemoryModuleTests
         Assert.Single(runner.Calls);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task A_pkexec_killed_by_a_signal_is_unavailable_and_does_not_prompt_again()
     {
         var runner = new FakeRunner(Exit(137));
@@ -183,7 +184,7 @@ public class MemoryModuleTests
         Assert.Single(runner.Calls);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Garbage_with_no_dmidecode_is_unavailable()
     {
         var runner = new FakeRunner(Exit(0, [1, 2, 3, 250, 250, 0, 0, 9]));
@@ -194,7 +195,7 @@ public class MemoryModuleTests
         Assert.Single(runner.Calls);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData(0)] // a table nobody can parse
     [InlineData(1)] // cat could not read it even as root
     public async Task Falls_back_to_dmidecode_when_the_table_gives_nothing(int catExit)
@@ -209,7 +210,7 @@ public class MemoryModuleTests
         Assert.Equal([$"{Pkexec} /usr/bin/cat /sys/firmware/dmi/tables/DMI", $"{Pkexec} {Dmidecode} -t 17"], runner.Calls);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Uses_dmidecode_alone_when_there_is_no_cat()
     {
         var runner = new FakeRunner(Text(SmbiosTable.ThreeSlotsDmidecode));
@@ -220,7 +221,7 @@ public class MemoryModuleTests
         Assert.Equal([$"{Pkexec} {Dmidecode} -t 17"], runner.Calls);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Dismissing_dmidecode_is_cancelled_and_dmidecode_failing_too_is_unavailable()
     {
         var dismissed = new FakeRunner(Exit(1), Exit(126));
@@ -230,7 +231,7 @@ public class MemoryModuleTests
         Assert.Equal(MemoryModulesOutcome.Unavailable, (await Reader(failed, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken)).Outcome);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Cancelling_reaches_the_runner_and_surfaces_as_a_cancellation()
     {
         using var source = new CancellationTokenSource();
@@ -250,7 +251,7 @@ public class MemoryModuleTests
         Assert.Equal(source.Token, seen);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Gives_the_runner_the_long_wait_a_person_needs()
     {
         TimeSpan asked = default;

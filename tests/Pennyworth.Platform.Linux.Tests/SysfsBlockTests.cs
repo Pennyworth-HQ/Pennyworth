@@ -1,3 +1,4 @@
+using Pennyworth.Tests;
 using Pennyworth.Monitoring.Hardware;
 
 namespace Pennyworth.Platform.Linux.Tests;
@@ -33,33 +34,10 @@ public class SysfsBlockTests
         _ => [],
     };
 
-    [Fact]
-    public void Parses_mountinfo_whatever_the_number_of_optional_fields()
-    {
-        var mounts = SysfsBlock.ParseMountInfo(MountInfo + "\n100 43 8:1 / /data rw shared:1 master:2 propagate_from:3 - ext4 /dev/sdd1 rw\n101 43 8:2 / /plain rw - ext4 /dev/sde1 rw\n");
-
-        Assert.Equal(new SysfsBlock.Mount("/", "btrfs", "/dev/nvme0n1p2"), mounts[0]);
-        Assert.Contains(new SysfsBlock.Mount("/data", "ext4", "/dev/sdd1"), mounts);
-        Assert.Contains(new SysfsBlock.Mount("/plain", "ext4", "/dev/sde1"), mounts);
-        Assert.Contains(new SysfsBlock.Mount("/mnt/wd-blue", "xfs", "/dev/sdb"), mounts);
-    }
-
-    [Fact]
-    public void Unescapes_octal_sequences_in_mount_points_and_skips_malformed_lines()
-    {
-        var mounts = SysfsBlock.ParseMountInfo("""
-            80 43 8:49 / /mnt/My\040Disk\134A rw - ext4 /dev/sdd1 rw
-            garbage
-            81 43 8:50 / /short rw
-            """);
-
-        Assert.Equal(new SysfsBlock.Mount("/mnt/My Disk\\A", "ext4", "/dev/sdd1"), Assert.Single(mounts));
-    }
-
-    [Fact]
+    [LinuxFact]
     public void Seven_subvolume_mounts_of_one_partition_are_one_volume_shown_at_the_shortest_mount_point()
     {
-        var byDisk = SysfsBlock.MountPointsByDisk(SysfsBlock.ParseMountInfo(MountInfo), DiskOfPartition);
+        var byDisk = SysfsBlock.MountPointsByDisk(MountTable.Parse(MountInfo), DiskOfPartition);
 
         Assert.Equal(["/", "/boot/efi", "/home"], byDisk["nvme0n1"]);
         Assert.Equal(["/mnt/exram"], byDisk["sda"]);
@@ -68,18 +46,18 @@ public class SysfsBlockTests
         Assert.Equal(4, byDisk.Count); // tmpfs, devtmpfs, sysfs and fuse mounts belong to no disk.
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_volume_spanning_two_disks_is_listed_on_both()
     {
         var byDisk = SysfsBlock.MountPointsByDisk(
-            SysfsBlock.ParseMountInfo("1 0 253:0 / /data rw - xfs /dev/mapper/vg-data rw"),
+            MountTable.Parse("1 0 253:0 / /data rw - xfs /dev/mapper/vg-data rw"),
             _ => ["sda", "sdb"]);
 
         Assert.Equal(["/data"], byDisk["sda"]);
         Assert.Equal(["/data"], byDisk["sdb"]);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Decodes_udev_escapes_and_the_padding_firmware_adds()
     {
         string encoded = """WDC\x20WD5000AZLX-00K2TA0\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20""";
@@ -89,7 +67,7 @@ public class SysfsBlockTests
         Assert.Equal("Caf\u00e9", SysfsBlock.DecodeUdev("Caf\\xc3\\xa9")); // Multi-byte UTF-8 survives.
     }
 
-    [Fact]
+    [LinuxFact]
     public void Reads_the_environment_lines_of_a_udev_database_file()
     {
         var udev = SysfsBlock.ParseUdev("""
@@ -106,7 +84,7 @@ public class SysfsBlockTests
         Assert.Equal(3, udev.Count);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("nvme0n1", "/sys/devices/pci0000:00/0000:00:01.1/0000:02:00.0/nvme/nvme0/nvme0n1", "NVMe")]
     [InlineData("sdb", "/sys/devices/pci0000:00/0000:00:1f.2/ata5/host4/target4:0:0/4:0:0:0/block/sdb", "SATA")]
     [InlineData("sdc", "/sys/devices/pci0000:00/0000:00:14.0/usb2/2-3/2-3:1.0/host6/target6:0:0/6:0:0:0/block/sdc", "USB")]
@@ -118,7 +96,7 @@ public class SysfsBlockTests
     public void Names_the_bus_from_where_the_device_hangs_in_the_tree(string name, string path, string bus) =>
         Assert.Equal(bus, SysfsBlock.BusOf(name, path));
 
-    [Fact]
+    [LinuxFact]
     public void A_path_under_a_folder_called_like_a_bus_does_not_fool_the_bus_check()
     {
         // A test (or a chroot) whose root is /tmp/usb1/ata2/..., ahead of the real /devices/ part.
@@ -126,7 +104,7 @@ public class SysfsBlockTests
         Assert.Equal("—", SysfsBlock.BusOf("sdz", "/tmp/usb1/ata2/sys/devices/platform/something/block/sdz"));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("loop0", true)]
     [InlineData("zram0", true)]
     [InlineData("dm-3", true)]
@@ -140,7 +118,7 @@ public class SysfsBlockTests
     public void Tells_virtual_block_devices_by_name(string name, bool isVirtual) =>
         Assert.Equal(isVirtual, SysfsBlock.IsVirtualName(name));
 
-    [Fact]
+    [LinuxFact]
     public void Numbered_names_sort_by_value_not_by_text()
     {
         string[] names = ["sdb", "nvme10n1", "nvme2n1", "nvme0n1", "sda"];
@@ -183,7 +161,7 @@ public class SysfsBlockTests
         return tree;
     }
 
-    [Fact]
+    [LinuxFact]
     public void Lists_only_physical_disks_in_natural_order_with_their_details()
     {
         using SpecsTree tree = Machine();
@@ -197,7 +175,7 @@ public class SysfsBlockTests
         Assert.Equal(["NVMe", "—", "USB"], disks.Select(d => d.Bus)); // sda is a plain directory here, not a link into the device tree, so only its name could tell.
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_mounts_source_is_followed_through_device_mapper_to_the_partition_it_sits_on()
     {
         using SpecsTree tree = Machine();
@@ -209,7 +187,7 @@ public class SysfsBlockTests
         Assert.Equal(["/run/media/ana/STICK"], disks.Single(d => d.Model == "SanDisk Ultra").Letters);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Without_sys_block_there_are_no_disks()
     {
         using var tree = new SpecsTree();
@@ -217,7 +195,7 @@ public class SysfsBlockTests
         Assert.Empty(SysfsBlock.Read(new SpecsRoot(tree.Root)));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_disk_with_no_model_anywhere_is_named_after_its_device()
     {
         using var tree = new SpecsTree();

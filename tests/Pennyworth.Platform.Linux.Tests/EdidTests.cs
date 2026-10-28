@@ -1,3 +1,4 @@
+using Pennyworth.Tests;
 namespace Pennyworth.Platform.Linux.Tests;
 
 public class EdidTests
@@ -19,7 +20,7 @@ public class EdidTests
 
     private static byte[] Sample() => Convert.FromHexString(SamsungLF24T35);
 
-    [Fact]
+    [LinuxFact]
     public void Reads_the_identity_the_monitor_reports()
     {
         Edid edid = Edid.Parse(Sample())!;
@@ -31,7 +32,7 @@ public class EdidTests
         Assert.Equal(30, edid.HeightCm);
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_first_detailed_timing_is_the_preferred_mode_and_its_refresh_is_clock_over_total_pixels()
     {
         EdidTiming preferred = Edid.Parse(Sample())!.Preferred!;
@@ -42,7 +43,7 @@ public class EdidTests
         Assert.Equal(60.0, preferred.RefreshHz, precision: 2);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Collects_timings_from_the_extension_block_and_the_standard_timings_too()
     {
         Edid edid = Edid.Parse(Sample())!;
@@ -55,7 +56,7 @@ public class EdidTests
         Assert.Null(edid.RefreshAt(3840, 2160));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Rejects_data_that_is_not_an_edid()
     {
         byte[] wrongHeader = Sample();
@@ -66,7 +67,7 @@ public class EdidTests
         Assert.Null(Edid.Parse([]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_base_block_alone_still_parses_even_when_the_extension_count_lies()
     {
         byte[] baseBlock = Sample()[..128];
@@ -77,7 +78,7 @@ public class EdidTests
         Assert.Equal("LF24T35", edid.Name);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_manufacturer_id_outside_a_to_z_is_unknown_rather_than_garbage()
     {
         byte[] data = Sample();
@@ -87,7 +88,7 @@ public class EdidTests
         Assert.Null(Edid.Parse(data)!.Manufacturer);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_monitor_without_a_name_descriptor_has_no_name()
     {
         byte[] data = Sample();
@@ -96,7 +97,7 @@ public class EdidTests
         Assert.Null(Edid.Parse(data)!.Name);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("SAM", "Samsung")]
     [InlineData("GSM", "LG")]
     [InlineData("XYZ", "XYZ")]

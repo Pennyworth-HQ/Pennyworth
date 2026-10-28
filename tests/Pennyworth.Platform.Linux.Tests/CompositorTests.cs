@@ -1,3 +1,4 @@
+using Pennyworth.Tests;
 using Pennyworth.Monitoring.Hardware;
 
 namespace Pennyworth.Platform.Linux.Tests;
@@ -27,7 +28,7 @@ public class CompositorTests
 
     // ---- the session ----
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("wayland", null, null, "Wayland")]
     [InlineData("Wayland", null, null, "Wayland")]
     [InlineData("x11", "wayland-0", ":0", "X11")]
@@ -46,7 +47,7 @@ public class CompositorTests
 
     // ---- the compositor ----
 
-    [Fact]
+    [LinuxFact]
     public void Kde_on_wayland_is_kwin_with_the_version_from_its_own_binary()
     {
         // This machine: kwin_wayland, its wrapper (a different comm), plasmashell and Xwayland.
@@ -60,7 +61,7 @@ public class CompositorTests
         Assert.Equal(["kwin_wayland --version"], asked);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Gnome_shell_is_mutter_inside_the_gnome_shell_on_either_session_type()
     {
         using var tree = Processes("gnome-shell", "gnome-session-b");
@@ -72,7 +73,7 @@ public class CompositorTests
         Assert.Equal("Mutter (GNOME Shell, X11)", x11!.Text);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("sway", "sway version 1.10.1", "sway 1.10.1 (Wayland)")]
     [InlineData("Hyprland", "Hyprland 0.44.1 built from branch main", "Hyprland 0.44.1 (Wayland)")]
     [InlineData("labwc", "labwc 0.7.1 (+xwayland +nls)", "labwc 0.7.1 (Wayland)")]
@@ -89,7 +90,7 @@ public class CompositorTests
         Assert.Equal(expected, compositor!.Text);
     }
 
-    [Fact]
+    [LinuxFact]
     public void River_is_asked_with_its_single_dash_flag()
     {
         using var tree = Processes("river");
@@ -100,7 +101,7 @@ public class CompositorTests
         Assert.Equal(["river -version"], asked);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("kwin_x11", "kwin 5.27.11", "KWin 5.27.11 (X11)")]
     [InlineData("openbox", "Openbox 3.6.1", "Openbox 3.6.1 (X11)")]
     [InlineData("xfwm4", "\tThis is xfwm4 version 4.18.0 (revision 6dcf4a1) for Xfce 4.18", "Xfwm 4.18.0 (X11)")]
@@ -115,7 +116,7 @@ public class CompositorTests
         Assert.Equal(expected, compositor!.Text);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_program_of_the_other_session_type_is_not_the_compositor()
     {
         // A stray kwin_x11 on a Wayland session (or a Wayland one on X11) is not what draws the windows.
@@ -125,7 +126,7 @@ public class CompositorTests
         Assert.Equal("KWin (X11)", CompositorDetector.Read(new SpecsRoot(tree.Root), Env(("XDG_SESSION_TYPE", "x11")), Tools([]))!.Text);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_full_desktop_s_compositor_wins_over_a_window_manager_that_also_runs()
     {
         using var tree = Processes("openbox", "gnome-shell");
@@ -133,7 +134,7 @@ public class CompositorTests
         Assert.Equal("Mutter (GNOME Shell, X11)", CompositorDetector.Read(new SpecsRoot(tree.Root), Env(("XDG_SESSION_TYPE", "x11")), Tools([]))!.Text);
     }
 
-    [Fact]
+    [LinuxFact]
     public void With_no_process_visible_the_session_bus_names_the_compositor()
     {
         using var tree = Processes("bwrap");
@@ -146,7 +147,7 @@ public class CompositorTests
         Assert.Contains(asked, call => call.StartsWith("gdbus call --session --dest org.freedesktop.DBus", StringComparison.Ordinal) && call.EndsWith("org.kde.KWin", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_bus_falls_back_to_mutter_when_kwin_has_no_owner()
     {
         using var tree = Processes();
@@ -158,7 +159,7 @@ public class CompositorTests
         Assert.Equal("Mutter (GNOME Shell, X11)", compositor!.Text);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_session_with_nothing_that_names_it_is_only_the_session_type()
     {
         using var tree = Processes("bash");
@@ -169,7 +170,7 @@ public class CompositorTests
         Assert.Equal("X11", compositor!.Text);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Without_a_graphical_session_there_is_no_compositor()
     {
         using var tree = Processes("kwin_wayland");
@@ -179,7 +180,7 @@ public class CompositorTests
 
     // ---- parsers ----
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("kwin 6.8.1", "6.8.1")]
     [InlineData("kwin_wayland 6.8.1\n", "6.8.1")]
     [InlineData("GNOME Shell 47.1", "47.1")]
@@ -194,7 +195,7 @@ public class CompositorTests
         Assert.Equal(version, CompositorDetector.ParseVersion(output));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("(true,)", true)]
     [InlineData("(true,)\n", true)]
     [InlineData("(false,)", false)]
@@ -206,7 +207,7 @@ public class CompositorTests
         Assert.Equal(owned, CompositorDetector.ParseNameHasOwner(output));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("Wayland", "KWin", "6.8.1", null, "KWin 6.8.1 (Wayland)")]
     [InlineData("Wayland", "Mutter", "47.1", "GNOME Shell", "Mutter 47.1 (GNOME Shell, Wayland)")]
     [InlineData("X11", "Openbox", null, null, "Openbox (X11)")]
@@ -218,7 +219,7 @@ public class CompositorTests
 
     // ---- the reader ----
 
-    [Fact]
+    [LinuxFact]
     public void The_specs_carry_the_compositor_and_leave_it_null_without_a_session()
     {
         using var tree = Processes("kwin_wayland");

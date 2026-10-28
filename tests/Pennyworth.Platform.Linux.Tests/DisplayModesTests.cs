@@ -1,3 +1,4 @@
+using Pennyworth.Tests;
 using Pennyworth.Monitoring.Hardware;
 
 namespace Pennyworth.Platform.Linux.Tests;
@@ -63,7 +64,7 @@ public class DisplayModesTests
 
     // ---- kscreen-doctor ----
 
-    [Fact]
+    [LinuxFact]
     public void Kscreen_gives_the_current_mode_not_the_preferred_one()
     {
         var modes = DisplayModes.ParseKscreenDoctor(Kscreen);
@@ -73,7 +74,7 @@ public class DisplayModesTests
             modes); // eDP-1 is switched off.
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("not json")]
@@ -87,7 +88,7 @@ public class DisplayModesTests
 
     // ---- Mutter ----
 
-    [Fact]
+    [LinuxFact]
     public void Mutter_gives_the_mode_flagged_is_current()
     {
         var modes = DisplayModes.ParseMutter(Mutter);
@@ -95,7 +96,7 @@ public class DisplayModesTests
         Assert.Equal([new CurrentMode("DP-1", 2560, 1440, 143.912), new CurrentMode("eDP-1", 1920, 1080, 60.002)], modes);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("Error: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown")]
@@ -107,7 +108,7 @@ public class DisplayModesTests
         Assert.Empty(DisplayModes.ParseMutter(text));
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_gvariant_reader_keeps_structure_and_drops_type_words()
     {
         var node = GVariantText.Parse("(uint32 6, ['a\\'b', 2.5, -3], {'k': <true>, 'n': <uint32 7>}, @as [] )");
@@ -122,7 +123,7 @@ public class DisplayModesTests
         Assert.Empty(((GVariantList)list.Items[3]).Items);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("(1, 2")]
     [InlineData("'unterminated")]
     [InlineData("{1 2}")]
@@ -135,13 +136,13 @@ public class DisplayModesTests
 
     // ---- wlr-randr ----
 
-    [Fact]
+    [LinuxFact]
     public void Wlr_randr_gives_the_current_mode_of_each_enabled_output()
     {
         Assert.Equal([new CurrentMode("DP-1", 2560, 1440, 143.912003)], DisplayModes.ParseWlrRandr(Wlr));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("{}")]
@@ -155,7 +156,7 @@ public class DisplayModesTests
 
     // ---- xrandr ----
 
-    [Fact]
+    [LinuxFact]
     public void Xrandr_gives_the_rate_marked_with_a_star()
     {
         var modes = DisplayModes.ParseXrandr(Xrandr);
@@ -163,7 +164,7 @@ public class DisplayModesTests
         Assert.Equal([new CurrentMode("HDMI-A-3", 1920, 1080, 74.91), new CurrentMode("VGA-1", 1024, 768, 75.03)], modes);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("Can't open display")]
@@ -175,7 +176,7 @@ public class DisplayModesTests
 
     // ---- matching to the kernel's connector names ----
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("HDMI-A-3", "HDMI-3")]
     [InlineData("HDMI-3", "HDMI-3")]
     [InlineData("hdmi-a-1", "HDMI-1")]
@@ -198,7 +199,7 @@ public class DisplayModesTests
         return answers.GetValueOrDefault(file);
     };
 
-    [Fact]
+    [LinuxFact]
     public void The_first_source_that_answers_wins_and_the_rest_are_not_asked()
     {
         var asked = new List<string>();
@@ -211,7 +212,7 @@ public class DisplayModesTests
         Assert.Equal(143.912, modes["DP-1"].RefreshHz);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_source_that_fails_hands_over_to_the_next()
     {
         var asked = new List<string>();
@@ -223,7 +224,7 @@ public class DisplayModesTests
         Assert.Equal(75.03, modes["VGA-1"].RefreshHz);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("GNOME", "gdbus")]
     [InlineData("ubuntu:GNOME", "gdbus")]
     [InlineData("KDE", "kscreen-doctor")]
@@ -239,7 +240,7 @@ public class DisplayModesTests
         Assert.Equal(4, asked.Count);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Gnome_answers_through_gdbus()
     {
         var modes = DisplayProbe.Read(name => name == "XDG_CURRENT_DESKTOP" ? "GNOME" : null, Tools(new() { ["gdbus"] = Mutter }));
@@ -248,7 +249,7 @@ public class DisplayModesTests
         Assert.Equal(60.002, modes["EDP-1"].RefreshHz);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Nothing_answering_gives_nothing()
     {
         Assert.Empty(DisplayProbe.Read(_ => null, Tools([])));
@@ -262,7 +263,7 @@ public class DisplayModesTests
         "450010292100001e000000fd00304b1e5412000a202020202020000000fc004c" +
         "4632345433350a2020202020000000ff00534e30303030303030300a2020015f"))!;
 
-    [Fact]
+    [LinuxFact]
     public void A_75_hz_monitor_whose_edid_prefers_60_reads_75()
     {
         var running = new CurrentMode("HDMI-A-3", 1920, 1080, 74.9729995727539);
@@ -272,7 +273,7 @@ public class DisplayModesTests
         Assert.Equal(new DisplaySpecs("Samsung LF24T35", "Intel Arc B580", 1920, 1080, 75, true), display);
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_running_resolution_replaces_the_preferred_one_too()
     {
         var running = new CurrentMode("DP-1", 2560, 1440, 143.912);
@@ -282,7 +283,7 @@ public class DisplayModesTests
         Assert.Equal((2560, 1440, 144), (display!.Width, display.Height, display.RefreshHz));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Without_a_running_mode_the_edid_timing_is_still_used()
     {
         DisplaySpecs? display = DrmDisplay.Build("HDMI-A-3", "Intel Arc B580", Samsung, "1920x1080\n", isPrimary: true);
@@ -290,7 +291,7 @@ public class DisplayModesTests
         Assert.Equal(60, display!.RefreshHz);
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_reader_matches_the_session_s_monitors_to_connectors_by_name()
     {
         using var tree = new SpecsTree()
@@ -312,7 +313,7 @@ public class DisplayModesTests
             specs.Displays.OrderBy(d => d.Name == "HDMI-A-3" ? 0 : 1).Select(d => (d.Name, d.Width, d.Height, d.RefreshHz)));
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_reader_reads_gnome_s_mutter_names_for_hdmi()
     {
         using var tree = new SpecsTree()

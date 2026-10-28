@@ -9,7 +9,7 @@ namespace Pennyworth.Platform.Linux;
 /// figure. Slots and modules are only in the SMBIOS tables, which need root, so this read leaves them
 /// unknown; <see cref="PkexecMemoryReader"/> reads them when the person asks.
 /// </summary>
-internal static class MemInfo
+internal static class MemorySection
 {
     /// <summary><c>MemTotal:   32681548 kB</c> in bytes (the kernel's "kB" is 1024 bytes); 0 when absent.</summary>
     public static long ParseTotal(string text)

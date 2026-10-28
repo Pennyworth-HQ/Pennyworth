@@ -1,3 +1,4 @@
+using Pennyworth.Tests;
 using Pennyworth.Monitoring.Hardware;
 
 namespace Pennyworth.Platform.Linux.Tests;
@@ -75,7 +76,7 @@ public class DrmTests
         return tree;
     }
 
-    [Fact]
+    [LinuxFact]
     public void Parses_lspci_machine_output_keyed_by_the_slot_sysfs_uses()
     {
         IReadOnlyDictionary<string, PciDevice> devices = PciNames.Parse(Lspci);
@@ -85,7 +86,7 @@ public class DrmTests
         Assert.Equal("VGA compatible controller", devices["0000:05:00.0"].Class);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("0000:05:00.0", "Intel Arc B580")]
     [InlineData("0000:01:00.0", "NVIDIA GeForce RTX 3060 Lite Hash Rate")]
     [InlineData("0000:0b:00.0", "AMD Radeon RX 6600/6600 XT/6600M")]
@@ -93,7 +94,7 @@ public class DrmTests
     public void Names_a_graphics_card_the_way_people_say_it(string slot, string expected) =>
         Assert.Equal(expected, PciNames.Parse(Lspci)[slot].GraphicsName);
 
-    [Fact]
+    [LinuxFact]
     public void A_network_card_keeps_its_full_device_text_with_a_short_vendor()
     {
         Assert.Equal(
@@ -101,7 +102,7 @@ public class DrmTests
             PciNames.Parse(Lspci)["0000:0a:00.0"].FullName);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Quoted_fields_may_contain_escaped_quotes()
     {
         var devices = PciNames.Parse("""03:00.0 "Display controller" "Acme" "Model \"X\" [Pro]" -p00""");
@@ -110,7 +111,7 @@ public class DrmTests
         Assert.Equal("Acme Pro", devices["0000:03:00.0"].GraphicsName);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("05:00.0", "0000:05:00.0")]
     [InlineData("00000000:01:00.0", "0000:01:00.0")] // nvidia-smi
     [InlineData("0001:03:00.0", "0001:03:00.0")]
@@ -118,7 +119,7 @@ public class DrmTests
     public void Normalizes_a_pci_slot_to_sysfs_spelling(string slot, string expected) =>
         Assert.Equal(expected, PciNames.NormalizeSlot(slot));
 
-    [Fact]
+    [LinuxFact]
     public void Reads_nvidia_smi_csv_and_converts_mebibytes()
     {
         IReadOnlyList<NvidiaGpu> gpus = GpuTools.ParseNvidiaSmi("00000000:01:00.0, 12288, 550.54.14\n00000000:02:00.0, [N/A], [N/A]\n\n");
@@ -128,7 +129,7 @@ public class DrmTests
         Assert.Equal(2, gpus.Count);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Vulkan_gives_the_largest_device_local_heap_per_gpu_and_marks_the_discrete_one()
     {
         IReadOnlyList<VulkanGpu> gpus = GpuTools.ParseVulkanInfo(Vulkaninfo);
@@ -138,7 +139,7 @@ public class DrmTests
         Assert.Equal(new VulkanGpu(0x10005, 0, false, 33465905152), gpus[1]);
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_intel_card_gets_its_name_from_lspci_and_its_memory_from_vulkan()
     {
         using var tree = new SpecsTree();
@@ -154,7 +155,7 @@ public class DrmTests
         Assert.Equal("xe (kernel 7.2.11-1-default)", card.Gpu.DriverVersion);
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_integrated_gpus_vulkan_heap_is_shared_system_memory_and_is_not_its_vram()
     {
         using var tree = new SpecsTree();
@@ -166,7 +167,7 @@ public class DrmTests
         Assert.Null(card.Gpu.Memory);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Without_lspci_the_name_falls_back_to_the_vendor_and_the_ids_and_memory_is_unknown_not_guessed()
     {
         using var tree = new SpecsTree();
@@ -178,7 +179,7 @@ public class DrmTests
         Assert.Null(card.Gpu.Memory);
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_amd_card_reports_its_vram_from_sysfs_and_runs_no_helper()
     {
         using var tree = new SpecsTree();
@@ -195,7 +196,7 @@ public class DrmTests
         Assert.Empty(asked);
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_nvidia_card_takes_memory_and_driver_from_nvidia_smi_matched_by_slot()
     {
         using var tree = new SpecsTree();
@@ -208,7 +209,7 @@ public class DrmTests
         Assert.Equal("NVIDIA GeForce RTX 3060 Lite Hash Rate", card.Gpu.Name);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_driver_that_publishes_a_module_version_wins_over_the_kernel_release()
     {
         using var tree = new SpecsTree();
@@ -220,7 +221,7 @@ public class DrmTests
         Assert.Equal("nvidia 560.35.03", card.Gpu.DriverVersion);
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_boot_display_is_listed_first_and_a_card_seen_twice_only_once()
     {
         using var tree = new SpecsTree();
@@ -234,7 +235,7 @@ public class DrmTests
         Assert.Equal([1, 0], cards.Select(c => c.Index));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Builds_a_display_from_the_edid_and_the_first_mode_of_the_connector()
     {
         Edid edid = Edid.Parse(Convert.FromHexString(
@@ -248,7 +249,7 @@ public class DrmTests
         Assert.Equal(new DisplaySpecs("Samsung LF24T35", "Intel Arc B580", 1920, 1080, 60, true), display);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_mode_that_is_not_the_preferred_one_takes_the_best_refresh_the_edid_lists_for_it()
     {
         var edid = new Edid("DEL", 1, "U2720Q", 60, 34, new EdidTiming(3840, 2160, 60), [new EdidTiming(3840, 2160, 60), new EdidTiming(1920, 1080, 59.94), new EdidTiming(1920, 1080, 120)]);
@@ -258,7 +259,7 @@ public class DrmTests
         Assert.Equal(new DisplaySpecs("Dell U2720Q", "GPU", 1920, 1080, 120, false), display);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Without_modes_the_edids_native_timing_is_used()
     {
         var edid = new Edid("LGD", 1, null, null, null, new EdidTiming(2560, 1600, 165.004), [new EdidTiming(2560, 1600, 165.004)]);
@@ -268,7 +269,7 @@ public class DrmTests
         Assert.Equal(new DisplaySpecs("LG Display display", "GPU", 2560, 1600, 165, true), display);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_connector_without_an_edid_is_named_after_the_connector_and_its_refresh_is_unknown()
     {
         DisplaySpecs? display = DrmDisplay.Build("VGA-1", "GPU", null, "1024x768i\n", isPrimary: true);
@@ -276,11 +277,11 @@ public class DrmTests
         Assert.Equal(new DisplaySpecs("VGA-1", "GPU", 1024, 768, 0, true), display);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_connected_connector_with_no_resolution_anywhere_is_not_a_display() =>
         Assert.Null(DrmDisplay.Build("DP-2", "GPU", null, "", isPrimary: false));
 
-    [Fact]
+    [LinuxFact]
     public void A_model_that_already_starts_with_the_maker_is_not_prefixed_twice()
     {
         var edid = new Edid("DEL", 1, "DELL U2720Q", null, null, null, [new EdidTiming(1920, 1080, 60)]);
@@ -288,7 +289,7 @@ public class DrmTests
         Assert.Equal("DELL U2720Q", DrmDisplay.Build("DP-1", "GPU", edid, "1920x1080", true)!.Name);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Lists_only_connected_connectors_with_their_gpu_and_the_first_as_main()
     {
         using var tree = new SpecsTree();

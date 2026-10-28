@@ -26,7 +26,7 @@ public class LinuxSpecsTests
 
     // ---- os-release, uptime, install date ----
 
-    [Fact]
+    [LinuxFact]
     public void Parses_this_machines_os_release_and_ignores_the_commented_out_lines()
     {
         var values = OsRelease.Parse(TumbleweedOsRelease);
@@ -39,7 +39,7 @@ public class LinuxSpecsTests
         Assert.Equal("cpe:2.3:o:opensuse:tumbleweed:20261024:*:*:*:*:*:*:*", values["CPE_NAME"]);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Follows_shell_quoting_rules()
     {
         var values = OsRelease.Parse("A=\"say \\\"hi\\\" \\$HOME \\\\ \\n\"\nB='it\\'s'\nC=plain\\ value\nD=\"unterminated\nE=first\nE=second\r\nF=\n=nokey\nnoequals");
@@ -53,20 +53,20 @@ public class LinuxSpecsTests
         Assert.False(values.ContainsKey(""));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("150572.40 4015209.13\n", 150572.40)]
     [InlineData("0.00 0.00", 0.0)]
     public void Reads_uptime_from_the_first_field(string text, double seconds) =>
         Assert.Equal(TimeSpan.FromSeconds(seconds), OsRelease.ParseUptime(text));
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("soon")]
     [InlineData("-5 3")]
     [InlineData(null)]
     public void Unreadable_uptime_is_unknown(string? text) => Assert.Null(OsRelease.ParseUptime(text));
 
-    [Fact]
+    [LinuxFact]
     public void Stat_birth_time_zero_means_the_filesystem_does_not_record_it_not_1970()
     {
         Assert.Null(OsRelease.ParseBirthTime("0\n"));
@@ -75,7 +75,7 @@ public class LinuxSpecsTests
         Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1780179277), OsRelease.ParseBirthTime("1780179277\n"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Describes_the_os_from_os_release_and_the_kernel()
     {
         using var tree = new SpecsTree();
@@ -90,7 +90,7 @@ public class LinuxSpecsTests
         Assert.Null(os.InstalledOn);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_rolling_distribution_without_version_id_falls_back_to_build_id_and_usr_lib_os_release()
     {
         using var tree = new SpecsTree();
@@ -103,7 +103,7 @@ public class LinuxSpecsTests
         Assert.Equal("?", os.Build);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Install_date_is_the_birth_time_of_the_root_and_falls_back_to_machine_id()
     {
         using var tree = new SpecsTree();
@@ -123,7 +123,7 @@ public class LinuxSpecsTests
         Assert.Equal([tree.Full("/"), tree.Full("/etc/machine-id")], asked);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Install_date_uses_the_machine_id_modification_time_when_no_birth_time_exists()
     {
         using var tree = new SpecsTree();
@@ -137,7 +137,7 @@ public class LinuxSpecsTests
 
     // ---- DMI ----
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("To Be Filled By O.E.M.")]
     [InlineData("to be filled by o.e.m.")]
     [InlineData("Default string")]
@@ -151,7 +151,7 @@ public class LinuxSpecsTests
     [InlineData(null)]
     public void Firmware_placeholders_are_not_answers(string? text) => Assert.Null(Dmi.Clean(text));
 
-    [Fact]
+    [LinuxFact]
     public void Real_values_are_trimmed_and_kept()
     {
         Assert.Equal("X99 PR9", Dmi.Clean("X99 PR9 \n"));
@@ -160,7 +160,7 @@ public class LinuxSpecsTests
         Assert.Equal("Unknown Vendor Ltd", Dmi.Clean("Unknown Vendor Ltd")); // Only the whole word is a placeholder.
     }
 
-    [Fact]
+    [LinuxFact]
     public void Reads_the_world_readable_dmi_attributes_of_this_machine()
     {
         using var tree = new SpecsTree();
@@ -176,7 +176,7 @@ public class LinuxSpecsTests
         Assert.Equal(("opensuse", "MACHINIST", "X99 PR9"), (system.ComputerName, system.Manufacturer, system.Model));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_board_whose_firmware_filled_nothing_in_is_unknown_field_by_field()
     {
         using var tree = new SpecsTree();
@@ -190,7 +190,7 @@ public class LinuxSpecsTests
     private static string Cpu(int processor, string package, string core, string model = "Intel(R) Xeon(R) CPU E5-2690 v4 @ 2.60GHz") =>
         $"processor\t: {processor}\nvendor_id\t: GenuineIntel\ncpu family\t: 6\nmodel\t\t: 79\nmodel name\t: {model}\ncpu MHz\t\t: 1197.090\ncache size\t: 35840 KB\nphysical id\t: {package}\nsiblings\t: 28\ncore id\t\t: {core}\ncpu cores\t: 14\nflags\t\t: fpu vme de\n\n";
 
-    [Fact]
+    [LinuxFact]
     public void Counts_cores_as_distinct_core_ids_so_smt_siblings_share_one()
     {
         // Logical CPUs 0 and 14 are the two threads of core 0 on this machine; CPU 1 is core 1.
@@ -203,7 +203,7 @@ public class LinuxSpecsTests
         Assert.Equal(1, info.Sockets);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Two_sockets_with_the_same_core_ids_are_not_the_same_cores()
     {
         var info = ProcCpu.Parse(Cpu(0, "0", "0") + Cpu(1, "1", "0"));
@@ -212,7 +212,7 @@ public class LinuxSpecsTests
         Assert.Equal(2, info.Sockets);
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_arm_cpuinfo_without_core_ids_has_unknown_cores_and_one_socket()
     {
         var info = ProcCpu.Parse("processor\t: 0\nBogoMIPS\t: 108.00\nFeatures\t: fp asimd\nCPU implementer\t: 0x41\n\nprocessor\t: 1\nBogoMIPS\t: 108.00\n\nHardware\t: BCM2711\nModel\t\t: Raspberry Pi 4 Model B Rev 1.5\n");
@@ -224,7 +224,7 @@ public class LinuxSpecsTests
         Assert.Null(info.Vendor);
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_processor_name_is_squeezed_of_repeated_spaces()
     {
         var info = ProcCpu.Parse(Cpu(0, "0", "0", "AMD Ryzen 5 5600   6-Core  Processor      "));
@@ -232,7 +232,7 @@ public class LinuxSpecsTests
         Assert.Equal("AMD Ryzen 5 5600 6-Core Processor", info.Name);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Empty_cpuinfo_is_all_unknown()
     {
         var info = ProcCpu.Parse("");
@@ -243,7 +243,7 @@ public class LinuxSpecsTests
         Assert.Equal(1, info.Sockets);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("32K", 32L * 1024)]
     [InlineData("256K", 256L * 1024)]
     [InlineData("35840K", 35840L * 1024)]
@@ -257,7 +257,7 @@ public class LinuxSpecsTests
     [InlineData("99999999999999999999K", 0)]
     public void Parses_sysfs_cache_sizes(string text, long bytes) => Assert.Equal(bytes, ProcCpu.ParseCacheSize(text));
 
-    [Fact]
+    [LinuxFact]
     public void Cache_totals_count_each_physical_cache_once_however_many_cpus_see_it()
     {
         // This machine: 14 cores x 2 threads. Each core's L1d/L1i/L2 is seen by its two threads; the L3 by all 28.
@@ -278,7 +278,7 @@ public class LinuxSpecsTests
         Assert.Equal(35840L * 1024, l3);         // lscpu: L3 35 MiB, 1 instance.
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_cache_level_above_three_is_ignored()
     {
         (long l1, long l2, long l3) = ProcCpu.SumCaches([new ProcCpu.CacheInstance(4, "Unified", "0", 1 << 30)]);
@@ -286,7 +286,7 @@ public class LinuxSpecsTests
         Assert.Equal((0L, 0L, 0L), (l1, l2, l3));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("Intel(R) Xeon(R) CPU E5-2690 v4 @ 2.60GHz", 2600)]
     [InlineData("Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz", 3200)]
     [InlineData("Intel(R) Pentium(R) CPU G620 @ 2.60 GHz", 2600)]
@@ -312,7 +312,7 @@ public class LinuxSpecsTests
         return tree;
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_processor_section_combines_cpuinfo_with_sysfs_caches()
     {
         using SpecsTree tree = CpuTree();
@@ -326,7 +326,7 @@ public class LinuxSpecsTests
         Assert.Null(cpu.Socket);         // The socket designation is in SMBIOS, which needs root.
     }
 
-    [Fact]
+    [LinuxFact]
     public void Base_speed_prefers_the_driver_base_frequency_then_the_name_then_the_boost_clock()
     {
         using SpecsTree tree = CpuTree("AMD Ryzen 5 5600 6-Core Processor");
@@ -340,7 +340,7 @@ public class LinuxSpecsTests
         Assert.Null(ProcCpu.Read(new SpecsRoot(bare.Root)).BaseMhz);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_tree_with_no_cpuinfo_still_reports_the_thread_count_from_the_runtime()
     {
         using var tree = new SpecsTree();
@@ -354,7 +354,7 @@ public class LinuxSpecsTests
 
     // ---- memory ----
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("MemTotal:       32681548 kB\nMemFree:          917844 kB\n", 32681548L * 1024)]
     [InlineData("MemFree: 1 kB\nMemTotal: 1024 kB\n", 1024L * 1024)]
     [InlineData("MemTotal: 2048\n", 2048)]
@@ -362,15 +362,15 @@ public class LinuxSpecsTests
     [InlineData("MemTotal: lots kB\n", 0)]
     [InlineData("MemTotal: 99999999999999999 kB\n", 0)]
     [InlineData("", 0)]
-    public void Reads_total_memory_from_meminfo(string text, long bytes) => Assert.Equal(bytes, MemInfo.ParseTotal(text));
+    public void Reads_total_memory_from_meminfo(string text, long bytes) => Assert.Equal(bytes, MemorySection.ParseTotal(text));
 
-    [Fact]
+    [LinuxFact]
     public void Memory_slots_and_modules_stay_unknown_because_they_need_root()
     {
         using var tree = new SpecsTree();
         tree.File("/proc/meminfo", "MemTotal:       32681548 kB\n");
 
-        MemorySpecs memory = MemInfo.Read(new SpecsRoot(tree.Root));
+        MemorySpecs memory = MemorySection.Read(new SpecsRoot(tree.Root));
 
         Assert.Equal(32681548L * 1024, memory.Total);
         Assert.Null(memory.Slots);
@@ -384,20 +384,20 @@ public class LinuxSpecsTests
 
     private static PowerSupply.Supply Mains(bool online, string type = "Mains") => new(type, null, null, null, online, null);
 
-    [Fact]
+    [LinuxFact]
     public void A_desktop_without_a_battery_has_no_battery()
     {
         Assert.Null(PowerSupply.Combine([Mains(true)]));
         Assert.Null(PowerSupply.Combine([]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_laptop_on_battery()
     {
         Assert.Equal(new BatterySpecs(57, false, false), PowerSupply.Combine([Battery("Discharging", 57), Mains(false)]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_laptop_charging_is_on_ac_and_one_that_is_full_on_the_charger_is_not_charging()
     {
         Assert.Equal(new BatterySpecs(80, true, true), PowerSupply.Combine([Battery("Charging", 80), Mains(true)]));
@@ -405,7 +405,7 @@ public class LinuxSpecsTests
         Assert.Equal(new BatterySpecs(78, false, true), PowerSupply.Combine([Battery("Not charging", 78), Mains(true)])); // Charge limit reached.
     }
 
-    [Fact]
+    [LinuxFact]
     public void Without_a_mains_device_a_battery_that_charges_or_is_full_still_proves_the_charger()
     {
         Assert.Equal(new BatterySpecs(40, true, true), PowerSupply.Combine([Battery("Charging", 40)]));
@@ -413,33 +413,33 @@ public class LinuxSpecsTests
         Assert.Equal(new BatterySpecs(40, false, false), PowerSupply.Combine([Battery("Discharging", 40)]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_usb_c_supply_that_is_online_counts_as_the_charger()
     {
         Assert.Equal(new BatterySpecs(90, false, true), PowerSupply.Combine([Battery("Discharging", 90), Mains(true, "USB")]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_wireless_mouses_battery_is_not_the_machines()
     {
         Assert.Null(PowerSupply.Combine([Battery("Discharging", 30, scope: "Device"), Mains(true)]));
         Assert.Equal(new BatterySpecs(60, false, false), PowerSupply.Combine([Battery("Discharging", 60, scope: "System"), Battery("Discharging", 30, scope: "Device"), Mains(false)]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Two_batteries_average_and_a_missing_one_is_ignored()
     {
         Assert.Equal(new BatterySpecs(51, false, false), PowerSupply.Combine([Battery("Discharging", 80), Battery("Discharging", 21), Mains(false)])); // 50.5 rounds up.
         Assert.Equal(new BatterySpecs(80, false, false), PowerSupply.Combine([Battery("Discharging", 80), Battery("Unknown", null, present: false), Mains(false)]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_battery_that_reports_no_capacity_still_exists_with_an_unknown_level()
     {
         Assert.Equal(new BatterySpecs(null, true, true), PowerSupply.Combine([Battery("Charging", null), Mains(true)]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Reads_supplies_from_a_power_supply_tree()
     {
         using var tree = new SpecsTree();
@@ -454,7 +454,7 @@ public class LinuxSpecsTests
 
     // ---- networks ----
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("enp10s0", true, false, 1L, "Ethernet")]
     [InlineData("wlp3s0", true, true, 1L, "Wi-Fi")]
     [InlineData("eth0", true, false, 1L, "Ethernet")]
@@ -478,7 +478,7 @@ public class LinuxSpecsTests
     public void Keeps_only_physical_ethernet_framed_adapters(string name, bool hasDevice, bool wireless, long? type, string? kind) =>
         Assert.Equal(kind, NetAdapters.Classify(name, hasDevice, wireless, type));
 
-    [Theory]
+    [LinuxTheory]
     [InlineData(1000L, 1_000_000_000L)]
     [InlineData(100L, 100_000_000L)]
     [InlineData(-1L, 0L)]   // Wi-Fi and links that are down.
@@ -486,7 +486,7 @@ public class LinuxSpecsTests
     [InlineData(null, 0L)]
     public void Link_speed_is_megabits_or_unknown(long? megabits, long bps) => Assert.Equal(bps, NetAdapters.SpeedBps(megabits));
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("00:e0:24:2f:2a:78", "00:E0:24:2F:2A:78")]
     [InlineData("00:00:00:00:00:00", null)]
     [InlineData("", null)]
@@ -530,7 +530,7 @@ public class LinuxSpecsTests
         return tree;
     }
 
-    [Fact]
+    [LinuxFact]
     public void Lists_only_connected_hardware_adapters_with_an_ipv4_and_no_container_interface()
     {
         using SpecsTree tree = Network();
@@ -554,7 +554,7 @@ public class LinuxSpecsTests
         Assert.Equal(("Wi-Fi", 0L), (wireless.Kind, wireless.SpeedBps));
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_adapter_without_an_ipv4_address_is_not_connected()
     {
         using SpecsTree tree = Network();
@@ -562,7 +562,7 @@ public class LinuxSpecsTests
         Assert.Empty(NetAdapters.Read(new SpecsRoot(tree.Root), _ => null, () => PciNames.Parse(null)));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Without_lspci_the_description_is_the_kernel_driver_then_the_usb_product_then_the_interface_name()
     {
         using var tree = new SpecsTree();
@@ -578,7 +578,7 @@ public class LinuxSpecsTests
         Assert.Null(networks.Single(n => n.Name == "eth9").Mac);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_usb_adapter_is_described_by_its_usb_product_string()
     {
         using var tree = new SpecsTree();
@@ -593,7 +593,7 @@ public class LinuxSpecsTests
 
     // ---- the reader ----
 
-    [Fact]
+    [LinuxFact]
     public void A_machine_with_nothing_readable_gives_a_complete_all_unknown_report()
     {
         using var tree = new SpecsTree();
@@ -612,7 +612,7 @@ public class LinuxSpecsTests
         Assert.Null(specs.System.Manufacturer);
     }
 
-    [Fact]
+    [LinuxFact]
     public void One_unreadable_source_empties_only_its_own_field()
     {
         using var tree = new SpecsTree();
@@ -632,7 +632,7 @@ public class LinuxSpecsTests
         Assert.Equal("X99 PR9", without.Board.Product);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_helper_program_that_blows_up_costs_only_the_section_that_asked_for_it()
     {
         using var tree = new SpecsTree();
@@ -644,7 +644,7 @@ public class LinuxSpecsTests
         Assert.Equal(1024 * 1024, specs.Memory.Total);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Assembles_every_section_from_one_tree()
     {
         using SpecsTree tree = CpuTree();
