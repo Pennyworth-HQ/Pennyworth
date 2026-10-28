@@ -11,6 +11,7 @@ using Pennyworth.Insights.Classification;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
 using Pennyworth.Platform;
+using Pennyworth.Platform.Linux;
 
 namespace Pennyworth.App;
 
@@ -25,15 +26,15 @@ public sealed partial class App : Application
             // Composition root: the only place concrete services are created, and the only place that
             // asks which operating system this is.
             IPlatform platform = CreatePlatform();
-            var classifier = new RuleClassifier(KnowledgeBaseLoader.LoadEmbedded().Locations, platform.ResolveVariable);
-            ISystemMonitor? monitor = platform.CreateMonitor(KnowledgeBaseLoader.LoadProcesses().Processes);
+            var classifier = new RuleClassifier(KnowledgeBaseLoader.LoadEmbedded(platform.Name).Locations, platform.ResolveVariable);
+            ISystemMonitor? monitor = platform.CreateMonitor(KnowledgeBaseLoader.LoadProcesses(platform.Name).Processes);
             var viewModel = new MainWindowViewModel(new AppServices(
                 platform.Drives,
                 platform.Scanner,
                 classifier,
-                new KnowledgeBaseLocationInfo(classifier),
+                new KnowledgeBaseLocationInfo(classifier, platform.AppNames),
                 platform.Explorer,
-                platform.CreateCleanup(KnowledgeBaseLoader.LoadCleanupRules().Rules),
+                platform.CreateCleanup(KnowledgeBaseLoader.LoadCleanupRules(platform.Name).Rules),
                 platform.HiddenSpace,
                 new FileSettingsStore(platform.SettingsPath),
                 platform.Specs,
@@ -73,8 +74,8 @@ public sealed partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static IPlatform CreatePlatform() => OperatingSystem.IsWindows()
-        ? new WindowsPlatform()
-        : throw new PlatformNotSupportedException(
-            "Pennyworth does not run on this operating system yet. Only Windows is supported.");
+    private static IPlatform CreatePlatform() =>
+        OperatingSystem.IsWindows() ? new WindowsPlatform()
+        : OperatingSystem.IsLinux() ? new LinuxPlatform()
+        : throw new PlatformNotSupportedException("Pennyworth runs on Windows and Linux only.");
 }

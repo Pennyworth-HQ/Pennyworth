@@ -50,9 +50,8 @@ public sealed partial class AskViewModel : ObservableObject
     private const int HistoryMessages = 6;
     private const int TitleLength = 60;
 
-    private static readonly Lazy<DiagnosisEngine> Engine = new(DiagnosisEngine.FromKnowledgeBase);
-    private static readonly Lazy<AdviceCatalog> Advice = new(KnowledgeBaseLoader.LoadBlockedAdvice);
-
+    private readonly Lazy<DiagnosisEngine> _engine;
+    private readonly Lazy<AdviceCatalog> _advice;
     private readonly AssistantServices _services;
     private readonly IAskHost _host;
     private readonly Func<DateTimeOffset> _clock;
@@ -66,6 +65,8 @@ public sealed partial class AskViewModel : ObservableObject
     public AskViewModel(AssistantServices services, IAskHost host, Func<DateTimeOffset> clock)
     {
         _services = services;
+        _engine = new(() => DiagnosisEngine.FromKnowledgeBase(services.PlatformName));
+        _advice = new(() => KnowledgeBaseLoader.LoadBlockedAdvice(services.PlatformName));
         _host = host;
         _clock = clock;
         RecommendedModel = services.Catalog.Models.First(m => m.Device == ModelDevice.Cpu);
@@ -142,6 +143,11 @@ public sealed partial class AskViewModel : ObservableObject
     public string DownloadLabel => string.Format(CultureInfo.CurrentCulture, Strings.DownloadModel, ByteSize.Format(RecommendedModel.Size));
 
     public bool IsInstalled => _services.Models.IsInstalled(RecommendedModel);
+
+    /// <summary>False when this platform cannot run the on-PC model: the setup then offers only an AI account.</summary>
+    public bool CanRunLocally => _services.CanRunLocally;
+
+    public int SetupColumns => CanRunLocally ? 2 : 1;
 
     public string VerdictTitle => Verdict?.Fit switch
     {
@@ -353,7 +359,7 @@ public sealed partial class AskViewModel : ObservableObject
         }
 
         IChatClient client = _services.CreateClient(profile, key);
-        var session = new AssistantSession(client, profile, Engine.Value, Advice.Value, profile.IsLocal ? null : _services.Anonymizer);
+        var session = new AssistantSession(client, profile, _engine.Value, _advice.Value, profile.IsLocal ? null : _services.Anonymizer);
         PcSnapshot snapshot = await _host.SnapshotAsync();
         PreparedQuestion prepared = session.Prepare(question, Topic, snapshot, Localizer.Instance.Culture, History());
 
@@ -661,7 +667,17 @@ public sealed partial class AskViewModel : ObservableObject
     private void SaveCloudProfile()
     {
         string id = "cloud-" + Guid.NewGuid().ToString("N")[..8];
-        _services.Keys.Save(id, ApiKey.Trim());
+        try
+        {
+            _services.Keys.Save(id, ApiKey.Trim());
+        }
+        catch (InvalidOperationException ex)
+        {
+            // No keyring to keep the key in: say so, store nothing, and keep what was typed.
+            TestResult = ex.Message;
+            return;
+        }
+
         ApiKey = "";
         AddProfile(DraftProfile(id));
         TestResult = null;
@@ -759,7 +775,17 @@ public sealed partial class AskViewModel : ObservableObject
     {
         if (!row.Profile.IsLocal)
         {
-            _services.Keys.Delete(row.Profile.Id);
+            try
+            {
+                _services.Keys.Delete(row.Profile.Id);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // The keyring answered and refused (locked): the key is still stored, so keep the profile
+                // that points at it rather than dropping the profile and leaving the key behind.
+                _host.ShowToast(ex.Message);
+                return;
+            }
         }
 
         AssistantSettings settings = _host.AssistantSettings;
