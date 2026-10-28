@@ -1,0 +1,342 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:l="using:Pennyworth.App.Localization"
+             xmlns:controls="using:Pennyworth.App.Controls"
+             x:Class="Pennyworth.App.Views.StressView"
+             x:DataType="vm:StressViewModel">
+  <UserControl.Styles>
+    <Style Selector="Border.panel">
+      <Setter Property="Background" Value="{DynamicResource Brush.Background}" />
+    </Style>
+    <Style Selector="Border.meter">
+      <Setter Property="Background" Value="{DynamicResource Brush.Background}" />
+      <Setter Property="Padding" Value="18,16" />
+    </Style>
+    <Style Selector="Border.meter.testing">
+      <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+    </Style>
+    <Style Selector="TextBlock.hot">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}" />
+    </Style>
+    <Style Selector="Border.result">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderStrong}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="22,18" />
+    </Style>
+    <Style Selector="Border.result.bad">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="36,28,36,28" Spacing="20">
+
+      <!-- Header, with the overall stress icon and level bars on the right. -->
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="label">
+            <Run Text="08 / " />
+            <Run Text="{l:Tr NavStress, Upper=True}" />
+          </TextBlock>
+          <TextBlock Classes="title" Text="{l:Tr StressTitle}" />
+          <TextBlock Classes="secondary" FontSize="13.5" LineHeight="20" MaxWidth="640" HorizontalAlignment="Left" TextWrapping="Wrap" Text="{l:Tr StressSub}" />
+        </StackPanel>
+        <Border Grid.Column="1" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" Padding="16,12" VerticalAlignment="Bottom"
+                ToolTip.Tip="{l:Tr StressHelpLevel}">
+          <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="14">
+            <controls:ComponentIcon Kind="Stress" Width="40" Height="40" Level="{Binding StressLevel}" />
+            <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+              <TextBlock Classes="label" FontSize="9.5" Text="{l:Tr StressLevel, Upper=True}" />
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <controls:LevelBars Width="34" Height="16" Level="{Binding StressLevel}" VerticalAlignment="Bottom" />
+                <TextBlock FontSize="15" FontWeight="Medium" Text="{Binding StressLevelText}" />
+              </StackPanel>
+            </StackPanel>
+          </Grid>
+        </Border>
+      </Grid>
+
+      <!-- Safety note. -->
+      <Border BorderBrush="{DynamicResource Brush.Accent}" BorderThickness="3,0,0,0" Background="{DynamicResource Brush.Surface}" Padding="14,10">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+          <TextBlock Classes="mono" Foreground="{DynamicResource Brush.Accent}" Text="▲" VerticalAlignment="Top" />
+          <TextBlock Grid.Column="1" FontSize="12.5" LineHeight="18" TextWrapping="Wrap" Text="{l:Tr StressSafety}" />
+        </Grid>
+      </Border>
+
+      <!-- Radar and controls. -->
+      <Border Background="{DynamicResource Brush.Border}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+        <Grid ColumnDefinitions="1.1*,*" ColumnSpacing="1">
+          <Border Classes="panel">
+            <Grid RowDefinitions="Auto,*,Auto" Margin="22,20">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="label" FontSize="10" Text="{l:Tr StressRadar, Upper=True}" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                  <TextBlock Classes="blink" Foreground="{DynamicResource Brush.Accent}" FontSize="11" Text="●" />
+                  <TextBlock Classes="label" FontSize="10" Text="{l:Tr Live, Upper=True}" />
+                </StackPanel>
+              </Grid>
+              <controls:RadarChart Grid.Row="1" Height="330" Margin="0,8"
+                                   Labels="{Binding RadarLabels}" Values="{Binding RadarValues}" Peaks="{Binding RadarPeaks}"
+                                   IsSweeping="{Binding IsRunning}" />
+              <StackPanel Grid.Row="2" Spacing="8">
+                <WrapPanel ItemSpacing="18" LineSpacing="6">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Border Width="14" Height="10" Background="{DynamicResource Brush.Accent}" Opacity="0.35" BorderBrush="{DynamicResource Brush.Accent}" BorderThickness="1" />
+                    <TextBlock FontSize="12" Text="{l:Tr StressNow}" />
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Line StartPoint="0,5" EndPoint="14,5" Width="14" Height="10" VerticalAlignment="Center"
+                          Stroke="{DynamicResource Brush.TextSecondary}" StrokeThickness="1" StrokeDashArray="3,2" />
+                    <TextBlock FontSize="12" Text="{l:Tr StressPeakLegend}" />
+                  </StackPanel>
+                </WrapPanel>
+                <TextBlock Classes="secondary" FontSize="12" LineHeight="17" TextWrapping="Wrap" Text="{l:Tr StressRadarHint}" />
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <Border Grid.Column="1" Classes="panel">
+            <StackPanel Margin="22,20" Spacing="16">
+              <TextBlock Classes="label" FontSize="10" Text="{l:Tr StressChoose, Upper=True}" />
+              <StackPanel Spacing="10" IsEnabled="{Binding CanChoose}">
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
+                  <CheckBox IsChecked="{Binding IncludeCpu}" VerticalAlignment="Top" />
+                  <controls:ComponentIcon Grid.Column="1" Kind="Cpu" Width="22" Height="22" VerticalAlignment="Top" Margin="0,4,0,0" />
+                  <StackPanel Grid.Column="2" Spacing="2" Margin="0,4,0,0">
+                    <TextBlock Text="{l:Tr StressCpu}" />
+                    <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding CpuHint}" />
+                  </StackPanel>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
+                  <CheckBox IsChecked="{Binding IncludeMemory}" VerticalAlignment="Top" />
+                  <controls:ComponentIcon Grid.Column="1" Kind="Memory" Width="22" Height="22" VerticalAlignment="Top" Margin="0,4,0,0" />
+                  <StackPanel Grid.Column="2" Spacing="2" Margin="0,4,0,0">
+                    <TextBlock Text="{l:Tr StressMemory}" />
+                    <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding MemoryHint}" />
+                  </StackPanel>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
+                  <CheckBox IsChecked="{Binding IncludeDisk}" VerticalAlignment="Top" />
+                  <controls:ComponentIcon Grid.Column="1" Kind="Disk" Width="22" Height="22" VerticalAlignment="Top" Margin="0,4,0,0" />
+                  <StackPanel Grid.Column="2" Spacing="2" Margin="0,4,0,0">
+                    <TextBlock Text="{l:Tr StressDisk}" />
+                    <TextBlock Classes="caption" TextWrapping="Wrap" Text="{Binding DiskHint}" />
+                  </StackPanel>
+                </Grid>
+                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
+                  <CheckBox IsChecked="{Binding IncludeGpu}" VerticalAlignment="Top" />
+                  <controls:ComponentIcon Grid.Column="1" Kind="Gpu" Width="22" Height="22" VerticalAlignment="Top" Margin="0,4,0,0" />
+                  <StackPanel Grid.Column="2" Spacing="2" Margin="0,4,0,0">
+                    <TextBlock Text="{l:Tr StressGpu}" />
+                    <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr StressGpuHint}" />
+                  </StackPanel>
+                </Grid>
+              </StackPanel>
+
+              <StackPanel Spacing="8" IsEnabled="{Binding CanChoose}">
+                <TextBlock Classes="label" FontSize="10" Text="{l:Tr StressMode, Upper=True}" />
+                <Border Classes="group" HorizontalAlignment="Left">
+                  <StackPanel Orientation="Horizontal">
+                    <Button Classes="segment" Classes.selected="{Binding IsFloatMode}" Content="{l:Tr StressModeFloat, Upper=True}"
+                            Command="{Binding SetCpuModeCommand}" CommandParameter="FloatingPoint" ToolTip.Tip="{l:Tr StressModeFloatTip}" />
+                    <Border Width="1" Background="{DynamicResource Brush.BorderStrong}" />
+                    <Button Classes="segment" Classes.selected="{Binding IsIntegerMode}" Content="{l:Tr StressModeInteger, Upper=True}"
+                            Command="{Binding SetCpuModeCommand}" CommandParameter="Integer" ToolTip.Tip="{l:Tr StressModeIntegerTip}" />
+                    <Border Width="1" Background="{DynamicResource Brush.BorderStrong}" />
+                    <Button Classes="segment" Classes.selected="{Binding IsMixedMode}" Content="{l:Tr StressModeMixed, Upper=True}"
+                            Command="{Binding SetCpuModeCommand}" CommandParameter="Mixed" ToolTip.Tip="{l:Tr StressModeMixedTip}" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+
+              <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="24" IsEnabled="{Binding CanChoose}">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="label" FontSize="10" Text="{l:Tr StressDuration, Upper=True}" />
+                  <Border Classes="group" HorizontalAlignment="Left">
+                    <ItemsControl ItemsSource="{Binding Durations}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DurationChoice">
+                          <Button Classes="segment" Padding="9,0" Classes.selected="{Binding IsSelected}" Content="{Binding Text}"
+                                  Command="{Binding $parent[UserControl].((vm:StressViewModel)DataContext).SetDurationCommand}"
+                                  CommandParameter="{Binding Minutes}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </Border>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="8" IsVisible="{Binding IncludeMemory}">
+                  <TextBlock Classes="label" FontSize="10" Text="{l:Tr StressMemoryShare, Upper=True}" />
+                  <Border Classes="group" HorizontalAlignment="Left">
+                    <ItemsControl ItemsSource="{Binding MemoryShares}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PercentChoice">
+                          <Button Classes="segment" Padding="9,0" Classes.selected="{Binding IsSelected}" Content="{Binding Text}"
+                                  Command="{Binding $parent[UserControl].((vm:StressViewModel)DataContext).SetMemoryPercentCommand}"
+                                  CommandParameter="{Binding Percent}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </Border>
+                </StackPanel>
+              </Grid>
+
+              <CheckBox IsChecked="{Binding StopOnError}" IsEnabled="{Binding CanChoose}" Content="{l:Tr StressStopOnError}" />
+
+              <!-- Start / stop and progress. -->
+              <StackPanel Spacing="10">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <Button Classes="primary" MinHeight="40" Padding="20,0" Content="{l:Tr StressStart, Upper=True}"
+                          Command="{Binding StartCommand}" IsVisible="{Binding IsIdle}" />
+                  <Button MinHeight="40" Padding="20,0" Background="{DynamicResource Brush.TextPrimary}" Foreground="{DynamicResource Brush.Background}"
+                          Content="{l:Tr StressStop, Upper=True}" Command="{Binding StopCommand}" IsVisible="{Binding IsRunning}" />
+                </StackPanel>
+                <StackPanel Spacing="6" IsVisible="{Binding IsRunning}">
+                  <ProgressBar Height="6" MinHeight="6" Minimum="0" Maximum="1" Value="{Binding Progress}" Foreground="{DynamicResource Brush.Accent}" />
+                  <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                    <TextBlock Classes="mono" FontSize="12">
+                      <Run Text="{l:Tr StressElapsed, Upper=True}" Foreground="{DynamicResource Brush.TextSecondary}" />
+                      <Run Text="{Binding ElapsedText}" />
+                    </TextBlock>
+                    <TextBlock Grid.Column="1" Classes="mono" FontSize="12" HorizontalAlignment="Center" Text="{Binding ErrorsText}" />
+                    <TextBlock Grid.Column="2" Classes="mono" FontSize="12">
+                      <Run Text="{l:Tr StressRemaining, Upper=True}" Foreground="{DynamicResource Brush.TextSecondary}" />
+                      <Run Text="{Binding RemainingText}" />
+                    </TextBlock>
+                  </Grid>
+                </StackPanel>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+
+      <!-- Result of the last run. -->
+      <Border Classes="result" Classes.bad="{Binding IsResultBad}" IsVisible="{Binding HasResult}">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+            <Border Width="44" Height="44" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1">
+              <TextBlock Classes="mono" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"
+                         Classes.hot="{Binding IsResultBad}" Text="{Binding ResultGlyph}" />
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+              <TextBlock FontSize="20" FontWeight="Medium" Classes.hot="{Binding IsResultBad}" Text="{Binding ResultTitle}" />
+              <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{Binding ResultText}" />
+            </StackPanel>
+          </Grid>
+          <ItemsControl ItemsSource="{Binding Stats}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><UniformGrid Columns="5" /></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:StressStat">
+                <StackPanel Spacing="4" Margin="0,0,12,0">
+                  <TextBlock Classes="label" FontSize="9.5" TextTrimming="CharacterEllipsis" Text="{Binding Label, Converter={x:Static controls:TextCase.Upper}}" />
+                  <TextBlock Classes="number" FontSize="22" Text="{Binding Value}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <!-- A dial per part of the PC. -->
+      <Border Background="{DynamicResource Brush.Border}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+        <ItemsControl ItemsSource="{Binding Meters}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><UniformGrid Columns="3" ColumnSpacing="1" RowSpacing="1" /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:StressMeterViewModel">
+              <Border Classes="meter" Classes.testing="{Binding IsUnderTest}">
+                <StackPanel Spacing="10">
+                  <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                    <controls:ComponentIcon Kind="{Binding Kind}" Level="{Binding Level}" Width="24" Height="24" />
+                    <TextBlock Grid.Column="1" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding Title}" />
+                    <Border Grid.Column="2" Classes="badge" IsVisible="{Binding IsUnderTest}">
+                      <TextBlock>
+                        <Run Text="■ " />
+                        <Run Text="{l:Tr StressUnderTest, Upper=True}" />
+                      </TextBlock>
+                    </Border>
+                  </Grid>
+                  <Grid Width="132" Height="132" HorizontalAlignment="Center">
+                    <controls:RadialGauge Value="{Binding Level}" Peak="{Binding Peak}" Thickness="7" />
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="0">
+                      <TextBlock Classes="number" FontSize="28" HorizontalAlignment="Center" Classes.hot="{Binding IsHot}" Text="{Binding ValueText}" />
+                      <TextBlock Classes="label" FontSize="10" HorizontalAlignment="Center" Text="{Binding UnitText}" />
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock Classes="caption" FontSize="11.5" TextAlignment="Center" TextWrapping="Wrap" MinHeight="32" Text="{Binding Detail}" />
+                  <TextBlock Classes="mono" FontSize="11.5" TextAlignment="Center" IsVisible="{Binding ShowErrors}"
+                             Classes.hot="{Binding HasErrors}" Text="{Binding ErrorsText}" />
+                  <Grid Height="34">
+                    <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,1,0,0" VerticalAlignment="Top" />
+                    <Border BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="0,0,0,1" VerticalAlignment="Bottom" />
+                    <controls:BarChart Maximum="100" Values="{Binding History}"
+                                       BarBrush="{DynamicResource Brush.TextSecondary}" HighlightBrush="{DynamicResource Brush.Accent}" />
+                  </Grid>
+                  <TextBlock Classes="label" FontSize="9" Text="{l:Tr Last60, Upper=True}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Border>
+
+      <!-- How to read the screen, and the log. -->
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="28">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="label" Text="{l:Tr StressHowToRead, Upper=True}" />
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+            <controls:RadarChart Width="34" Height="34" Values="{Binding RadarValues}" Spokes="6" IsHitTestVisible="False" />
+            <TextBlock Grid.Column="1" FontSize="12.5" LineHeight="18" TextWrapping="Wrap" Text="{l:Tr StressHelpRadar}" />
+          </Grid>
+          <Grid ColumnDefinitions="34,*" ColumnSpacing="12">
+            <controls:RadialGauge Width="30" Height="30" Value="0.66" Peak="0.9" Thickness="3" />
+            <TextBlock Grid.Column="1" FontSize="12.5" LineHeight="18" TextWrapping="Wrap" Text="{l:Tr StressHelpDial}" />
+          </Grid>
+          <Grid ColumnDefinitions="34,*" ColumnSpacing="12">
+            <controls:LevelBars Width="28" Height="16" Level="0.9" VerticalAlignment="Top" Margin="0,2,0,0" />
+            <TextBlock Grid.Column="1" FontSize="12.5" LineHeight="18" TextWrapping="Wrap" Text="{l:Tr StressHelpLevel}" />
+          </Grid>
+          <Grid ColumnDefinitions="34,*" ColumnSpacing="12">
+            <TextBlock Classes="mono" FontSize="16" Foreground="{DynamicResource Brush.Accent}" HorizontalAlignment="Center" Text="✕" />
+            <TextBlock Grid.Column="1" FontSize="12.5" LineHeight="18" TextWrapping="Wrap" Text="{l:Tr StressHelpErrors}" />
+          </Grid>
+          <Grid ColumnDefinitions="34,*" ColumnSpacing="12">
+            <controls:ComponentIcon Kind="Temperature" Width="24" Height="24" Level="0.5" VerticalAlignment="Top" />
+            <TextBlock Grid.Column="1" Classes="secondary" FontSize="12.5" LineHeight="18" TextWrapping="Wrap" Text="{l:Tr StressSensorNote}" />
+          </Grid>
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Spacing="10">
+          <TextBlock Classes="label" Text="{l:Tr StressLog, Upper=True}" />
+          <TextBlock Classes="secondary" FontSize="12.5" Text="{l:Tr StressLogEmpty}" IsVisible="{Binding !HasLog}" />
+          <ItemsControl ItemsSource="{Binding Log}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:StressLogEntry">
+                <Border Classes="rule" Padding="0,7">
+                  <Grid ColumnDefinitions="64,*" ColumnSpacing="10">
+                    <TextBlock Classes="mono tertiary" FontSize="11" Text="{Binding Time}" />
+                    <TextBlock Grid.Column="1" FontSize="12.5" TextWrapping="Wrap" Classes.hot="{Binding IsBad}" Text="{Binding Text}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

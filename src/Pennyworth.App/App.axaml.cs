@@ -44,7 +44,11 @@ public sealed partial class App : Application
                 Assistant: platform.CreateAssistant(() => monitor?.Sample().Memory.Available ?? 0)));
 
             desktop.MainWindow = new MainWindow { DataContext = viewModel };
-            desktop.Exit += (_, _) => (monitor as IDisposable)?.Dispose();
+            desktop.Exit += (_, _) =>
+            {
+                viewModel.Stress.Shutdown();
+                (monitor as IDisposable)?.Dispose();
+            };
             viewModel.Initialize();
 
             // Live numbers once per second; the first sample right away.

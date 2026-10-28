@@ -402,4 +402,92 @@
   <data name="ActionUnlock" xml:space="preserve"><value>Unlock full scan</value></data>
   <data name="DeviceGpu" xml:space="preserve"><value>{0} on the graphics card</value></data>
   <data name="DeviceCpu" xml:space="preserve"><value>{0} on the processor</value></data>
+  <data name="NavStress" xml:space="preserve"><value>Stress test</value></data>
+  <data name="NavStressHint" xml:space="preserve"><value>Push the PC to its limit, safely</value></data>
+  <data name="StressTitle" xml:space="preserve"><value>Stress test</value></data>
+  <data name="StressSub" xml:space="preserve"><value>Loads the processor, memory, disk and graphics card to their limit and checks every result, like OCCT, Prime95 and HeavyLoad. A stable PC gives the same answer every time; a wrong answer means something is unstable.</value></data>
+  <data name="StressSafety" xml:space="preserve"><value>The PC will get hot and the fans loud: that is expected. Plug laptops in and keep the vents clear. You can stop at any time; Pennyworth also stops by itself at 95 °C and, if you leave it ticked, at the first wrong result.</value></data>
+  <data name="StressCpu" xml:space="preserve"><value>Processor</value></data>
+  <data name="StressMemory" xml:space="preserve"><value>Memory</value></data>
+  <data name="StressDisk" xml:space="preserve"><value>Disk</value></data>
+  <data name="StressGpu" xml:space="preserve"><value>Graphics</value></data>
+  <data name="StressTemperature" xml:space="preserve"><value>Temperature</value></data>
+  <data name="StressPower" xml:space="preserve"><value>Power</value></data>
+  <data name="StressCpuHint" xml:space="preserve"><value>Heavy maths on all {1:N0} logical processors; finds processors that overheat or are unstable.</value></data>
+  <data name="StressMemoryHint" xml:space="preserve"><value>Fills {0} of free memory with patterns and checks every bit.</value></data>
+  <data name="StressDiskHint" xml:space="preserve"><value>Writes and reads back a {0} temporary file, deleted when the test ends.</value></data>
+  <data name="StressGpuHint" xml:space="preserve"><value>Shader maths on the graphics card through DirectX 11, checking every answer; finds cards that overheat or are unstable.</value></data>
+  <data name="StressChoose" xml:space="preserve"><value>What to test</value></data>
+  <data name="StressMode" xml:space="preserve"><value>Processor load</value></data>
+  <data name="StressModeFloat" xml:space="preserve"><value>Floating point</value></data>
+  <data name="StressModeInteger" xml:space="preserve"><value>Integer</value></data>
+  <data name="StressModeMixed" xml:space="preserve"><value>Mixed</value></data>
+  <data name="StressModeFloatTip" xml:space="preserve"><value>Vector multiply-add, like Prime95 small FFTs: the most heat and power.</value></data>
+  <data name="StressModeIntegerTip" xml:space="preserve"><value>Integer chains: loads the cores while running cooler.</value></data>
+  <data name="StressModeMixedTip" xml:space="preserve"><value>Alternates both, so load and power keep changing, which catches unstable power delivery.</value></data>
+  <data name="StressDuration" xml:space="preserve"><value>Duration</value></data>
+  <data name="StressMemoryShare" xml:space="preserve"><value>Memory to test</value></data>
+  <data name="StressStopOnError" xml:space="preserve"><value>Stop at the first wrong result</value></data>
+  <data name="StressStart" xml:space="preserve"><value>Start test</value></data>
+  <data name="StressStop" xml:space="preserve"><value>Stop</value></data>
+  <data name="StressElapsed" xml:space="preserve"><value>Elapsed</value></data>
+  <data name="StressRemaining" xml:space="preserve"><value>Left</value></data>
+  <data name="StressErrors" xml:space="preserve"><value>Errors</value></data>
+  <data name="StressNoErrors" xml:space="preserve"><value>No errors</value></data>
+  <data name="StressErrorsCount" xml:space="preserve"><value>{1:N0} errors</value></data>
+  <data name="StressThreads" xml:space="preserve"><value>{1:N0} threads</value></data>
+  <data name="StressRadar" xml:space="preserve"><value>Load radar</value></data>
+  <data name="StressRadarHint" xml:space="preserve"><value>Each spoke is a part of the PC; the further out, the harder it works. A shape pushed to one side shows which part is the bottleneck.</value></data>
+  <data name="StressNow" xml:space="preserve"><value>Now</value></data>
+  <data name="StressPeakLegend" xml:space="preserve"><value>Highest this run</value></data>
+  <data name="StressLevel" xml:space="preserve"><value>Stress level</value></data>
+  <data name="StressLevelCalm" xml:space="preserve"><value>Calm</value></data>
+  <data name="StressLevelModerate" xml:space="preserve"><value>Moderate</value></data>
+  <data name="StressLevelHigh" xml:space="preserve"><value>High</value></data>
+  <data name="StressLevelExtreme" xml:space="preserve"><value>Extreme</value></data>
+  <data name="StressUnderTest" xml:space="preserve"><value>Under test</value></data>
+  <data name="StressNotTested" xml:space="preserve"><value>Not under test</value></data>
+  <data name="StressNotReported" xml:space="preserve"><value>Not reported by this PC</value></data>
+  <data name="StressGpuNote" xml:space="preserve"><value>Used by other apps; tick Graphics to load it</value></data>
+  <data name="StressSensorAcpi" xml:space="preserve"><value>Hottest motherboard sensor (ACPI)</value></data>
+  <data name="StressSensorPower" xml:space="preserve"><value>Processor power, as Windows reports it</value></data>
+  <data name="StressSensorPowerEstimate" xml:space="preserve"><value>Estimate: processor load × its rated power (TDP); this PC doesn't measure it</value></data>
+  <data name="StressPreparing" xml:space="preserve"><value>Preparing</value></data>
+  <data name="StressWriting" xml:space="preserve"><value>Writing</value></data>
+  <data name="StressReading" xml:space="preserve"><value>Reading back</value></data>
+  <data name="StressChecking" xml:space="preserve"><value>Writing and checking</value></data>
+  <data name="StressPassed" xml:space="preserve"><value>Passed</value></data>
+  <data name="StressPassedSub" xml:space="preserve"><value>Ran for {0} with no wrong results. Under this load, your PC is stable.</value></data>
+  <data name="StressErrorFound" xml:space="preserve"><value>Errors found</value></data>
+  <data name="StressErrorFoundSub" xml:space="preserve"><value>A part of the PC gave wrong results under load. The log says which. Let it cool down and run the test again; if it repeats, that part needs attention.</value></data>
+  <data name="StressStopped" xml:space="preserve"><value>Stopped</value></data>
+  <data name="StressStoppedSub" xml:space="preserve"><value>Stopped after {0}, before the end. No wrong results until then.</value></data>
+  <data name="StressFailed" xml:space="preserve"><value>Could not run</value></data>
+  <data name="StressFailedSub" xml:space="preserve"><value>A test could not start or stopped unexpectedly. The log says why.</value></data>
+  <data name="StressTooHot" xml:space="preserve"><value>Too hot</value></data>
+  <data name="StressTooHotSub" xml:space="preserve"><value>Stopped to protect the PC at {0}. Check the fans, the dust and the airflow before trying again.</value></data>
+  <data name="StressStatDuration" xml:space="preserve"><value>Duration</value></data>
+  <data name="StressStatPeakCpu" xml:space="preserve"><value>Peak processor</value></data>
+  <data name="StressStatPeakTemp" xml:space="preserve"><value>Peak temperature</value></data>
+  <data name="StressStatPeakPower" xml:space="preserve"><value>Peak power</value></data>
+  <data name="StressLog" xml:space="preserve"><value>Event log</value></data>
+  <data name="StressLogEmpty" xml:space="preserve"><value>Nothing yet. Start a test to follow what happens.</value></data>
+  <data name="StressLogStarted" xml:space="preserve"><value>Started: {0}</value></data>
+  <data name="StressLogStoppedByUser" xml:space="preserve"><value>Stopped by you.</value></data>
+  <data name="StressLogTooHot" xml:space="preserve"><value>Stopping: the PC reached {0}.</value></data>
+  <data name="StressLogNoMemory" xml:space="preserve"><value>The memory test could not start: not enough free memory.</value></data>
+  <data name="StressLogNoDisk" xml:space="preserve"><value>The disk test could not start: not enough free space.</value></data>
+  <data name="StressLogCrashed" xml:space="preserve"><value>The {0} test stopped unexpectedly.</value></data>
+  <data name="StressLogCpuError" xml:space="preserve"><value>The processor gave a wrong result: it may be overheating, overclocked or undervolted.</value></data>
+  <data name="StressLogMemoryError" xml:space="preserve"><value>Memory read back different from what was written: a memory module may be faulty or overclocked.</value></data>
+  <data name="StressLogDiskError" xml:space="preserve"><value>The disk returned different data from what was written.</value></data>
+  <data name="StressLogNoGpu" xml:space="preserve"><value>The graphics card test could not start: no graphics card with DirectX 11 was found.</value></data>
+  <data name="StressLogGpuError" xml:space="preserve"><value>The graphics card gave a wrong result or its driver reset: it may be overheating, overclocked or have faulty video memory.</value></data>
+  <data name="StressHowToRead" xml:space="preserve"><value>How to read this</value></data>
+  <data name="StressHelpRadar" xml:space="preserve"><value>Radar: the whole PC at once. The filled shape is now, the dashed one the highest of the run; the beam turns while a test runs.</value></data>
+  <data name="StressHelpDial" xml:space="preserve"><value>Dials: how hard each part works. The arc turns orange above 85 %; the orange tick marks the highest so far.</value></data>
+  <data name="StressHelpLevel" xml:space="preserve"><value>Stress level: the busiest part decides it. One bar is calm, five is extreme; the flame fills as it rises.</value></data>
+  <data name="StressHelpErrors" xml:space="preserve"><value>Errors: a wrong calculation, memory word, disk block or graphics card answer. On a healthy PC this stays at zero, however long the test.</value></data>
+  <data name="StressSensorNote" xml:space="preserve"><value>Temperature comes from the motherboard's ACPI sensor and power from the processor, when Windows reports them; many desktops report neither. Without a reading, power is estimated from the load and the processor's rated power, marked with ~: real draw can run above it under heavy load. Pennyworth doesn't install drivers to read more.</value></data>
+  <data name="StressStatus" xml:space="preserve"><value>STRESS {0}</value></data>
 </root>

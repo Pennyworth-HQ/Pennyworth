@@ -47,5 +47,8 @@
     <DataTemplate DataType="vm:AskViewModel">
       <views:AskView />
     </DataTemplate>
+    <DataTemplate DataType="vm:StressViewModel">
+      <views:StressView />
+    </DataTemplate>
   </Application.DataTemplates>
 </Application>

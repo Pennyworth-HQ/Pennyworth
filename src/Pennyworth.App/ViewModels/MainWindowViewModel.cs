@@ -11,6 +11,7 @@ using Pennyworth.Monitoring;
 using Pennyworth.Monitoring.Hardware;
 using Pennyworth.Platform;
 using Pennyworth.Scanning;
+using Pennyworth.Stress;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -32,7 +33,8 @@ public sealed record AppServices(
     CleanupHistory? CleanupHistory = null,
     Func<DateTimeOffset>? Clock = null,
     IClipboardService? Clipboard = null,
-    AssistantServices? Assistant = null);
+    AssistantServices? Assistant = null,
+    Func<StressOptions, IStressRunner>? StressRunner = null);
 
 public enum Page
 {
@@ -44,6 +46,7 @@ public enum Page
     Folders,
     Specs,
     Ask,
+    Stress,
 }
 
 /// <summary>
@@ -85,6 +88,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Folders = new FolderBrowserViewModel(this);
         Pc = new PcViewModel(this);
         Specs = new SpecsViewModel(services.Specs, this, services.Clipboard);
+        Stress = new StressViewModel(Live, this, services.StressRunner, _clock);
+        Stress.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(StressViewModel.State) or nameof(StressViewModel.ElapsedText))
+            {
+                OnPropertyChanged(nameof(StressStatus));
+            }
+        };
         Ask = services.Assistant is { } assistant ? new AskViewModel(assistant, this, _clock) : null;
         if (Ask is not null)
         {
@@ -111,6 +122,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public PcViewModel Pc { get; }
 
     public SpecsViewModel Specs { get; }
+
+    public StressViewModel Stress { get; }
 
     /// <summary>The assistant screen; null when the app runs without assistant services (some tests).</summary>
     public AskViewModel? Ask { get; }
@@ -156,7 +169,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentPage), nameof(MainContent), nameof(ShowSidebar),
-        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage))]
+        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage), nameof(IsStressPage))]
     public partial Page Page { get; private set; }
 
     /// <summary>3D mode replaces the pages with the ASCII PC.</summary>
@@ -174,6 +187,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Page.Memory => Memory,
         Page.Specs => Specs,
         Page.Ask => Ask,
+        Page.Stress => Stress,
         _ => Folders,
     };
 
@@ -195,6 +209,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public bool IsSpecsPage => Page == Page.Specs;
 
     public bool IsAskPage => Page == Page.Ask;
+
+    public bool IsStressPage => Page == Page.Stress;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RescanCommand))]
@@ -255,6 +271,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     public string CpuStatus => Live.HasSample ? $"CPU {Live.CpuText}" : "";
 
+    /// <summary>"STRESS 02:13" while a stress test runs, so it is never forgotten on another page.</summary>
+    public string StressStatus => Stress.IsRunning ? string.Format(Strings.StressStatus, Stress.ElapsedText) : "";
+
     public string BitsLine => Ascii.BitsLine(Live.Bits);
 
     public string ChipArt => Ascii.ChipArt(Live.Bits);
@@ -313,6 +332,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         try
         {
             Memory.Update();
+            Stress.Update();
             Home.RefreshLive();
             Pc.RefreshLive();
         }
@@ -495,6 +515,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Navigate(Page.Specs);
         _ = Specs.EnsureLoaded();
     }
+
+    [RelayCommand]
+    private void GoStress() => Navigate(Page.Stress);
 
     [RelayCommand]
     private void GoAsk()
@@ -754,6 +777,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Cleanup.RefreshTexts();
         Memory.RefreshTexts();
         Specs.RefreshTexts();
+        Stress.RefreshTexts();
         Ask?.RefreshTexts();
         Welcome.Refresh();
         RefreshPages();

@@ -79,6 +79,36 @@ public class GpuMeterTests
     }
 }
 
+[SupportedOSPlatform("windows")]
+public class SensorCountersTests
+{
+    [WindowsFact]
+    public void Power_sums_processor_packages_only()
+    {
+        double? watts = SensorCounters.PickPower(
+            [("RAPL_Package0_PKG", 45_000), ("RAPL_Package0_PP0", 40_000), ("RAPL_Package0_DRAM", 3_000), ("RAPL_Package1_PKG", 15_000)],
+            [("_Total", 120_000)]);
+
+        Assert.Equal(60, watts);
+    }
+
+    [WindowsFact]
+    public void Power_falls_back_to_the_power_meter_and_ignores_nonsense()
+    {
+        Assert.Equal(120, SensorCounters.PickPower([], [("Power Meter (0)", 1), ("_Total", 120_000)]));
+        Assert.Null(SensorCounters.PickPower([], []));
+        Assert.Null(SensorCounters.PickPower([("RAPL_Package0_PKG", 0)], []));
+    }
+
+    [WindowsFact]
+    public void Temperature_is_the_hottest_plausible_zone()
+    {
+        Assert.Equal(76.85, SensorCounters.PickTemperature([("\\_TZ.CPUZ", 3500), ("\\_TZ.GFXZ", 3000)], tenthsOfKelvin: true)!.Value, 2);
+        Assert.Equal(26.85, SensorCounters.PickTemperature([("\\_TZ.THRM", 300), ("bad", 0)], tenthsOfKelvin: false)!.Value, 2);
+        Assert.Null(SensorCounters.PickTemperature([("bad", 0)], tenthsOfKelvin: false));
+    }
+}
+
 public class AppGrouperTests
 {
     private static readonly ProcessExplanation Services = new(
