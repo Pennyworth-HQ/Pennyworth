@@ -16,7 +16,7 @@ public sealed class SecretServiceStoreTests : IDisposable
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public void Save_without_libsecret_throws_plain_words_and_stores_nothing()
     {
         var backend = new FakeBackend { Fail = new DllNotFoundException("libsecret-1.so.0") };
@@ -29,7 +29,7 @@ public sealed class SecretServiceStoreTests : IDisposable
         Assert.Empty(backend.Items);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_library_without_the_needed_functions_is_the_same_as_no_library()
     {
         var store = new SecretServiceStore(new FakeBackend { Fail = new EntryPointNotFoundException("secret_password_storev_sync") });
@@ -39,7 +39,7 @@ public sealed class SecretServiceStoreTests : IDisposable
         Assert.Equal(SecretServiceStore.NoKeyringMessage, ex.Message);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Save_keeps_the_keyring_own_explanation_when_the_service_refuses()
     {
         var store = new SecretServiceStore(new FakeBackend { Fail = new KeyringException("The keyring would not store the key: Cannot create an item in a locked collection") });
@@ -49,10 +49,10 @@ public sealed class SecretServiceStoreTests : IDisposable
         Assert.Contains("locked collection", ex.Message);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Read_and_Delete_without_a_keyring_find_nothing_and_do_not_throw()
     {
-        foreach (Exception failure in new Exception[] { new DllNotFoundException(), new EntryPointNotFoundException(), new KeyringException("no service") })
+        foreach (Exception failure in new Exception[] { new DllNotFoundException(), new EntryPointNotFoundException(), new KeyringException("no service", serviceMissing: true) })
         {
             var store = new SecretServiceStore(new FakeBackend { Fail = failure });
 
@@ -61,7 +61,28 @@ public sealed class SecretServiceStoreTests : IDisposable
         }
     }
 
-    [Fact]
+    [LinuxFact]
+    public void Delete_does_not_hide_a_keyring_that_answered_and_refused()
+    {
+        var backend = new FakeBackend { Fail = new KeyringException("The keyring would not delete the key: locked collection") };
+        var store = new SecretServiceStore(backend);
+
+        var ex = Assert.Throws<KeyringException>(() => store.Delete("cloud-1"));
+
+        Assert.Contains("locked collection", ex.Message);
+    }
+
+    [LinuxTheory]
+    [InlineData("The name org.freedesktop.secrets was not provided by any .service files", true)]
+    [InlineData("GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable", true)]
+    [InlineData("Cannot autolaunch D-Bus without X11 $DISPLAY", true)]
+    [InlineData("Cannot create an item in a locked collection", false)]
+    [InlineData("Object does not exist at path", false)]
+    [InlineData("", false)]
+    public void Tells_a_missing_service_from_one_that_refused(string detail, bool missing) =>
+        Assert.Equal(missing, Libsecret.IsServiceMissing(detail));
+
+    [LinuxFact]
     public void Other_failures_are_not_swallowed()
     {
         var store = new SecretServiceStore(new FakeBackend { Fail = new IOException("disk on fire") });
@@ -71,7 +92,7 @@ public sealed class SecretServiceStoreTests : IDisposable
         Assert.Throws<IOException>(() => store.Delete("cloud-1"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Save_replaces_and_Delete_removes_only_that_profile()
     {
         var backend = new FakeBackend();
@@ -87,7 +108,7 @@ public sealed class SecretServiceStoreTests : IDisposable
         Assert.Equal("other", store.Read("b"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_label_tells_a_person_what_the_item_is()
     {
         var backend = new FakeBackend();
@@ -97,7 +118,7 @@ public sealed class SecretServiceStoreTests : IDisposable
         Assert.Equal("Pennyworth assistant key (cloud-1)", backend.Labels["cloud-1"]);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_NUL_in_a_key_is_refused_instead_of_cut_off_silently()
     {
         var backend = new FakeBackend();
@@ -110,18 +131,18 @@ public sealed class SecretServiceStoreTests : IDisposable
         Assert.Null(store.Read("a\0b"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_empty_profile_id_is_refused()
     {
         Assert.Throws<ArgumentException>(() => new SecretServiceStore(new FakeBackend()).Save("", "k"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Availability_follows_whether_the_service_answers_and_never_throws()
     {
         Assert.True(SecretServiceStore.IsAvailable(new FakeBackend()));
         Assert.False(SecretServiceStore.IsAvailable(new FakeBackend { Fail = new DllNotFoundException() }));
-        Assert.False(SecretServiceStore.IsAvailable(new FakeBackend { Fail = new KeyringException("no service") }));
+        Assert.False(SecretServiceStore.IsAvailable(new FakeBackend { Fail = new KeyringException("no service", serviceMissing: true) }));
     }
 
     [LinuxFact]

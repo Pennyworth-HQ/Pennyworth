@@ -41,7 +41,7 @@ public sealed class LinuxAssistantServicesTests : IDisposable
         Assert.InRange(Math.Abs(services.FreeSpace(sub) - new DriveInfo(_root).AvailableFreeSpace), 0, 64L << 20);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_folder_that_does_not_exist_yet_is_measured_at_its_nearest_existing_parent()
     {
         var measured = new List<string>();
@@ -60,7 +60,7 @@ public sealed class LinuxAssistantServicesTests : IDisposable
         Assert.Equal([existing], measured);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Measures_the_deepest_existing_folder_not_the_root()
     {
         var measured = new List<string>();
@@ -74,7 +74,7 @@ public sealed class LinuxAssistantServicesTests : IDisposable
         Assert.Equal(["/mnt/disk/a"], measured);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Free_space_is_zero_when_nothing_can_be_measured()
     {
         Assert.Equal(0, LinuxAssistantServices.FreeSpace("/gone/away", _ => false, _ => 7));

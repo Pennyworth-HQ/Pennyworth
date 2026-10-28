@@ -16,7 +16,14 @@ internal interface ISecretBackend
 }
 
 /// <summary>The keyring answered with an error, or no keyring answered. The message is safe to show.</summary>
-internal sealed class KeyringException(string message, Exception? inner = null) : InvalidOperationException(message, inner);
+/// <param name="serviceMissing">
+/// True when there is no Secret Service at all (not running, no session bus), so nothing was kept in it by this
+/// session. False when a service answered and refused (locked, no default collection): a key may still be stored.
+/// </param>
+internal sealed class KeyringException(string message, Exception? inner = null, bool serviceMissing = false) : InvalidOperationException(message, inner)
+{
+    public bool ServiceMissing { get; } = serviceMissing;
+}
 
 /// <summary>
 /// API keys in the desktop keyring (the freedesktop Secret Service: GNOME Keyring, KWallet, KeePassXC...)
@@ -24,6 +31,8 @@ internal sealed class KeyringException(string message, Exception? inner = null) 
 /// There is no other place for a key: when libsecret is missing or no service answers, <see cref="Save"/> throws
 /// and nothing is written to a file or the environment. <see cref="Read"/> then finds no key and
 /// <see cref="Delete"/> has nothing to remove, so the Ask screen shows "no key" and can still drop a profile.
+/// A keyring that is there but refuses (locked) is different: the key may still be stored, so <see cref="Delete"/>
+/// throws and the profile stays, instead of dropping the profile and leaving the key behind.
 /// </summary>
 public sealed class SecretServiceStore : ICredentialStore
 {
@@ -97,7 +106,11 @@ public sealed class SecretServiceStore : ICredentialStore
         }
     }
 
-    /// <summary>Removes the key. Without a keyring there is none to remove, so that is not an error.</summary>
+    /// <summary>
+    /// Removes the key. Without a keyring (library missing, no service running) there is none to remove, so that is
+    /// not an error.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">A keyring answered and refused (for example it is locked): the key is still stored.</exception>
     public void Delete(string profileId)
     {
         if (string.IsNullOrEmpty(profileId) || profileId.Contains('\0'))
@@ -109,7 +122,7 @@ public sealed class SecretServiceStore : ICredentialStore
         {
             _backend.Clear(profileId);
         }
-        catch (Exception ex) when (IsUnavailable(ex))
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or KeyringException { ServiceMissing: true })
         {
         }
     }

@@ -109,8 +109,22 @@ internal sealed unsafe partial class Libsecret : ISecretBackend
         return new KeyringException(
             detail.Length == 0
                 ? $"The keyring would not {action}."
-                : $"The keyring would not {action}: {detail}");
+                : $"The keyring would not {action}: {detail}",
+            serviceMissing: IsServiceMissing(detail));
     }
+
+    /// <summary>
+    /// Whether a D-Bus error text says there is no Secret Service to talk to, as opposed to one that answered and
+    /// refused. An unknown text counts as "refused": that is the safe side, because it keeps the profile.
+    /// </summary>
+    internal static bool IsServiceMissing(string detail) =>
+        detail.Contains("was not provided by any .service files", StringComparison.Ordinal)
+        || detail.Contains("ServiceUnknown", StringComparison.Ordinal)
+        || detail.Contains("NameHasNoOwner", StringComparison.Ordinal)
+        || detail.Contains("has no owner", StringComparison.Ordinal)
+        || detail.Contains("Cannot autolaunch D-Bus", StringComparison.Ordinal)
+        || detail.Contains("Could not connect", StringComparison.Ordinal)
+        || detail.Contains("Failed to connect", StringComparison.Ordinal);
 
     private static Native Load()
     {
