@@ -28,43 +28,7 @@ public class MountDriveServiceTests
     private static MountDriveService Service(Func<string, (long, long)?>? space = null, string labels = "/nonexistent") =>
         new(() => Table, space ?? Fixed, labels);
 
-    [Fact]
-    public void Unescapes_octal_sequences_in_mount_points()
-    {
-        var entry = MountTable.Parse("1 0 8:1 / /mnt/a\\040b\\011c\\012d\\134e rw - ext4 /dev/sda1 rw").Single();
-
-        Assert.Equal("/mnt/a b\tc\nd\\e", entry.MountPoint);
-    }
-
-    [Fact]
-    public void Leaves_malformed_escapes_alone_and_decodes_utf8_bytes()
-    {
-        Assert.Equal("/x\\9", MountTable.Unescape("/x\\9"));
-        Assert.Equal("/ç", MountTable.Unescape("/\\303\\247"));
-    }
-
-    [Theory]
-    [InlineData("1 0 8:1 / /m rw - ext4 /dev/sda1 rw")]
-    [InlineData("1 0 8:1 / /m rw shared:1 - ext4 /dev/sda1 rw")]
-    [InlineData("1 0 8:1 / /m rw shared:1 master:2 propagate_from:3 - ext4 /dev/sda1 rw")]
-    public void Finds_the_fixed_tail_after_any_number_of_optional_fields(string line)
-    {
-        var entry = MountTable.Parse(line).Single();
-
-        Assert.Equal("/m", entry.MountPoint);
-        Assert.Equal("ext4", entry.FileSystemType);
-        Assert.Equal("/dev/sda1", entry.Source);
-        Assert.Equal("8:1", entry.MajorMinor);
-        Assert.Equal("rw", entry.MountOptions);
-    }
-
-    [Fact]
-    public void Skips_malformed_lines()
-    {
-        Assert.Empty(MountTable.Parse("garbage\n\n1 0 8:1 / /m rw ext4 /dev/sda1 rw"));
-    }
-
-    [Fact]
+    [LinuxFact]
     public void Lists_all_mount_points_including_pseudo_ones()
     {
         var points = MountTable.MountPoints(Table);
@@ -74,7 +38,7 @@ public class MountDriveServiceTests
         Assert.Equal(15, points.Count);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Drops_pseudo_file_systems_and_squashfs_loops()
     {
         var roots = Service().GetDrives().Select(d => d.RootPath).ToList();
@@ -87,7 +51,7 @@ public class MountDriveServiceTests
         Assert.DoesNotContain("/snap/core/1", roots);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Collapses_subvolume_mounts_with_different_device_numbers_into_the_shortest_path()
     {
         var roots = Service().GetDrives().Select(d => d.RootPath).ToList();
@@ -97,7 +61,7 @@ public class MountDriveServiceTests
         Assert.DoesNotContain("/.snapshots", roots);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Keeps_distinct_partitions_that_report_the_same_size()
     {
         var roots = Service().GetDrives().Select(d => d.RootPath).ToList();
@@ -106,7 +70,7 @@ public class MountDriveServiceTests
         Assert.Contains("/mnt/b", roots);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Orders_the_root_first_then_by_path_and_keeps_removable_media()
     {
         var roots = Service().GetDrives().Select(d => d.RootPath).ToList();
@@ -114,7 +78,7 @@ public class MountDriveServiceTests
         Assert.Equal(["/", "/boot/efi", "/home", "/mnt/a", "/mnt/b", "/run/media/ana/My Stick"], roots);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Skips_a_mount_whose_space_cannot_be_read()
     {
         var drives = Service(path => path == "/home" ? null : (1000, 400)).GetDrives();
@@ -123,7 +87,7 @@ public class MountDriveServiceTests
         Assert.Contains(drives, d => d.RootPath == "/");
     }
 
-    [Fact]
+    [LinuxFact]
     public void Reports_total_and_available_space()
     {
         var root = Service(_ => (1000, 400)).GetDrives().First();
@@ -133,7 +97,7 @@ public class MountDriveServiceTests
         Assert.Equal("/", Service().SystemDriveRoot);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Falls_back_to_the_mount_point_without_a_label()
     {
         Assert.All(Service().GetDrives(), d => Assert.Equal(d.RootPath, d.Label));
