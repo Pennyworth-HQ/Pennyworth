@@ -1,3 +1,4 @@
+using Pennyworth.Tests;
 using Pennyworth.Platform.Linux;
 
 namespace Pennyworth.Platform.Linux.Tests;
@@ -7,7 +8,7 @@ public class XdgPathsTests
     private static Func<string, string?> Env(params (string Name, string Value)[] values) =>
         name => values.FirstOrDefault(v => v.Name == name).Value;
 
-    [Fact]
+    [LinuxFact]
     public void Falls_back_to_the_specification_defaults_under_home()
     {
         var paths = new XdgPaths(Env(("HOME", "/home/ana")));
@@ -18,7 +19,7 @@ public class XdgPathsTests
         Assert.Equal(Path.Combine("/home/ana", ".local", "state"), paths.StateHome);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Settings_follow_the_config_home_and_everything_else_the_data_home()
     {
         var paths = new XdgPaths(Env(("HOME", "/home/ana"), ("XDG_CONFIG_HOME", "/c"), ("XDG_DATA_HOME", "/d")));
@@ -30,7 +31,7 @@ public class XdgPathsTests
         Assert.Equal(Path.Combine("/d", "Pennyworth", "models"), paths.ModelRoot);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("relative/dir")]
     [InlineData(".config")]
@@ -42,7 +43,7 @@ public class XdgPathsTests
         Assert.Equal(Path.Combine("/home/ana", ".local", "share"), paths.DataHome);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Drops_a_trailing_separator()
     {
         var paths = new XdgPaths(Env(("HOME", "/home/ana/"), ("XDG_CACHE_HOME", "/cache/")));
@@ -60,35 +61,40 @@ public class EnvironmentScopeTests
         return new EnvironmentScope(new XdgPaths(Env), Env);
     }
 
-    [Theory]
-    [InlineData("USERPROFILE", "/home/ana")]
+    [LinuxTheory]
     [InlineData("HOME", "/home/ana")]
-    [InlineData("LOCALAPPDATA", "/home/ana/.cache")]
-    [InlineData("LocalAppData", "/home/ana/.cache")]
-    [InlineData("APPDATA", "/home/ana/.config")]
+    [InlineData("XDG_CACHE_HOME", "/home/ana/.cache")]
+    [InlineData("XDG_CONFIG_HOME", "/home/ana/.config")]
     [InlineData("XDG_DATA_HOME", "/home/ana/.local/share")]
-    [InlineData("SystemDrive", "/")]
-    public void Maps_the_names_the_data_uses(string name, string expected)
+    [InlineData("XDG_STATE_HOME", "/home/ana/.local/state")]
+    public void Resolves_the_names_the_linux_data_uses(string name, string expected)
     {
         string? resolved = Scope(("HOME", "/home/ana")).Resolve(name);
 
         Assert.Equal(expected, resolved?.Replace(Path.DirectorySeparatorChar, '/'));
     }
 
-    [Theory]
+    [LinuxTheory]
+    [InlineData("TEMP")]
+    [InlineData("TMP")]
+    [InlineData("LOCALAPPDATA")]
+    [InlineData("APPDATA")]
+    [InlineData("USERPROFILE")]
+    [InlineData("SystemDrive")]
     [InlineData("SystemRoot")]
     [InlineData("ProgramFiles")]
     [InlineData("ProgramData")]
     [InlineData("PATH")]
+    [InlineData("home")]
     [InlineData("")]
-    public void Leaves_names_without_a_meaning_here_unresolved(string name) =>
+    public void Windows_names_and_anything_else_stay_unresolved_so_their_rules_are_dropped(string name) =>
         Assert.Null(Scope(("HOME", "/home/ana")).Resolve(name));
 
-    [Fact]
+    [LinuxFact]
     public void Temp_follows_tmpdir_and_otherwise_slash_tmp()
     {
-        Assert.Equal("/run/user/1000", Scope(("HOME", "/h"), ("TMPDIR", "/run/user/1000/")).Resolve("TEMP"));
-        Assert.Equal("/tmp", Scope(("HOME", "/h")).Resolve("TEMP"));
-        Assert.Equal("/tmp", Scope(("HOME", "/h"), ("TMPDIR", "relative")).Resolve("TMP"));
+        Assert.Equal("/run/user/1000", Scope(("HOME", "/h"), ("TMPDIR", "/run/user/1000/")).Resolve("TMPDIR"));
+        Assert.Equal("/tmp", Scope(("HOME", "/h")).Resolve("TMPDIR"));
+        Assert.Equal("/tmp", Scope(("HOME", "/h"), ("TMPDIR", "relative")).Resolve("TMPDIR"));
     }
 }
