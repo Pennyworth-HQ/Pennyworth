@@ -39,7 +39,9 @@ public static class FactCollector
             Add("os.uptime_hours", TopicKind.Overview, T("Hours since the PC was last restarted", "Horas desde que o PC foi reiniciado"), FactKind.Count, Math.Floor(specs.Os.Uptime.TotalHours));
         }
 
-        Add("unlock.state", TopicKind.Overview, T("Full-scan permission granted (1 = yes)", "Permissão de verificação completa concedida (1 = sim)"), FactKind.Count, snapshot.IsUnlocked ? 1 : 0);
+        Add("unlock.state", TopicKind.Overview, IsWindows(snapshot) || snapshot.Specs is null
+            ? T("Full-scan permission granted (1 = yes)", "Permissão de verificação completa concedida (1 = sim)")
+            : T("System space measured (1 = yes)", "Espaço do sistema medido (1 = sim)"), FactKind.Count, snapshot.IsUnlocked ? 1 : 0);
         return facts;
     }
 
@@ -73,7 +75,7 @@ public static class FactCollector
         if (snapshot.Specs is { } specs)
         {
             var unused = specs.Disks.Where(d => d.IsSsd == true && d.Letters.Count == 0).ToList();
-            add("disk.unused_ssd_count", TopicKind.Storage, t("SSDs with no drive letter (not in use)", "SSDs sem letra de unidade (sem uso)"), FactKind.Count, unused.Count, null);
+            add("disk.unused_ssd_count", TopicKind.Storage, windows ? t("SSDs with no drive letter (not in use)", "SSDs sem letra de unidade (sem uso)") : t("SSDs with nothing mounted (not in use)", "SSDs sem nada montado (sem uso)"), FactKind.Count, unused.Count, null);
             if (unused.Count > 0)
             {
                 add("disk.unused_ssd", TopicKind.Storage, t("Unused SSD", "SSD sem uso"), FactKind.Text, 0,
@@ -93,7 +95,7 @@ public static class FactCollector
         {
             foreach (var (category, bytes) in categories.Where(c => c.Value > 0).OrderByDescending(c => c.Value))
             {
-                add($"storage.{category.ToString().ToLowerInvariant()}", TopicKind.Storage, t($"On the {os} drive: {CategoryName(category, false)}", $"No disco do {osPt}: {CategoryName(category, true)}"), FactKind.Bytes, bytes, null);
+                add($"storage.{category.ToString().ToLowerInvariant()}", TopicKind.Storage, t($"On the {os} drive: {CategoryName(category, false, windows)}", $"No disco do {osPt}: {CategoryName(category, true, windows)}"), FactKind.Bytes, bytes, null);
             }
         }
     }
@@ -249,12 +251,12 @@ public static class FactCollector
     private static string AppName(AppGroup app, CultureInfo culture) =>
         app.Explanation?.Title.Get(culture) ?? app.Description ?? app.Key;
 
-    private static string CategoryName(StorageCategory category, bool pt) => category switch
+    private static string CategoryName(StorageCategory category, bool pt, bool windows) => category switch
     {
         StorageCategory.Games => pt ? "jogos" : "games",
         StorageCategory.Apps => pt ? "apps" : "apps",
         StorageCategory.YourFiles => pt ? "seus arquivos" : "your files",
-        StorageCategory.Windows => "Windows",
+        StorageCategory.Windows => windows ? "Windows" : pt ? "sistema" : "system",
         StorageCategory.HiddenSystem => pt ? "sistema oculto" : "hidden system space",
         _ => pt ? "outros" : "other",
     };
