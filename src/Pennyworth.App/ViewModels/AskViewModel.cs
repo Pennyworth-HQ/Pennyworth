@@ -774,7 +774,17 @@ public sealed partial class AskViewModel : ObservableObject
     {
         if (!row.Profile.IsLocal)
         {
-            _services.Keys.Delete(row.Profile.Id);
+            try
+            {
+                _services.Keys.Delete(row.Profile.Id);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // The keyring answered and refused (locked): the key is still stored, so keep the profile
+                // that points at it rather than dropping the profile and leaving the key behind.
+                _host.ShowToast(ex.Message);
+                return;
+            }
         }
 
         AssistantSettings settings = _host.AssistantSettings;

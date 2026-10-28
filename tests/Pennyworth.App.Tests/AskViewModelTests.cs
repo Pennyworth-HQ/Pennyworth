@@ -285,6 +285,22 @@ public sealed class AskViewModelTests : IDisposable
     }
 
     [Fact]
+    public void A_keyring_that_refuses_to_delete_keeps_the_profile()
+    {
+        var (_, ask) = Create();
+        ask.ApiKey = "sk-1";
+        ask.SaveCloudProfileCommand.Execute(null);
+        string id = ask.Profile!.Id;
+        ask.ShowSettingsCommand.Execute(null);
+        _keys.DeleteFails = new InvalidOperationException("The keyring would not delete the key: locked");
+
+        ask.RemoveProfileCommand.Execute(Assert.Single(ask.ProfileRows));
+
+        Assert.Equal(id, Assert.Single(ask.ProfileRows).Profile.Id);
+        Assert.Equal("sk-1", _keys.Read(id));
+    }
+
+    [Fact]
     public async Task Stop_cancels_a_streaming_answer()
     {
         var (_, ask) = Create();
@@ -325,7 +341,17 @@ public sealed class AskViewModelTests : IDisposable
 
         public string? Read(string profileId) => _keys.GetValueOrDefault(profileId);
 
-        public void Delete(string profileId) => _keys.Remove(profileId);
+        public Exception? DeleteFails { get; set; }
+
+        public void Delete(string profileId)
+        {
+            if (DeleteFails is not null)
+            {
+                throw DeleteFails;
+            }
+
+            _keys.Remove(profileId);
+        }
     }
 
     private sealed class FakeSpecs : ISpecsReader
