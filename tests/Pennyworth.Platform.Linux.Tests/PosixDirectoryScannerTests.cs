@@ -24,7 +24,7 @@ public sealed class PosixDirectoryScannerTests : IDisposable
         Run("/bin/rm", "-rf", _root);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Statx_struct_has_the_kernel_layout()
     {
         Assert.Equal(256, Marshal.SizeOf<StatxBuffer>());
@@ -45,7 +45,7 @@ public sealed class PosixDirectoryScannerTests : IDisposable
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public void FromBuffer_derives_kind_sizes_and_identity()
     {
         var buffer = new StatxBuffer
