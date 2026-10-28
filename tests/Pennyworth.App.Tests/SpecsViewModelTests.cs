@@ -5,6 +5,8 @@ using static Pennyworth.App.Tests.SampleTrees;
 
 namespace Pennyworth.App.Tests;
 
+// Asserts English labels: must not run while another test has switched to Portuguese.
+[Collection(nameof(LanguageSwitching))]
 public class SpecsViewModelTests
 {
     internal static PcSpecs SamplePc(BatterySpecs? battery = null) => new(

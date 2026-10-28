@@ -47,5 +47,8 @@
     <DataTemplate DataType="vm:AskViewModel">
       <views:AskView />
     </DataTemplate>
+    <DataTemplate DataType="vm:AlertsViewModel">
+      <views:AlertsView />
+    </DataTemplate>
   </Application.DataTemplates>
 </Application>

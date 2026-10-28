@@ -1,7 +1,10 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
+using Pennyworth.App.Localization;
+using Pennyworth.App.Resources;
 using Pennyworth.App.Services;
 using Pennyworth.App.Services.Windows;
 using Pennyworth.App.ViewModels;
@@ -27,6 +30,8 @@ public sealed partial class App : Application
             IPlatform platform = CreatePlatform();
             var classifier = new RuleClassifier(KnowledgeBaseLoader.LoadEmbedded().Locations, platform.ResolveVariable);
             ISystemMonitor? monitor = platform.CreateMonitor(KnowledgeBaseLoader.LoadProcesses().Processes);
+            ITray? tray = CreateTray(platform);
+            var window = new MainWindow();
             var viewModel = new MainWindowViewModel(new AppServices(
                 platform.Drives,
                 platform.Scanner,
@@ -40,12 +45,28 @@ public sealed partial class App : Application
                 monitor,
                 platform.Closer,
                 new CleanupHistory(platform.CleanupHistoryPath),
-                Clipboard: new AvaloniaClipboardService(() => desktop.MainWindow),
-                Assistant: platform.CreateAssistant(() => monitor?.Sample().Memory.Available ?? 0)));
+                Clipboard: new AvaloniaClipboardService(() => window),
+                Assistant: platform.CreateAssistant(() => monitor?.Sample().Memory.Available ?? 0),
+                Notifier: tray,
+                Startup: platform.Startup));
 
-            desktop.MainWindow = new MainWindow { DataContext = viewModel };
-            desktop.Exit += (_, _) => (monitor as IDisposable)?.Dispose();
+            window.DataContext = viewModel;
+            desktop.Exit += (_, _) =>
+            {
+                tray?.Dispose();
+                (monitor as IDisposable)?.Dispose();
+            };
             viewModel.Initialize();
+
+            if (tray is null)
+            {
+                desktop.MainWindow = window;
+                SingleInstance.ShowRequested = () => Dispatcher.UIThread.Post(window.Activate);
+            }
+            else
+            {
+                RunInTray(desktop, window, viewModel, tray);
+            }
 
             // Live numbers once per second; the first sample right away.
             var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -66,6 +87,94 @@ public sealed partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// With a tray icon the app lives until "Exit": closing the window only hides it when the person
+    /// wants it kept in the background, and a start at sign-in begins hidden.
+    /// </summary>
+    private static void RunInTray(IClassicDesktopStyleApplicationLifetime desktop, MainWindow window, MainWindowViewModel viewModel, ITray tray)
+    {
+        bool exiting = false;
+        desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        void Show()
+        {
+            viewModel.InBackground = false;
+            window.Show();
+            if (window.WindowState == WindowState.Minimized)
+            {
+                window.WindowState = WindowState.Normal;
+            }
+
+            window.Activate();
+            _ = viewModel.TickAsync(); // Fresh numbers right away, not up to a second later.
+        }
+
+        void Exit()
+        {
+            exiting = true;
+            desktop.Shutdown();
+        }
+
+        void UpdateMenu() => tray.Show("Pennyworth",
+        [
+            new TrayMenuItem(Strings.TrayOpen, Show),
+            new TrayMenuItem(Strings.TrayPause, () => { viewModel.Alerts.TogglePaused(); UpdateMenu(); }, IsChecked: !viewModel.Alerts.Enabled),
+            new TrayMenuItem(Strings.TrayExit, Exit),
+        ], Show);
+
+        UpdateMenu();
+        Localizer.Instance.LanguageChanged += (_, _) => UpdateMenu();
+        viewModel.Alerts.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AlertsViewModel.Enabled))
+            {
+                UpdateMenu();
+            }
+        };
+        viewModel.ShowWindowRequested += (_, _) => Show();
+        SingleInstance.ShowRequested = () => Dispatcher.UIThread.Post(Show);
+
+        window.Closing += (_, e) =>
+        {
+            if (exiting || !viewModel.RunInBackground)
+            {
+                return;
+            }
+
+            e.Cancel = true;
+            window.Hide();
+            viewModel.InBackground = true;
+            if (viewModel.TakeBackgroundHint())
+            {
+                tray.Notify(Strings.BackgroundHintTitle, Strings.BackgroundHintBody);
+            }
+        };
+        window.Closed += (_, _) => Exit();
+
+        if (desktop.Args?.Contains(SingleInstance.BackgroundArgument) == true)
+        {
+            viewModel.InBackground = true;
+        }
+        else
+        {
+            Show();
+        }
+    }
+
+    private static ITray? CreateTray(IPlatform platform)
+    {
+        try
+        {
+            return platform.CreateTray();
+        }
+        catch (InvalidOperationException ex)
+        {
+            // No tray: the app works as before, closing quits and alerts show as toasts.
+            System.Diagnostics.Debug.WriteLine(ex);
+            return null;
+        }
     }
 
     private static IPlatform CreatePlatform() => OperatingSystem.IsWindows()

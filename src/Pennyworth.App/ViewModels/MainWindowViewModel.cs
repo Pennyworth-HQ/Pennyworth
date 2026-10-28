@@ -8,6 +8,7 @@ using Pennyworth.Cleanup;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
 using Pennyworth.Monitoring;
+using Pennyworth.Monitoring.Alerts;
 using Pennyworth.Monitoring.Hardware;
 using Pennyworth.Platform;
 using Pennyworth.Scanning;
@@ -32,7 +33,9 @@ public sealed record AppServices(
     CleanupHistory? CleanupHistory = null,
     Func<DateTimeOffset>? Clock = null,
     IClipboardService? Clipboard = null,
-    AssistantServices? Assistant = null);
+    AssistantServices? Assistant = null,
+    INotifier? Notifier = null,
+    IStartupRegistration? Startup = null);
 
 public enum Page
 {
@@ -44,13 +47,14 @@ public enum Page
     Folders,
     Specs,
     Ask,
+    Alerts,
 }
 
 /// <summary>
 /// The app shell: pages, Simple/3D mode, scans per drive, live monitoring, dialogs, toasts,
 /// language and theme. Pages call back into it through small host interfaces.
 /// </summary>
-public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost, IMemoryHost, IAskHost
+public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost, IMemoryHost, IAskHost, IAlertsHost
 {
     private static readonly TimeSpan ToastDuration = TimeSpan.FromSeconds(3.4);
 
@@ -85,6 +89,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Folders = new FolderBrowserViewModel(this);
         Pc = new PcViewModel(this);
         Specs = new SpecsViewModel(services.Specs, this, services.Clipboard);
+        Alerts = new AlertsViewModel(this, services.Notifier, services.Drives, services.Startup, _clock);
         Ask = services.Assistant is { } assistant ? new AskViewModel(assistant, this, _clock) : null;
         if (Ask is not null)
         {
@@ -111,6 +116,20 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public PcViewModel Pc { get; }
 
     public SpecsViewModel Specs { get; }
+
+    public AlertsViewModel Alerts { get; }
+
+    /// <summary>The window asks to come back from the tray, after a click on a notification.</summary>
+    public event EventHandler? ShowWindowRequested;
+
+    /// <summary>
+    /// True while the window is hidden in the tray: samples still feed the alerts, but no
+    /// screen is refreshed for nobody to see.
+    /// </summary>
+    public bool InBackground { get; set; }
+
+    /// <summary>Closing the window hides it in the tray instead of quitting.</summary>
+    public bool RunInBackground => _settings.Alerts.RunInBackground;
 
     /// <summary>The assistant screen; null when the app runs without assistant services (some tests).</summary>
     public AskViewModel? Ask { get; }
@@ -156,7 +175,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentPage), nameof(MainContent), nameof(ShowSidebar),
-        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage))]
+        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage), nameof(IsAlertsPage))]
     public partial Page Page { get; private set; }
 
     /// <summary>3D mode replaces the pages with the ASCII PC.</summary>
@@ -174,6 +193,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Page.Memory => Memory,
         Page.Specs => Specs,
         Page.Ask => Ask,
+        Page.Alerts => Alerts,
         _ => Folders,
     };
 
@@ -195,6 +215,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public bool IsSpecsPage => Page == Page.Specs;
 
     public bool IsAskPage => Page == Page.Ask;
+
+    public bool IsAlertsPage => Page == Page.Alerts;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RescanCommand))]
@@ -290,6 +312,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             try
             {
                 MonitorSample sample = await Task.Run(monitor.Sample);
+                Alerts.Check(sample);
                 Live.Apply(sample);
                 _recentSamples.Enqueue(sample);
                 while (_recentSamples.Count > FactCollector.SustainedSamples)
@@ -308,6 +331,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         else
         {
             Live.Flicker();
+        }
+
+        if (InBackground)
+        {
+            return;
         }
 
         try
@@ -494,6 +522,39 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     {
         Navigate(Page.Specs);
         _ = Specs.EnsureLoaded();
+    }
+
+    [RelayCommand]
+    private void GoAlerts() => Navigate(Page.Alerts);
+
+    AlertSettings IAlertsHost.AlertSettings => _settings.Alerts;
+
+    void IAlertsHost.SaveAlertSettings(AlertSettings settings) => SaveSettings(_settings with { Alerts = settings });
+
+    void IAlertsHost.OpenFromAlert(AlertComponent component)
+    {
+        if (component == AlertComponent.Disk)
+        {
+            ShowStorageCommand.Execute(null);
+        }
+        else
+        {
+            Navigate(Page.Memory);
+        }
+
+        ShowWindowRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>True the first time the window hides in the tray, so the person learns where it went.</summary>
+    public bool TakeBackgroundHint()
+    {
+        if (_settings.Alerts.BackgroundHintShown)
+        {
+            return false;
+        }
+
+        SaveSettings(_settings with { Alerts = _settings.Alerts with { BackgroundHintShown = true } });
+        return true;
     }
 
     [RelayCommand]
@@ -754,6 +815,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Cleanup.RefreshTexts();
         Memory.RefreshTexts();
         Specs.RefreshTexts();
+        Alerts.RefreshTexts();
         Ask?.RefreshTexts();
         Welcome.Refresh();
         RefreshPages();

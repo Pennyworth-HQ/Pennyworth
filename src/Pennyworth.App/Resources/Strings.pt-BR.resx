@@ -402,4 +402,42 @@
   <data name="ActionUnlock" xml:space="preserve"><value>Liberar verificação completa</value></data>
   <data name="DeviceGpu" xml:space="preserve"><value>{0} na placa de vídeo</value></data>
   <data name="DeviceCpu" xml:space="preserve"><value>{0} no processador</value></data>
+  <data name="NavAlerts" xml:space="preserve"><value>Alertas</value></data>
+  <data name="NavAlertsHint" xml:space="preserve"><value>Vigie o PC pela bandeja</value></data>
+  <data name="AlertsTitle" xml:space="preserve"><value>Me avise quando o PC estiver no limite</value></data>
+  <data name="AlertsSub" xml:space="preserve"><value>O Pennyworth pode ficar ao lado do relógio depois que você fecha a janela e avisar quando uma peça passa do limite por 10 segundos. Cada alerta dispara uma vez e espera a peça se acalmar antes de poder disparar de novo.</value></data>
+  <data name="AlertsEnabled" xml:space="preserve"><value>Enviar notificações</value></data>
+  <data name="AlertsBackground" xml:space="preserve"><value>Continuar rodando na bandeja ao fechar a janela</value></data>
+  <data name="AlertsStartup" xml:space="preserve"><value>Iniciar com o Windows, escondido na bandeja</value></data>
+  <data name="AlertsStartupFailed" xml:space="preserve"><value>O Windows não me deixou mudar os aplicativos de inicialização.</value></data>
+  <data name="AlertsNoTray" xml:space="preserve"><value>Este sistema não tem ícone na bandeja, então os alertas só aparecem com a janela aberta.</value></data>
+  <data name="AlertsRules" xml:space="preserve"><value>Regras</value></data>
+  <data name="AlertsRulesHint" xml:space="preserve"><value>Adicione suas próprias regras para vigiar outros limites ou ser avisado com suas palavras.</value></data>
+  <data name="AlertsAbove" xml:space="preserve"><value>Acima de</value></data>
+  <data name="AlertsMessage" xml:space="preserve"><value>Sua própria mensagem (opcional)</value></data>
+  <data name="AlertsAdd" xml:space="preserve"><value>Adicionar alerta</value></data>
+  <data name="AlertsRemove" xml:space="preserve"><value>Remover</value></data>
+  <data name="AlertsTest" xml:space="preserve"><value>Enviar um teste</value></data>
+  <data name="AlertsRecent" xml:space="preserve"><value>Alertas recentes</value></data>
+  <data name="AlertsNoRecent" xml:space="preserve"><value>Nada ainda. Boa notícia.</value></data>
+  <data name="AlertShortCpu" xml:space="preserve"><value>CPU</value></data>
+  <data name="AlertShortMemory" xml:space="preserve"><value>RAM</value></data>
+  <data name="AlertShortGpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="AlertShortDisk" xml:space="preserve"><value>Disco</value></data>
+  <data name="AlertDiskName" xml:space="preserve"><value>Disco {0}</value></data>
+  <data name="AlertTitle" xml:space="preserve"><value>{0} em {1:N0}%</value></data>
+  <data name="AlertBodyCpu" xml:space="preserve"><value>Algo está ocupando o processador. Clique para ver quais aplicativos.</value></data>
+  <data name="AlertBodyMemory" xml:space="preserve"><value>A memória está quase cheia e o PC pode ficar lento. Clique para ver quais aplicativos a usam.</value></data>
+  <data name="AlertBodyGpu" xml:space="preserve"><value>A placa de vídeo está trabalhando a toda carga. Clique para ver quais aplicativos.</value></data>
+  <data name="AlertBodyDisk" xml:space="preserve"><value>O disco {0} está quase cheio. Clique para ver o que ocupa o espaço.</value></data>
+  <data name="AlertTestTitle" xml:space="preserve"><value>Os alertas do Pennyworth estão ligados</value></data>
+  <data name="AlertTestBody" xml:space="preserve"><value>É assim que um aviso vai aparecer.</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Abrir o Pennyworth</value></data>
+  <data name="TrayPause" xml:space="preserve"><value>Pausar alertas</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Sair</value></data>
+  <data name="BackgroundHintTitle" xml:space="preserve"><value>O Pennyworth continua rodando</value></data>
+  <data name="BackgroundHintBody" xml:space="preserve"><value>Vou ficar de olho no PC pela bandeja. Clique com o botão direito no ícone para sair.</value></data>
+  <data name="AlertNameCpu" xml:space="preserve"><value>Processador</value></data>
+  <data name="AlertNameMemory" xml:space="preserve"><value>Memória</value></data>
+  <data name="AlertNameGpu" xml:space="preserve"><value>Placa de vídeo</value></data>
 </root>
