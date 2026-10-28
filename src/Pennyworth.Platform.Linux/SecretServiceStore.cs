@@ -21,11 +21,11 @@ internal interface ISecretBackend
 /// </summary>
 internal sealed class UnavailableKeyring(string message) : ISecretBackend
 {
-    public void Store(string profileId, string label, string secret) => throw new KeyringException(message);
+    public void Store(string profileId, string label, string secret) => throw new KeyringException(message, serviceMissing: true);
 
-    public string? Lookup(string profileId) => throw new KeyringException(message);
+    public string? Lookup(string profileId) => throw new KeyringException(message, serviceMissing: true);
 
-    public void Clear(string profileId) => throw new KeyringException(message);
+    public void Clear(string profileId) => throw new KeyringException(message, serviceMissing: true);
 }
 
 /// <summary>The keyring answered with an error, or no keyring answered. The message is safe to show.</summary>

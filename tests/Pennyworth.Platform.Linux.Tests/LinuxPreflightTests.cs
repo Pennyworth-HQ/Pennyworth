@@ -5,7 +5,7 @@ namespace Pennyworth.Platform.Linux.Tests;
 
 public sealed class LinuxPreflightTests
 {
-    [Fact]
+    [LinuxFact]
     public void A_complete_machine_has_no_problems()
     {
         PreflightReport report = LinuxPreflight.Run(new FakeProbe());
@@ -15,7 +15,7 @@ public sealed class LinuxPreflightTests
         Assert.Empty(report.Blocking);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_missing_libsecret_disables_only_the_keyring_with_one_plain_sentence()
     {
         PreflightReport report = LinuxPreflight.Run(new FakeProbe { MissingLibraries = { LinuxPreflight.SecretLibrary } });
@@ -31,7 +31,7 @@ public sealed class LinuxPreflightTests
         Assert.DoesNotContain("password", problem.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_missing_glib_or_a_libsecret_without_the_needed_functions_is_the_same_problem()
     {
         PreflightReport noGlib = LinuxPreflight.Run(new FakeProbe { MissingLibraries = { LinuxPreflight.GlibLibrary } });
@@ -42,7 +42,7 @@ public sealed class LinuxPreflightTests
         Assert.Equal(LinuxPreflight.SecretLibrary, tooOld.Keyring!.Missing);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_libc_without_statx_blocks_storage_and_names_the_function()
     {
         PreflightReport report = LinuxPreflight.Run(new FakeProbe { MissingExports = { "statx" } });
@@ -54,7 +54,7 @@ public sealed class LinuxPreflightTests
         Assert.Null(report.Keyring);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Without_proc_the_live_numbers_are_blocked()
     {
         PreflightReport report = LinuxPreflight.Run(new FakeProbe { MissingFiles = { "/proc/meminfo" } });
@@ -64,7 +64,7 @@ public sealed class LinuxPreflightTests
         Assert.Equal("/proc/meminfo", problem.Missing);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Everything_missing_reports_every_feature_once()
     {
         var probe = new FakeProbe { MissingLibraries = { LinuxPreflight.SecretLibrary, LinuxPreflight.CLibrary } };
@@ -76,7 +76,7 @@ public sealed class LinuxPreflightTests
             report.Problems.Select(p => p.Feature));
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_disabled_keyring_stores_nothing_and_never_asks_for_anything()
     {
         const string sentence = "API keys cannot be saved because the keyring library (libsecret-1.so.0) is missing or too old; install the libsecret package to turn the keyring on.";
