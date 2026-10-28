@@ -48,7 +48,9 @@ public sealed partial class App : Application
                 Clipboard: new AvaloniaClipboardService(() => window),
                 Assistant: platform.CreateAssistant(() => monitor?.Sample().Memory.Available ?? 0),
                 Notifier: tray,
-                Startup: platform.Startup));
+                Startup: platform.Startup,
+                Pets: new PetLibrary(Path.Combine(Path.GetDirectoryName(platform.SettingsPath)!, "pets")),
+                Files: new AvaloniaFilePicker(() => window)));
 
             window.DataContext = viewModel;
             desktop.Exit += (_, _) =>
@@ -170,12 +172,12 @@ public sealed partial class App : Application
     }
 
     /// <summary>
-    /// The pet's window follows the pet chosen on the alerts screen: shown with one, hidden with
-    /// none, and animated only while it is on the screen.
+    /// The pet's window follows the pet added in Settings: shown with one, hidden with none, and
+    /// its bubbles timed only while it is on the screen.
     /// </summary>
     private static PetWindow ShowPet(MainWindowViewModel viewModel)
     {
-        PetViewModel pet = viewModel.Alerts.Pet;
+        PetViewModel pet = viewModel.Pet;
         pet.ReduceMotion = OperatingSystem.IsWindows() && WindowsAnimations.AreOff();
         var window = new PetWindow { DataContext = pet };
         window.OpenRequested += (_, _) => viewModel.RequestShowWindow();

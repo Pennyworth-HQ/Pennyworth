@@ -13,18 +13,6 @@ public enum ThemePreference
     Dark,
 }
 
-/// <summary>The companion that sits on the desktop and says the notifications. None sends them as Windows toasts.</summary>
-public enum PetKind
-{
-    None,
-    Cat,
-    Dog,
-    Owl,
-    Bunny,
-    Robot,
-    Ghost,
-}
-
 public sealed record AppSettings
 {
     public LanguagePreference Language { get; init; } = LanguagePreference.System;
@@ -33,6 +21,9 @@ public sealed record AppSettings
 
     /// <summary>The welcome screen is shown until the first "Analyze my PC".</summary>
     public bool WelcomeSeen { get; init; }
+
+    /// <summary>The pet on the desktop (its folder in the pet library), or null for none.</summary>
+    public string? PetId { get; init; }
 
     /// <summary>Never null: a settings file from before the assistant has no "assistant" key, and the JSON source generator passes null for missing init properties.</summary>
     public AssistantSettings Assistant { get => field ?? new(); init; }
@@ -46,10 +37,11 @@ public sealed record AppSettings
         && Language == other.Language
         && Theme == other.Theme
         && WelcomeSeen == other.WelcomeSeen
+        && PetId == other.PetId
         && Assistant.Equals(other.Assistant)
         && Alerts.Equals(other.Alerts);
 
-    public override int GetHashCode() => HashCode.Combine(Language, Theme, WelcomeSeen);
+    public override int GetHashCode() => HashCode.Combine(Language, Theme, WelcomeSeen, PetId);
 }
 
 /// <summary>How the assistant answers. API keys are never here; they live in the Windows Credential Manager.</summary>
@@ -90,18 +82,14 @@ public sealed record AlertSettings
     /// <summary>Missing in older files means the defaults; an empty list means the person removed them all.</summary>
     public IReadOnlyList<AlertRule> Rules { get => field ?? AlertRule.Defaults; init; }
 
-    /// <summary>The pet that says the notifications instead of Windows; None by default.</summary>
-    public PetKind Pet { get; init; }
-
     public bool Equals(AlertSettings? other) =>
         other is not null
         && Enabled == other.Enabled
         && RunInBackground == other.RunInBackground
         && BackgroundHintShown == other.BackgroundHintShown
-        && Pet == other.Pet
         && Rules.SequenceEqual(other.Rules);
 
-    public override int GetHashCode() => HashCode.Combine(Enabled, RunInBackground, Pet, Rules.Count);
+    public override int GetHashCode() => HashCode.Combine(Enabled, RunInBackground, Rules.Count);
 }
 
 public interface ISettingsStore

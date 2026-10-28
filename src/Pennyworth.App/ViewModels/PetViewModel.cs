@@ -1,3 +1,4 @@
+using System.Globalization;
 using Pennyworth.App.Resources;
 using Pennyworth.App.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -5,9 +6,43 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace Pennyworth.App.ViewModels;
 
+/// <summary>The rows of a Codex pet spritesheet, top to bottom.</summary>
+public enum PetAnimation
+{
+    Idle,
+    RunningRight,
+    RunningLeft,
+    Waving,
+    Jumping,
+    Failed,
+    Waiting,
+    Running,
+    Review,
+}
+
+/// <summary>What the app is doing, which the pet acts out.</summary>
+public enum PetActivity
+{
+    Resting,
+
+    /// <summary>Scanning or cleaning.</summary>
+    Working,
+
+    /// <summary>The assistant is answering.</summary>
+    Thinking,
+}
+
+public interface IPetHost
+{
+    void ShowToast(string message);
+
+    void SavePetId(string? id);
+}
+
 /// <summary>
-/// The pet on the desktop: an ASCII animal that blinks while idle and says each notification in a
-/// speech bubble. Bubbles queue up, stay while the pointer is on them, and go away on their own.
+/// The pet on the desktop: a Codex pet the person downloaded (from Petdex or another pet site)
+/// and added from its file. It says each notification in a speech bubble; bubbles queue up, stay
+/// while the pointer is on them, and go away on their own. It runs while the app works.
 /// </summary>
 public sealed partial class PetViewModel : ObservableObject
 {
@@ -20,26 +55,37 @@ public sealed partial class PetViewModel : ObservableObject
     public const int MaxQueued = 3;
 
     private readonly Queue<PetSpeech> _queue = new();
+    private readonly PetLibrary? _library;
+    private readonly IFilePicker? _picker;
+    private readonly IPetHost? _host;
     private readonly Func<DateTimeOffset> _clock;
     private DateTimeOffset _speechEnds;
-    private int _tick;
+    private PetActivity _activity;
+    private PetAnimation? _oneShot;
+    private DateTimeOffset _oneShotUntil;
 
-    public PetViewModel(PetKind kind, Func<DateTimeOffset>? clock = null)
+    public PetViewModel(PetLibrary? library, IFilePicker? picker, IPetHost? host, Func<DateTimeOffset>? clock = null, string? petId = null)
     {
+        _library = library;
+        _picker = picker;
+        _host = host;
         _clock = clock ?? (() => DateTimeOffset.Now);
-        Kind = kind;
-        Art = PetArt.Frame(kind, talking: false, 0);
+        Pet = petId is null ? null : library?.Load(petId);
     }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsVisible))]
-    public partial PetKind Kind { get; set; }
+    [NotifyPropertyChangedFor(nameof(IsVisible), nameof(Name))]
+    public partial PetPackage? Pet { get; private set; }
 
-    public bool IsVisible => Kind != PetKind.None;
+    public bool IsVisible => Pet is not null;
 
-    /// <summary>The current frame of the animal.</summary>
+    /// <summary>Pets can be added only when the app has a pet library (tests may run without).</summary>
+    public bool CanAddPets => _library is not null;
+
+    public string Name => Pet?.DisplayName ?? "";
+
     [ObservableProperty]
-    public partial string Art { get; private set; }
+    public partial PetAnimation Animation { get; private set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsSpeaking))]
@@ -53,15 +99,70 @@ public sealed partial class PetViewModel : ObservableObject
     /// <summary>No animation, for people who turned animations off in Windows.</summary>
     public bool ReduceMotion { get; set; }
 
-    partial void OnKindChanged(PetKind value)
+    /// <summary>The import started last; lets tests await it.</summary>
+    public Task LastImport { get; private set; } = Task.CompletedTask;
+
+    partial void OnPetChanged(PetPackage? value)
     {
-        if (value == PetKind.None)
+        _queue.Clear();
+        Speech = null;
+        Update(_activity);
+    }
+
+    /// <summary>"Add a pet…": the file the person downloaded from a pet site.</summary>
+    [RelayCommand]
+    private async Task AddAsync()
+    {
+        if (_picker is null || _library is null)
         {
-            _queue.Clear();
-            Speech = null;
+            return;
         }
 
-        Art = PetArt.Frame(value, IsSpeaking, _tick);
+        if (await _picker.PickFileAsync(Strings.PetPickerTitle, Strings.PetPickerFilter, PetLibrary.Patterns) is { } path)
+        {
+            await ImportAsync(path);
+        }
+    }
+
+    /// <summary>Adds the pet in a .zip, folder, pet.json or spritesheet, and puts it on the desktop.</summary>
+    public Task ImportAsync(string path) => LastImport = ImportCoreAsync(path);
+
+    private async Task ImportCoreAsync(string path)
+    {
+        if (_library is not { } library)
+        {
+            return;
+        }
+
+        PetImportResult result = await Task.Run(() => library.Import(path));
+        if (result.Pet is { } pet)
+        {
+            Pet = pet;
+            _host?.SavePetId(pet.Id);
+            Play(PetAnimation.Jumping, TimeSpan.FromSeconds(2));
+            Say(string.Format(CultureInfo.CurrentCulture, Strings.PetHelloTitle, pet.DisplayName), Strings.PetHelloBody);
+            return;
+        }
+
+        _host?.ShowToast(result.Error switch
+        {
+            PetImportError.BadSpritesheet => Strings.PetBadSpritesheet,
+            PetImportError.NotAPet => Strings.PetNotAPet,
+            _ => Strings.PetUnreadable,
+        });
+        Play(PetAnimation.Failed, TimeSpan.FromSeconds(2));
+    }
+
+    /// <summary>Takes the pet off the desktop; notifications go back to Windows.</summary>
+    [RelayCommand]
+    private void Remove()
+    {
+        if (Pet is { } pet)
+        {
+            Pet = null;
+            _host?.SavePetId(null);
+            _host?.ShowToast(string.Format(CultureInfo.CurrentCulture, Strings.PetRemoved, pet.DisplayName));
+        }
     }
 
     /// <param name="onClick">Runs when the person clicks the bubble.</param>
@@ -86,16 +187,34 @@ public sealed partial class PetViewModel : ObservableObject
         }
     }
 
-    /// <summary>Next animation frame; the bubble leaves when its time is up.</summary>
+    /// <summary>The bubble leaves when its time is up.</summary>
     public void Tick()
     {
-        _tick++;
         if (Speech is not null && !IsHovered && _clock() >= _speechEnds)
         {
             Next();
         }
+        else
+        {
+            Update(_activity);
+        }
+    }
 
-        Art = PetArt.Frame(Kind, IsSpeaking, ReduceMotion ? 0 : _tick);
+    /// <summary>Called every second with what the app is doing.</summary>
+    public void Update(PetActivity activity)
+    {
+        _activity = activity;
+        if (_oneShot is not null && _clock() >= _oneShotUntil)
+        {
+            _oneShot = null;
+        }
+
+        Animation = _oneShot ?? (IsSpeaking ? PetAnimation.Waving : activity switch
+        {
+            PetActivity.Working => PetAnimation.Running,
+            PetActivity.Thinking => PetAnimation.Review,
+            _ => PetAnimation.Idle,
+        });
     }
 
     /// <summary>A click on the bubble: does what the notification offers, then moves on.</summary>
@@ -119,7 +238,7 @@ public sealed partial class PetViewModel : ObservableObject
         else
         {
             Speech = null;
-            Art = PetArt.Frame(Kind, talking: false, _tick);
+            Update(_activity);
         }
     }
 
@@ -127,178 +246,18 @@ public sealed partial class PetViewModel : ObservableObject
     {
         Speech = speech;
         _speechEnds = _clock() + SpeechDuration;
-        Art = PetArt.Frame(Kind, talking: true, _tick);
+        Update(_activity);
+    }
+
+    private void Play(PetAnimation animation, TimeSpan duration)
+    {
+        _oneShot = animation;
+        _oneShotUntil = _clock() + duration;
+        Update(_activity);
     }
 }
 
 public sealed record PetSpeech(string Title, string Message, Action? OnClick)
 {
     public bool CanOpen => OnClick is not null;
-}
-
-/// <summary>One pet on the alerts screen's picker.</summary>
-public sealed partial class PetChoiceViewModel(PetKind kind) : ObservableObject
-{
-    public PetKind Kind { get; } = kind;
-
-    public string Name => PetArt.Name(Kind);
-
-    public string Preview => Kind == PetKind.None ? "" : PetArt.Frame(Kind, talking: false, 0);
-
-    [ObservableProperty]
-    public partial bool IsSelected { get; set; }
-
-    public void RefreshTexts() => OnPropertyChanged(nameof(Name));
-}
-
-/// <summary>
-/// The pets, drawn in the same monospace as the 3D PC. Every frame of a pet has the same lines and
-/// widths, so the animal never jumps while it blinks or talks.
-/// </summary>
-public static class PetArt
-{
-    /// <summary>Ticks per idle loop: eyes open, a blink on the last one.</summary>
-    private const int IdleLoop = 12;
-
-    public static IReadOnlyList<PetKind> All { get; } = Enum.GetValues<PetKind>();
-
-    public static string Name(PetKind kind) => kind switch
-    {
-        PetKind.Cat => Strings.PetCat,
-        PetKind.Dog => Strings.PetDog,
-        PetKind.Owl => Strings.PetOwl,
-        PetKind.Bunny => Strings.PetBunny,
-        PetKind.Robot => Strings.PetRobot,
-        PetKind.Ghost => Strings.PetGhost,
-        _ => Strings.PetNone,
-    };
-
-    /// <summary>The frame at <paramref name="tick"/>: talking opens and closes the mouth, idle blinks now and then.</summary>
-    public static string Frame(PetKind kind, bool talking, int tick)
-    {
-        if (kind == PetKind.None)
-        {
-            return "";
-        }
-
-        (string open, string blink, string talk) = Frames(kind);
-        if (talking)
-        {
-            return tick % 2 == 0 ? talk : open;
-        }
-
-        return tick % IdleLoop == IdleLoop - 1 ? blink : open;
-    }
-
-    private static (string Open, string Blink, string Talk) Frames(PetKind kind) => kind switch
-    {
-        PetKind.Cat => (
-            """
-             /\_/\
-            ( o.o )
-             > ^ <
-            """,
-            """
-             /\_/\
-            ( -.- )
-             > ^ <
-            """,
-            """
-             /\_/\
-            ( o.o )
-             > O <
-            """),
-        PetKind.Dog => (
-            """
-             /^ ^\
-            / o o \
-            V\ Y /V
-             / - \
-            """,
-            """
-             /^ ^\
-            / - - \
-            V\ Y /V
-             / - \
-            """,
-            """
-             /^ ^\
-            / o o \
-            V\ Y /V
-             / O \
-            """),
-        PetKind.Owl => (
-            """
-             ,___,
-             (O,O)
-             /)_)
-              ""
-            """,
-            """
-             ,___,
-             (-,-)
-             /)_)
-              ""
-            """,
-            """
-             ,___,
-             (O.O)
-             /)_)
-              ""
-            """),
-        PetKind.Bunny => (
-            """
-            (\_/)
-            (o.o)
-            (> <)
-            """,
-            """
-            (\_/)
-            (-.-)
-            (> <)
-            """,
-            """
-            (\_/)
-            (oOo)
-            (> <)
-            """),
-        PetKind.Robot => (
-            """
-              [___]
-              |o_o|
-             /|___|\
-              d   b
-            """,
-            """
-              [___]
-              |-_-|
-             /|___|\
-              d   b
-            """,
-            """
-              [___]
-              |oOo|
-             /|___|\
-              d   b
-            """),
-        _ => (
-            """
-             .-.
-            (o o)
-            | - |
-            '~~~'
-            """,
-            """
-             .-.
-            (- -)
-            | - |
-            '~~~'
-            """,
-            """
-             .-.
-            (o o)
-            | O |
-            '~~~'
-            """),
-    };
 }

@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Pennyworth.App.ViewModels"
         xmlns:l="using:Pennyworth.App.Localization"
+        xmlns:controls="using:Pennyworth.App.Controls"
         x:Class="Pennyworth.App.Views.PetWindow"
         x:DataType="vm:PetViewModel"
         Title="Pennyworth"
@@ -50,7 +51,8 @@
     <!-- Drag the pet to move it; a double click opens Pennyworth. -->
     <Border x:Name="Pet" HorizontalAlignment="Right" Background="Transparent" Padding="6,2" Cursor="SizeAll"
             ToolTip.Tip="{l:Tr PetTip}" PointerPressed="OnPetPressed">
-      <TextBlock Classes="mono" FontSize="15" LineHeight="17" Foreground="{DynamicResource Brush.TextPrimary}" Text="{Binding Art}" />
+      <controls:PetSprite Width="96" Height="104" Source="{Binding Pet.SpritesheetPath, FallbackValue={x:Null}}"
+                          Rows="{Binding Pet.Rows, FallbackValue=9}" Animation="{Binding Animation}" IsAnimated="{Binding !ReduceMotion}" />
     </Border>
   </StackPanel>
 </Window>

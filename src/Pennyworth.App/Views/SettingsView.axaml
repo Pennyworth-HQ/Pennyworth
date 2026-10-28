@@ -1,0 +1,107 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:l="using:Pennyworth.App.Localization"
+             xmlns:controls="using:Pennyworth.App.Controls"
+             x:Class="Pennyworth.App.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="36,28,36,28" Spacing="20" MaxWidth="760" HorizontalAlignment="Left">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="label">
+          <Run Text="09 / " />
+          <Run Text="{l:Tr NavSettings, Upper=True}" />
+        </TextBlock>
+        <TextBlock Classes="title" TextWrapping="Wrap" Text="{l:Tr SettingsTitle}" />
+        <TextBlock Classes="secondary" FontSize="13.5" TextWrapping="Wrap" Text="{l:Tr SettingsSub}" />
+      </StackPanel>
+
+      <!-- Appearance: theme and language. -->
+      <Border Classes="card">
+        <StackPanel Spacing="18">
+          <TextBlock Classes="label" FontSize="10" Text="{l:Tr SettingsAppearance, Upper=True}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+              <TextBlock Text="{l:Tr SettingsTheme}" />
+              <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr SettingsThemeHint}" />
+            </StackPanel>
+            <Border Grid.Column="1" Classes="group" VerticalAlignment="Center">
+              <StackPanel Orientation="Horizontal">
+                <Button Classes="segment" Classes.selected="{Binding IsThemeSystem}" Content="{l:Tr SettingsSystem, Upper=True}" Command="{Binding SetThemeSystemCommand}" />
+                <Border Width="1" Background="{DynamicResource Brush.BorderStrong}" />
+                <Button Classes="segment" Classes.selected="{Binding IsThemeLight}" Content="{l:Tr ThemeLight, Upper=True}" Command="{Binding SetThemeLightCommand}" />
+                <Border Width="1" Background="{DynamicResource Brush.BorderStrong}" />
+                <Button Classes="segment" Classes.selected="{Binding IsThemeDark}" Content="{l:Tr ThemeDark, Upper=True}" Command="{Binding SetThemeDarkCommand}" />
+              </StackPanel>
+            </Border>
+          </Grid>
+          <Border Classes="rule" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+              <TextBlock Text="{l:Tr SettingsLanguage}" />
+              <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr SettingsLanguageHint}" />
+            </StackPanel>
+            <Border Grid.Column="1" Classes="group" VerticalAlignment="Center">
+              <StackPanel Orientation="Horizontal">
+                <Button Classes="segment" Classes.selected="{Binding IsLanguageSystem}" Content="{l:Tr SettingsSystem, Upper=True}" Command="{Binding SetLanguageSystemCommand}" />
+                <Border Width="1" Background="{DynamicResource Brush.BorderStrong}" />
+                <Button Classes="segment" Classes.selected="{Binding IsLanguagePortuguese}" Content="PORTUGUÊS" Command="{Binding SetLanguagePortugueseCommand}" />
+                <Border Width="1" Background="{DynamicResource Brush.BorderStrong}" />
+                <Button Classes="segment" Classes.selected="{Binding IsLanguageEnglish}" Content="ENGLISH" Command="{Binding SetLanguageEnglishCommand}" />
+              </StackPanel>
+            </Border>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- The Codex pet in the corner of the window. -->
+      <Border Classes="card" IsVisible="{Binding Pet.CanAddPets}">
+        <StackPanel Spacing="18">
+          <TextBlock Classes="label" FontSize="10" Text="{l:Tr SettingsPet, Upper=True}" />
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
+            <Border Width="112" Height="120" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" VerticalAlignment="Top">
+              <Panel>
+                <controls:PetSprite Width="96" Height="104" IsVisible="{Binding Pet.IsVisible}"
+                                    Source="{Binding Pet.Pet.SpritesheetPath, FallbackValue={x:Null}}"
+                                    Rows="{Binding Pet.Pet.Rows, FallbackValue=9}" Animation="{Binding Pet.Animation}" />
+                <TextBlock Classes="mono tertiary" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsVisible="{Binding !Pet.IsVisible}" Text="(·ω·)" />
+              </Panel>
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="10">
+              <StackPanel Spacing="4" IsVisible="{Binding Pet.IsVisible}">
+                <TextBlock FontSize="19" FontWeight="Medium" TextWrapping="Wrap" Text="{Binding Pet.Name}" />
+                <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{Binding Pet.Pet.Description, FallbackValue={x:Null}}" />
+              </StackPanel>
+              <TextBlock FontSize="19" FontWeight="Medium" TextWrapping="Wrap" IsVisible="{Binding !Pet.IsVisible}" Text="{l:Tr SettingsNoPet}" />
+              <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr SettingsPetHint}" />
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Classes="primary" MinHeight="36" Padding="16,0" Content="{l:Tr PetAdd, Upper=True}"
+                        Command="{Binding Pet.AddCommand}" IsVisible="{Binding !Pet.IsVisible}" />
+                <Button MinHeight="36" Padding="16,0" Content="{l:Tr PetChange, Upper=True}"
+                        Command="{Binding Pet.AddCommand}" IsVisible="{Binding Pet.IsVisible}" />
+                <Button MinHeight="36" Padding="16,0" Content="{l:Tr PetRemove, Upper=True}"
+                        Command="{Binding Pet.RemoveCommand}" IsVisible="{Binding Pet.IsVisible}" />
+              </StackPanel>
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <!-- Opening the app when the PC starts. -->
+      <Border Classes="card">
+        <StackPanel Spacing="14">
+          <TextBlock Classes="label" FontSize="10" Text="{l:Tr SettingsStartup, Upper=True}" />
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" IsVisible="{Binding CanStartWithPc}">
+            <CheckBox IsChecked="{Binding StartWithPc}" VerticalAlignment="Top" />
+            <StackPanel Grid.Column="1" Spacing="2" Margin="0,4,0,0">
+              <TextBlock Text="{l:Tr SettingsStartWithPc}" />
+              <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr SettingsStartWithPcHint}" />
+            </StackPanel>
+          </Grid>
+          <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" IsVisible="{Binding !CanStartWithPc}" Text="{l:Tr SettingsStartupUnavailable}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

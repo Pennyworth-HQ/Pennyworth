@@ -20,10 +20,24 @@ public sealed class AlertsViewModelTests : IDisposable
 
     public AlertsViewModelTests() => Localizer.Instance.SetLanguage(LanguagePreference.English);
 
-    public void Dispose() => Localizer.Instance.SetLanguage(LanguagePreference.English);
+    public void Dispose()
+    {
+        Localizer.Instance.SetLanguage(LanguagePreference.English);
+        Directory.Delete(_dir, recursive: true);
+    }
 
-    private AlertsViewModel Create(IDriveService? drives = null, IStartupRegistration? startup = null) =>
-        new(_host, _notifier, drives ?? new FakeDriveService(TestApp.DriveC), startup, () => _now, new AlertMonitor(sustain: TimeSpan.Zero));
+    private readonly string _dir = Directory.CreateTempSubdirectory("pennyworth-alerts").FullName;
+
+    private AlertsViewModel Create(IDriveService? drives = null, PetViewModel? pet = null) =>
+        new(_host, _notifier, drives ?? new FakeDriveService(TestApp.DriveC), pet, () => _now, new AlertMonitor(sustain: TimeSpan.Zero));
+
+    /// <summary>A Codex pet already added in Settings.</summary>
+    private PetViewModel Boba()
+    {
+        var library = new PetLibrary(Path.Combine(_dir, "pets"));
+        library.Import(SamplePets.Zip(_dir, "boba.zip", ("pet.json", SamplePets.Utf8(SamplePets.PetJson)), ("spritesheet.webp", SamplePets.WebpHeader)));
+        return new PetViewModel(library, null, null, () => _now, "boba");
+    }
 
     [Fact]
     public void Starts_with_one_rule_per_part_at_ninety_percent()
@@ -127,17 +141,6 @@ public sealed class AlertsViewModelTests : IDisposable
     }
 
     [Fact]
-    public void Start_with_windows_goes_through_the_registration()
-    {
-        var startup = new FakeStartup();
-        var alerts = Create(startup: startup);
-
-        alerts.StartWithWindows = true;
-
-        Assert.True(startup.IsEnabled);
-    }
-
-    [Fact]
     public void Without_a_tray_alerts_show_as_toasts()
     {
         var alerts = new AlertsViewModel(_host, null, new FakeDriveService(TestApp.DriveC), clock: () => _now, monitor: new AlertMonitor(sustain: TimeSpan.Zero));
@@ -150,14 +153,7 @@ public sealed class AlertsViewModelTests : IDisposable
     [Fact]
     public void With_a_pet_the_alerts_come_as_its_speech()
     {
-        var alerts = Create();
-
-        alerts.ChoosePetCommand.Execute(PetKind.Owl);
-
-        Assert.Equal(PetKind.Owl, _host.AlertSettings.Pet);
-        Assert.Equal([PetKind.Owl], alerts.PetChoices.Where(c => c.IsSelected).Select(c => c.Kind));
-        Assert.Equal("Hi! Owl here.", alerts.Pet.Speech!.Title);
-        alerts.Pet.DismissCommand.Execute(null);
+        var alerts = Create(pet: Boba());
 
         alerts.Check(Busy);
 
@@ -170,15 +166,14 @@ public sealed class AlertsViewModelTests : IDisposable
     [Fact]
     public void Without_a_pet_the_alerts_go_back_to_windows()
     {
-        var alerts = Create();
-        alerts.ChoosePetCommand.Execute(PetKind.Cat);
+        PetViewModel pet = Boba();
+        var alerts = Create(pet: pet);
 
-        alerts.ChoosePetCommand.Execute(PetKind.None);
+        pet.RemoveCommand.Execute(null);
         alerts.Check(Busy);
 
         Assert.False(alerts.Pet.IsVisible);
         Assert.Single(_notifier.Sent);
-        Assert.Equal(PetKind.None, _host.AlertSettings.Pet);
     }
 
     [Fact]
@@ -224,12 +219,5 @@ public sealed class AlertsViewModelTests : IDisposable
         public List<(string Title, string Message, Action? OnClick)> Sent { get; } = [];
 
         public void Notify(string title, string message, Action? onClick = null) => Sent.Add((title, message, onClick));
-    }
-
-    private sealed class FakeStartup : IStartupRegistration
-    {
-        public bool IsEnabled { get; private set; }
-
-        public void SetEnabled(bool enabled) => IsEnabled = enabled;
     }
 }

@@ -25,26 +25,6 @@
     <Style Selector="Button.segment">
       <Setter Property="Padding" Value="10,0" />
     </Style>
-    <!-- Pet picker cards: the chosen one gets the accent border. -->
-    <Style Selector="Button.pet">
-      <Setter Property="Width" Value="104" />
-      <Setter Property="Height" Value="104" />
-      <Setter Property="Padding" Value="6,10,6,8" />
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
-      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-      <Setter Property="VerticalContentAlignment" Value="Stretch" />
-    </Style>
-    <Style Selector="Button.pet:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="{DynamicResource Brush.SurfaceHover}" />
-      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
-    </Style>
-    <Style Selector="Button.pet.selected /template/ ContentPresenter">
-      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
-      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
-    </Style>
   </UserControl.Styles>
 
   <ScrollViewer HorizontalScrollBarVisibility="Disabled">
@@ -64,35 +44,10 @@
         <StackPanel Spacing="10">
           <CheckBox IsChecked="{Binding Enabled}" Content="{l:Tr AlertsEnabled}" />
           <CheckBox IsChecked="{Binding RunInBackground}" Content="{l:Tr AlertsBackground}" IsVisible="{Binding HasNotifications}" />
-          <CheckBox IsChecked="{Binding StartWithWindows}" Content="{l:Tr AlertsStartup}" IsVisible="{Binding CanStartWithWindows}" />
           <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr AlertsNoTray}" IsVisible="{Binding !HasNotifications}" />
           <Button Classes="small" HorizontalAlignment="Left" Margin="0,4,0,0" Content="{l:Tr AlertsTest, Upper=True}" Command="{Binding SendTestCommand}" />
         </StackPanel>
       </Border>
-
-      <!-- The pet that says the alerts. -->
-      <StackPanel Spacing="6">
-        <TextBlock Classes="label" FontSize="10" Text="{l:Tr AlertsPet, Upper=True}" />
-        <TextBlock Classes="caption" TextWrapping="Wrap" MaxWidth="640" HorizontalAlignment="Left" Text="{l:Tr AlertsPetHint}" />
-      </StackPanel>
-      <ItemsControl ItemsSource="{Binding PetChoices}">
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate>
-            <WrapPanel ItemSpacing="8" LineSpacing="8" />
-          </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="vm:PetChoiceViewModel">
-            <Button Classes="pet" Classes.selected="{Binding IsSelected}"
-                    Command="{Binding $parent[UserControl].((vm:AlertsViewModel)DataContext).ChoosePetCommand}" CommandParameter="{Binding Kind}">
-              <Grid RowDefinitions="*,Auto" RowSpacing="6">
-                <TextBlock Classes="mono" FontSize="11" LineHeight="13" HorizontalAlignment="Center" VerticalAlignment="Center" Text="{Binding Preview}" />
-                <TextBlock Grid.Row="1" FontSize="12" HorizontalAlignment="Center" Text="{Binding Name}" />
-              </Grid>
-            </Button>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
 
       <!-- Rules. -->
       <StackPanel Spacing="6">

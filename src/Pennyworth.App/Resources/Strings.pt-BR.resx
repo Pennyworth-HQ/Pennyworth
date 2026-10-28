@@ -408,8 +408,6 @@
   <data name="AlertsSub" xml:space="preserve"><value>O Pennyworth pode ficar ao lado do relógio depois que você fecha a janela e avisar quando uma peça passa do limite por 10 segundos. Cada alerta dispara uma vez e espera a peça se acalmar antes de poder disparar de novo.</value></data>
   <data name="AlertsEnabled" xml:space="preserve"><value>Enviar notificações</value></data>
   <data name="AlertsBackground" xml:space="preserve"><value>Continuar rodando na bandeja ao fechar a janela</value></data>
-  <data name="AlertsStartup" xml:space="preserve"><value>Iniciar com o Windows, escondido na bandeja</value></data>
-  <data name="AlertsStartupFailed" xml:space="preserve"><value>O Windows não me deixou mudar os aplicativos de inicialização.</value></data>
   <data name="AlertsNoTray" xml:space="preserve"><value>Este sistema não tem ícone na bandeja, então os alertas só aparecem com a janela aberta.</value></data>
   <data name="AlertsRules" xml:space="preserve"><value>Regras</value></data>
   <data name="AlertsRulesHint" xml:space="preserve"><value>Adicione suas próprias regras para vigiar outros limites ou ser avisado com suas palavras.</value></data>
@@ -440,17 +438,37 @@
   <data name="AlertNameCpu" xml:space="preserve"><value>Processador</value></data>
   <data name="AlertNameMemory" xml:space="preserve"><value>Memória</value></data>
   <data name="AlertNameGpu" xml:space="preserve"><value>Placa de vídeo</value></data>
-  <data name="AlertsPet" xml:space="preserve"><value>Pet</value></data>
-  <data name="AlertsPetHint" xml:space="preserve"><value>Escolha um companheiro para ficar no canto da tela. Ele fala os alertas num balão em vez de uma notificação do Windows. Arraste para onde quiser; clique duas vezes nele para abrir o Pennyworth.</value></data>
-  <data name="PetNone" xml:space="preserve"><value>Sem pet</value></data>
-  <data name="PetCat" xml:space="preserve"><value>Gato</value></data>
-  <data name="PetDog" xml:space="preserve"><value>Cachorro</value></data>
-  <data name="PetOwl" xml:space="preserve"><value>Coruja</value></data>
-  <data name="PetBunny" xml:space="preserve"><value>Coelho</value></data>
-  <data name="PetRobot" xml:space="preserve"><value>Robô</value></data>
-  <data name="PetGhost" xml:space="preserve"><value>Fantasma</value></data>
   <data name="PetHelloTitle" xml:space="preserve"><value>Oi! {0} a postos.</value></data>
   <data name="PetHelloBody" xml:space="preserve"><value>Vou ficar de olho no PC e te avisar por aqui quando algo esquentar.</value></data>
   <data name="PetDismiss" xml:space="preserve"><value>Dispensar</value></data>
   <data name="PetTip" xml:space="preserve"><value>Arraste para mover · clique duas vezes para abrir o Pennyworth</value></data>
+  <data name="PetPickerTitle" xml:space="preserve"><value>Escolha um pet baixado do Petdex</value></data>
+  <data name="PetPickerFilter" xml:space="preserve"><value>Pets do Codex</value></data>
+  <data name="PetRemoved" xml:space="preserve"><value>{0} foi para casa.</value></data>
+  <data name="PetNotAPet" xml:space="preserve"><value>Esse arquivo não é um pet do Codex: falta o pet.json e a spritesheet.</value></data>
+  <data name="PetBadSpritesheet" xml:space="preserve"><value>Essa spritesheet não é uma grade de pet do Codex com 8 × 9 ou 8 × 11 quadros.</value></data>
+  <data name="PetUnreadable" xml:space="preserve"><value>Não foi possível ler o arquivo do pet.</value></data>
+  <data name="PetAdd" xml:space="preserve"><value>Adicionar pet…</value></data>
+  <data name="PetChange" xml:space="preserve"><value>Trocar pet…</value></data>
+  <data name="PetRemove" xml:space="preserve"><value>Remover pet</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Configurações</value></data>
+  <data name="NavSettingsHint" xml:space="preserve"><value>Tema, pet e inicialização</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Deixe o Pennyworth do seu jeito</value></data>
+  <data name="SettingsSub" xml:space="preserve"><value>A aparência, quem te faz companhia e se ele abre junto com o PC. As mudanças valem na hora.</value></data>
+  <data name="SettingsAppearance" xml:space="preserve"><value>Aparência</value></data>
+  <data name="SettingsTheme" xml:space="preserve"><value>Tema</value></data>
+  <data name="SettingsThemeHint" xml:space="preserve"><value>Sistema segue o Windows, claro ou escuro.</value></data>
+  <data name="SettingsLanguage" xml:space="preserve"><value>Idioma</value></data>
+  <data name="SettingsLanguageHint" xml:space="preserve"><value>Sistema usa o idioma configurado no Windows.</value></data>
+  <data name="SettingsSystem" xml:space="preserve"><value>Sistema</value></data>
+  <data name="SettingsPet" xml:space="preserve"><value>Pet</value></data>
+  <data name="SettingsNoPet" xml:space="preserve"><value>Nenhum pet ainda</value></data>
+  <data name="SettingsPetHint" xml:space="preserve"><value>Um pet do Codex fica no canto da tela e fala os alertas num balão, em vez de uma notificação do Windows. Baixe um no Petdex ou em outro site de pets e adicione o arquivo aqui, ou solte-o na janela. Arraste o pet para onde quiser; clique duas vezes nele para abrir o Pennyworth.</value></data>
+  <data name="SettingsStartup" xml:space="preserve"><value>Inicialização</value></data>
+  <data name="SettingsStartWithPc" xml:space="preserve"><value>Iniciar com o Windows, escondido na bandeja</value></data>
+  <data name="SettingsStartWithPcHint" xml:space="preserve"><value>O Pennyworth inicia depois que você entra no Windows e continua de olho no PC pela bandeja. Também dá para desligar no Gerenciador de Tarefas, em Aplicativos de inicialização.</value></data>
+  <data name="SettingsStartupUnavailable" xml:space="preserve"><value>Iniciar junto com o PC não está disponível neste sistema.</value></data>
+  <data name="StartupOnToast" xml:space="preserve"><value>O Pennyworth vai iniciar com o Windows.</value></data>
+  <data name="StartupOffToast" xml:space="preserve"><value>O Pennyworth não vai mais iniciar sozinho.</value></data>
+  <data name="StartupFailed" xml:space="preserve"><value>O Windows não me deixou mudar os aplicativos de inicialização.</value></data>
 </root>

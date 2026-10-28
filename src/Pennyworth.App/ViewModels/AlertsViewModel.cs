@@ -39,20 +39,18 @@ public sealed partial class AlertsViewModel : ObservableObject
     private readonly IAlertsHost _host;
     private readonly INotifier? _notifier;
     private readonly IDriveService _drives;
-    private readonly IStartupRegistration? _startup;
     private readonly Func<DateTimeOffset> _clock;
     private readonly AlertMonitor _monitor;
     private IReadOnlyList<(string Root, double UsedPercent)> _driveUsage = [];
     private DateTimeOffset? _drivesReadAt;
     private bool _loading;
 
-    public AlertsViewModel(IAlertsHost host, INotifier? notifier, IDriveService drives, IStartupRegistration? startup = null,
+    public AlertsViewModel(IAlertsHost host, INotifier? notifier, IDriveService drives, PetViewModel? pet = null,
         Func<DateTimeOffset>? clock = null, AlertMonitor? monitor = null)
     {
         _host = host;
         _notifier = notifier;
         _drives = drives;
-        _startup = startup;
         _clock = clock ?? (() => DateTimeOffset.Now);
         _monitor = monitor ?? new AlertMonitor();
 
@@ -60,9 +58,7 @@ public sealed partial class AlertsViewModel : ObservableObject
         AlertSettings settings = host.AlertSettings;
         Enabled = settings.Enabled;
         RunInBackground = settings.RunInBackground;
-        StartWithWindows = ReadStartup();
-        Pet = new PetViewModel(settings.Pet, _clock);
-        PetChoices = [.. PetArt.All.Select(kind => new PetChoiceViewModel(kind) { IsSelected = kind == settings.Pet })];
+        Pet = pet ?? new PetViewModel(null, null, null, _clock);
         foreach (AlertRule rule in settings.Rules)
         {
             Rules.Add(new AlertRuleViewModel(rule, Save));
@@ -78,15 +74,11 @@ public sealed partial class AlertsViewModel : ObservableObject
 
     public bool HasRecent => Recent.Count > 0;
 
-    /// <summary>The pet on the desktop that says the notifications, when one is chosen.</summary>
+    /// <summary>The pet on the desktop that says the notifications, when one was added in Settings.</summary>
     public PetViewModel Pet { get; }
-
-    public IReadOnlyList<PetChoiceViewModel> PetChoices { get; }
 
     /// <summary>False where the OS has no tray: alerts then only show inside the window.</summary>
     public bool HasNotifications => _notifier is not null;
-
-    public bool CanStartWithWindows => _startup is not null;
 
     [ObservableProperty]
     public partial bool Enabled { get; set; }
@@ -94,33 +86,9 @@ public sealed partial class AlertsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool RunInBackground { get; set; }
 
-    [ObservableProperty]
-    public partial bool StartWithWindows { get; set; }
-
     partial void OnEnabledChanged(bool value) => Save();
 
     partial void OnRunInBackgroundChanged(bool value) => Save();
-
-    partial void OnStartWithWindowsChanged(bool value)
-    {
-        if (_loading || _startup is null)
-        {
-            return;
-        }
-
-        try
-        {
-            _startup.SetEnabled(value);
-        }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.Security.SecurityException or InvalidOperationException)
-        {
-            Debug.WriteLine(ex);
-            _host.ShowToast(Strings.AlertsStartupFailed);
-            _loading = true;
-            StartWithWindows = ReadStartup();
-            _loading = false;
-        }
-    }
 
     /// <summary>Called with every live sample: fires the rules that went off.</summary>
     public void Check(MonitorSample sample)
@@ -202,25 +170,6 @@ public sealed partial class AlertsViewModel : ObservableObject
         Save();
     }
 
-    /// <summary>Choosing a pet puts it on the desktop, where it says hello; None hides it.</summary>
-    [RelayCommand]
-    private void ChoosePet(PetKind kind)
-    {
-        if (kind == Pet.Kind)
-        {
-            return;
-        }
-
-        Pet.Kind = kind;
-        foreach (PetChoiceViewModel choice in PetChoices)
-        {
-            choice.IsSelected = choice.Kind == kind;
-        }
-
-        Save();
-        Pet.Say(string.Format(CultureInfo.CurrentCulture, Strings.PetHelloTitle, PetArt.Name(kind)), Strings.PetHelloBody);
-    }
-
     [RelayCommand]
     private void SendTest() => Send(Strings.AlertTestTitle, Strings.AlertTestBody, null);
 
@@ -229,11 +178,6 @@ public sealed partial class AlertsViewModel : ObservableObject
         foreach (AlertRuleViewModel rule in Rules)
         {
             rule.RefreshTexts();
-        }
-
-        foreach (PetChoiceViewModel choice in PetChoices)
-        {
-            choice.RefreshTexts();
         }
     }
 
@@ -260,19 +204,6 @@ public sealed partial class AlertsViewModel : ObservableObject
     private void Send(string title, string message, AlertComponent? component) =>
         Notify(title, message, component is { } c ? () => _host.OpenFromAlert(c) : null);
 
-    private bool ReadStartup()
-    {
-        try
-        {
-            return _startup?.IsEnabled ?? false;
-        }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.Security.SecurityException or InvalidOperationException)
-        {
-            Debug.WriteLine(ex);
-            return false;
-        }
-    }
-
     private void Save()
     {
         if (_loading)
@@ -284,7 +215,6 @@ public sealed partial class AlertsViewModel : ObservableObject
         {
             Enabled = Enabled,
             RunInBackground = RunInBackground,
-            Pet = Pet.Kind,
             Rules = [.. Rules.Select(r => r.Rule)],
         });
     }
