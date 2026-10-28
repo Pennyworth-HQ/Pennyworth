@@ -25,7 +25,7 @@ public class LinuxMonitorTests
         return system;
     }
 
-    [Fact]
+    [LinuxFact]
     public void Machine_load_is_the_busy_share_since_the_previous_sample()
     {
         using FakeProcFs system = Machine();
@@ -39,7 +39,7 @@ public class LinuxMonitorTests
         Assert.Equal(20, load, 3);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_process_using_one_of_four_cores_is_25_percent()
     {
         using FakeProcFs system = Machine();
@@ -55,7 +55,7 @@ public class LinuxMonitorTests
         Assert.Equal(25, busy.Processes[0].Cpu, 3);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_reused_process_id_starts_over_instead_of_inheriting_the_old_cpu_time()
     {
         using FakeProcFs system = Machine();
@@ -71,7 +71,7 @@ public class LinuxMonitorTests
         Assert.Equal(0, group.Cpu);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Private_memory_is_the_rollup_where_readable_and_resident_memory_elsewhere()
     {
         using FakeProcFs system = Machine();
@@ -87,7 +87,7 @@ public class LinuxMonitorTests
 
     private static long MemoryOf(LinuxMonitor monitor, string key) => monitor.Sample().Apps.Single(a => a.Key == key).Memory;
 
-    [Fact]
+    [LinuxFact]
     public void Private_memory_is_read_again_when_the_reading_is_sixty_samples_old()
     {
         using FakeProcFs system = Machine();
@@ -103,7 +103,7 @@ public class LinuxMonitorTests
         Assert.Equal(9_000L * 1024, MemoryOf(monitor, "app"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Between_readings_private_memory_follows_the_growth_of_resident_memory()
     {
         using FakeProcFs system = Machine();
@@ -117,7 +117,7 @@ public class LinuxMonitorTests
         Assert.Equal((5_000L * 1024) - (1_000 * PageSize), MemoryOf(monitor, "app"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_large_change_in_resident_memory_triggers_a_new_reading_at_once()
     {
         using FakeProcFs system = Machine();
@@ -129,7 +129,7 @@ public class LinuxMonitorTests
         Assert.Equal(20_000L * 1024, MemoryOf(monitor, "app"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_time_budget_limits_the_page_table_walks_and_the_biggest_new_process_goes_first()
     {
         using FakeProcFs system = Machine();
@@ -149,7 +149,7 @@ public class LinuxMonitorTests
         Assert.Equal(50L * 1024, second["small"]);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_process_that_refuses_the_rollup_is_not_asked_again_for_its_lifetime()
     {
         using FakeProcFs system = Machine();
@@ -165,7 +165,7 @@ public class LinuxMonitorTests
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_reused_process_id_does_not_inherit_the_old_private_memory()
     {
         using FakeProcFs system = Machine();
@@ -178,7 +178,7 @@ public class LinuxMonitorTests
         Assert.Equal(100_500 * PageSize, MemoryOf(monitor, "new")); // not 5 000 kB plus the growth
     }
 
-    [Fact]
+    [LinuxFact]
     public void Apps_are_grouped_by_name_largest_first_and_kernel_threads_are_left_out()
     {
         using FakeProcFs system = Machine();
@@ -195,7 +195,7 @@ public class LinuxMonitorTests
         Assert.Equal([10, 11], apps[1].Processes.Select(p => p.Pid).Order());
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_id_that_was_a_kernel_thread_is_looked_at_again_within_sixteen_samples()
     {
         using FakeProcFs system = Machine();
@@ -213,7 +213,7 @@ public class LinuxMonitorTests
         Assert.InRange(samples, 0, 15);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_process_that_ends_leaves_the_list()
     {
         using FakeProcFs system = Machine();
@@ -227,7 +227,7 @@ public class LinuxMonitorTests
         Assert.Equal("stays", Assert.Single(monitor.Sample().Apps).Key);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_process_that_renames_itself_is_listed_under_its_new_name()
     {
         using FakeProcFs system = Machine();
@@ -239,7 +239,7 @@ public class LinuxMonitorTests
         Assert.Equal("app", Assert.Single(monitor.Sample().Apps).Key);
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_explained_service_host_lists_the_services_from_the_cgroup_and_cannot_be_closed()
     {
         using FakeProcFs system = Machine();
@@ -270,7 +270,7 @@ public class LinuxMonitorTests
         Assert.Null(apps["unreadable"].ImagePath);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Cached_memory_is_capped_so_that_free_memory_is_what_the_kernel_reports_free()
     {
         using FakeProcFs system = Machine();
@@ -287,7 +287,7 @@ public class LinuxMonitorTests
         Assert.Equal(5_000_000L * 1024, memory.Used);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Cached_memory_is_the_sum_of_buffers_cache_and_reclaimable_slab()
     {
         using FakeProcFs system = Machine();
@@ -300,7 +300,7 @@ public class LinuxMonitorTests
         Assert.Equal(3_500_000L * 1024, memory.Free);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Compressed_memory_is_zswap_plus_every_zram_device()
     {
         using FakeProcFs system = Machine();
@@ -313,7 +313,7 @@ public class LinuxMonitorTests
         Assert.Equal((100L * 1024) + 2765144064 + 4096, monitor.Sample().Memory.Compressed);
     }
 
-    [Fact]
+    [LinuxFact]
     public void No_compression_is_zero_compressed()
     {
         using FakeProcFs system = Machine();
@@ -347,7 +347,7 @@ public class LinuxMonitorTests
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_cgroup_limit_replaces_the_machines_memory_and_leaves_what_the_cgroup_has_not_used()
     {
         using FakeProcFs system = Machine();
@@ -360,7 +360,7 @@ public class LinuxMonitorTests
         Assert.Equal(1073741824 - 400_000_000, memory.Available); // used = current - inactive file cache
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_smaller_of_max_high_and_every_ancestors_limit_applies()
     {
         using FakeProcFs system = Machine();
@@ -372,7 +372,7 @@ public class LinuxMonitorTests
         Assert.Equal(500_000_000, monitor.Sample().Memory.Total);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_limit_larger_than_the_machine_or_no_limit_changes_nothing()
     {
         using FakeProcFs system = Machine();
@@ -385,7 +385,7 @@ public class LinuxMonitorTests
         Assert.Equal(8_000_000L * 1024, other.Sample().Memory.Total);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_machine_without_proc_files_degrades_every_field_and_does_not_throw()
     {
         using FakeProcFs system = new();
@@ -412,7 +412,7 @@ public class LinuxMonitorTests
         Assert.All(processes, p => Assert.Equal(0, p.Memory));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Disposing_twice_is_harmless()
     {
         using FakeProcFs system = Machine();

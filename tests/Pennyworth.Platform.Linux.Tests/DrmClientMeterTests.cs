@@ -37,7 +37,7 @@ public class DrmClientMeterTests
         drm-engine-capacity-video:	2
         """;
 
-    [Fact]
+    [LinuxFact]
     public void Cycle_counters_of_an_xe_client_are_read_per_engine_class()
     {
         var engines = new NameTable();
@@ -56,7 +56,7 @@ public class DrmClientMeterTests
         Assert.Equal(3, readings.Count);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Nanosecond_counters_have_no_cycle_total_and_a_capacity_line_is_not_an_engine()
     {
         var engines = new NameTable();
@@ -72,7 +72,7 @@ public class DrmClientMeterTests
         Assert.Equal(2, Assert.Single(readings, r => r.Engine == engines.Id("video")).Capacity);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("pos:\t0\nflags:\t02100002\nmnt_id:\t39\nino:\t623\n")] // a plain file
     [InlineData("drm-driver:\txe\ndrm-cycles-rcs:\t5\n")] // no client id
     [InlineData("")]
@@ -106,7 +106,7 @@ public class DrmClientMeterTests
     private static string Ns(int client, long busy, string engine = "render", int capacity = 1) =>
         $"drm-driver:\ti915\ndrm-client-id:\t{client}\ndrm-pdev:\t0000:00:02.0\ndrm-engine-{engine}:\t{busy} ns\ndrm-engine-capacity-{engine}:\t{capacity}\n";
 
-    [Fact]
+    [LinuxFact]
     public void Cycles_used_over_cycles_elapsed_is_the_load()
     {
         using var system = new FakeProcFs();
@@ -122,7 +122,7 @@ public class DrmClientMeterTests
         Assert.Equal(25, meter.Sample([100])!.Value, 3);
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_busiest_engine_class_is_the_load_and_capacity_divides_it()
     {
         using var system = new FakeProcFs();
@@ -141,7 +141,7 @@ public class DrmClientMeterTests
         Assert.Equal(45, meter.Sample([100])!.Value, 3);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Nanoseconds_are_compared_with_the_wall_clock_and_clients_add_up()
     {
         using var system = new FakeProcFs();
@@ -159,7 +159,7 @@ public class DrmClientMeterTests
         Assert.Equal(70, meter.Sample([100, 200])!.Value, 3);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Two_descriptors_of_one_client_count_once()
     {
         using var system = new FakeProcFs();
@@ -177,7 +177,7 @@ public class DrmClientMeterTests
         Assert.Equal(40, meter.Sample([100])!.Value, 3);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_duplicate_descriptor_takes_over_when_the_first_one_closes()
     {
         using var system = new FakeProcFs();
@@ -211,7 +211,7 @@ public class DrmClientMeterTests
         Assert.Equal(30, last!.Value, 3);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_client_seen_for_the_first_time_has_no_baseline_and_adds_nothing()
     {
         using var system = new FakeProcFs();
@@ -232,7 +232,7 @@ public class DrmClientMeterTests
         Assert.Equal(20, meter.Sample([101])!.Value, 3);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_counter_that_goes_backwards_and_a_standing_clock_are_ignored_not_divided_by()
     {
         using var system = new FakeProcFs();
@@ -250,7 +250,7 @@ public class DrmClientMeterTests
         Assert.Null(meter.Sample([100])); // no time passed: no rate
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_closed_descriptor_and_an_ended_process_are_forgotten_without_error()
     {
         using var system = new FakeProcFs();
@@ -267,7 +267,7 @@ public class DrmClientMeterTests
         Assert.Null(meter.Sample([]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_descriptor_number_reused_for_an_ordinary_file_is_dropped()
     {
         using var system = new FakeProcFs();
@@ -283,7 +283,7 @@ public class DrmClientMeterTests
         Assert.Null(meter.Sample([100]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Processes_are_scanned_a_few_at_a_time_and_a_new_client_is_found_within_one_round()
     {
         using var system = new FakeProcFs();

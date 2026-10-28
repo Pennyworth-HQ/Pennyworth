@@ -1,3 +1,4 @@
+using Pennyworth.Tests;
 using Pennyworth.Platform.Linux;
 
 namespace Pennyworth.Platform.Linux.Tests;
@@ -21,7 +22,7 @@ public class ProcFileSystemTests
         Hugepagesize:       2048 kB
         """;
 
-    [Fact]
+    [LinuxFact]
     public void Meminfo_sizes_are_kibibytes_and_counts_stay_counts()
     {
         Assert.True(ProcFileSystem.TryParseMemInfo(MemInfo, out MemInfo info));
@@ -35,7 +36,7 @@ public class ProcFileSystemTests
         Assert.Equal(512L * 1024, info.Zswap); // Zswap, not Zswapped
     }
 
-    [Fact]
+    [LinuxFact]
     public void Meminfo_without_MemAvailable_derives_it_and_never_exceeds_the_total()
     {
         const string old = "MemTotal: 1000 kB\nMemFree: 100 kB\nBuffers: 50 kB\nCached: 200 kB\n";
@@ -47,7 +48,7 @@ public class ProcFileSystemTests
         Assert.Equal(10L * 1024, info.Available);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("MemFree: 100 kB\n")]
     [InlineData("MemTotal: nonsense kB\n")]
@@ -67,7 +68,7 @@ public class ProcFileSystemTests
         cpufreq_dummy 1 2 3
         """;
 
-    [Fact]
+    [LinuxFact]
     public void Cpu_time_is_laid_out_for_CpuTracker()
     {
         Assert.True(ProcFileSystem.TryParseCpuStat(CpuStat, out CpuTimes times));
@@ -78,7 +79,7 @@ public class ProcFileSystemTests
         Assert.Equal(3, times.Cores); // cpu0..cpu2; "cpu " and what follows intr are not cores
     }
 
-    [Fact]
+    [LinuxFact]
     public void Cpu_time_of_an_old_kernel_with_four_columns()
     {
         Assert.True(ProcFileSystem.TryParseCpuStat("cpu  100 10 50 800\ncpu0 100 10 50 800\n", out CpuTimes times));
@@ -89,7 +90,7 @@ public class ProcFileSystemTests
         Assert.Equal(1, times.Cores);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Cpu_load_of_two_snapshots_matches_the_busy_share()
     {
         ProcFileSystem.TryParseCpuStat("cpu  100 0 100 800 0 0 0 0\n", out CpuTimes first);
@@ -101,7 +102,7 @@ public class ProcFileSystemTests
         Assert.Equal(40, tracker.UpdateSystem(second.Idle, second.Kernel, second.User), 3);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("intr 1 2 3\n")]
     [InlineData("cpu0 1 2 3 4\n")]
@@ -114,7 +115,7 @@ public class ProcFileSystemTests
     private const string TrickyStat =
         "1373412 (a) (b c) S 1048699 1373412 1373412 0 -1 4194304 73 0 0 0 7 5 0 0 20 0 1 0 15094258 2953216 426 18446744073709551615 94630208176128 94630208194161 140726993837616 0 0 0 0 16777216 0 1 0 0 17 3 0 0 0 0 0 94630208207760 94630208209048 94630828589056 140726993843609 140726993843625 140726993843625 140726993850347 0\n";
 
-    [Fact]
+    [LinuxFact]
     public void A_name_with_parentheses_and_spaces_is_split_at_the_last_closing_parenthesis()
     {
         Assert.True(ProcFileSystem.TryParseProcessStat(TrickyStat, out ProcessStat stat));
@@ -127,7 +128,7 @@ public class ProcFileSystemTests
         Assert.Equal(15094258, stat.StartTime);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("Web Content")]
     [InlineData("tmux: server")]
     [InlineData("x)")]
@@ -146,7 +147,7 @@ public class ProcFileSystemTests
         Assert.Equal(9000, stat.StartTime);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Kernel_threads_are_recognised_by_their_flag()
     {
         // kthreadd: flags 0x208040 has PF_KTHREAD (0x200000).
@@ -157,7 +158,7 @@ public class ProcFileSystemTests
         Assert.True((user.Flags & ProcFileSystem.KernelThreadFlag) == 0);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("42 no parentheses S 1 2 3")]
     [InlineData(") (")]
@@ -181,13 +182,13 @@ public class ProcFileSystemTests
         Private_Hugetlb:    2048 kB
         """;
 
-    [Fact]
+    [LinuxFact]
     public void Private_memory_is_clean_plus_dirty_and_ignores_hugetlb()
     {
         Assert.Equal((12L + 164) * 1024, ProcFileSystem.ParsePrivateBytes(SmapsRollup));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("Rss: 1996 kB\nPss: 174 kB\n")]
     public void Private_memory_is_unknown_when_the_kernel_prints_none(string text)
@@ -195,13 +196,13 @@ public class ProcFileSystemTests
         Assert.Null(ProcFileSystem.ParsePrivateBytes(text));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Private_memory_of_zero_is_known_not_unknown()
     {
         Assert.Equal(0, ProcFileSystem.ParsePrivateBytes("Private_Clean: 0 kB\nPrivate_Dirty: 0 kB\n"));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("99999 5000 10 1 0 5 0\n", 5000)]
     [InlineData("0 0 0 0 0 0 0\n", 0)]
     public void Resident_memory_is_the_second_column_of_statm(string statm, long pages)
@@ -209,7 +210,7 @@ public class ProcFileSystemTests
         Assert.Equal(pages, ProcFileSystem.ParseResidentPages(statm));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("99999\n")]
     [InlineData("99999 x 1\n")]
@@ -219,7 +220,7 @@ public class ProcFileSystemTests
         Assert.Null(ProcFileSystem.ParseResidentPages(statm));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Zram_memory_is_the_third_column_of_mm_stat()
     {
         // orig_data_size compr_data_size mem_used_total mem_limit mem_used_max same_pages pages_compacted huge_pages
@@ -228,7 +229,7 @@ public class ProcFileSystemTests
         Assert.Equal(0, ProcFileSystem.ParseZramBytes(""));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("max\n", false, 0)]
     [InlineData("", false, 0)]
     [InlineData("2147483648\n", true, 2147483648)]
@@ -238,7 +239,7 @@ public class ProcFileSystemTests
         Assert.Equal(isLimit ? bytes : null, ProcFileSystem.ParseLimit(text));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_keyed_value_matches_the_whole_key()
     {
         const string stat = "anon 100\nfile 200\ninactive_file_x 5\ntotal_inactive_file 6\ninactive_file 7\n";
@@ -250,7 +251,7 @@ public class ProcFileSystemTests
 
     private const string KonsoleTab = "1:net_cls:/\n0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.kde.konsole-4526.scope/tab(1048188).scope\n";
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("1:net_cls:/\n0::/system.slice/dbus-broker.service\n", "dbus-broker.service")]
     [InlineData("0::/user.slice/user-1000.slice/user@1000.service/session.slice/pipewire.service\n", "pipewire.service")]
     [InlineData("0::/user.slice/user-1000.slice/user@1000.service/app.slice/dbus-broker.service\n", "dbus-broker.service")]
@@ -264,7 +265,7 @@ public class ProcFileSystemTests
         Assert.Equal(expected, ProcFileSystem.ParseServiceUnit(cgroup));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData(KonsoleTab)] // a desktop app is a scope under the user manager, not the manager's service
     [InlineData("0::/user.slice/user-1000.slice/session-3.scope\n")]
     [InlineData("0::/user.slice/user-1000.slice/user@1000.service/init.scope\n")] // systemd --user itself
@@ -281,7 +282,7 @@ public class ProcFileSystemTests
         Assert.Null(ProcFileSystem.ParseServiceUnit(cgroup));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Unit_name_escapes_are_undone()
     {
         Assert.Equal("dev-disk-by-uuid-1.device", ProcFileSystem.UnescapeUnitName("dev-disk-by\\x2duuid\\x2d1.device"));
@@ -290,14 +291,14 @@ public class ProcFileSystemTests
         Assert.Equal("a\\xzzb", ProcFileSystem.UnescapeUnitName("a\\xzzb"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_unified_cgroup_path_is_the_zero_hierarchy()
     {
         Assert.Equal("/user.slice/x.scope", ProcFileSystem.ParseUnifiedCgroupPath("1:net_cls:/\n0::/user.slice/x.scope\n"));
         Assert.Null(ProcFileSystem.ParseUnifiedCgroupPath("1:name=systemd:/a\n"));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("/usr/bin/firefox (deleted)", "/usr/bin/firefox")]
     [InlineData("/usr/bin/firefox", "/usr/bin/firefox")]
     [InlineData("/opt/a (deleted) b/app", "/opt/a (deleted) b/app")]

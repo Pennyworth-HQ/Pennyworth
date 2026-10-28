@@ -5,7 +5,7 @@ namespace Pennyworth.Platform.Linux.Tests;
 
 public class LinuxGpuMeterTests
 {
-    [Fact]
+    [LinuxFact]
     public void The_busiest_gpu_is_reported_and_clamped()
     {
         Assert.Equal(70, LinuxGpuMeter.Combine([10, 70, 30]));
@@ -14,7 +14,7 @@ public class LinuxGpuMeterTests
         Assert.Null(LinuxGpuMeter.Combine([]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Nvidia_smi_prints_one_gpu_per_line_and_unsupported_ones_are_left_out()
     {
         Assert.Equal([37, 5], LinuxGpuMeter.ParseNvidiaSmi("37\n5\n"));
@@ -23,7 +23,7 @@ public class LinuxGpuMeterTests
         Assert.Empty(LinuxGpuMeter.ParseNvidiaSmi("NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver.\n"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_program_is_found_on_the_first_path_entry_that_has_it()
     {
         using var system = new FakeProcFs();
@@ -49,7 +49,7 @@ public class LinuxGpuMeterTests
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_amd_card_reports_its_busy_percent_and_the_busiest_of_several_wins()
     {
         using var system = new FakeProcFs();
@@ -60,7 +60,7 @@ public class LinuxGpuMeterTests
         Assert.Equal(81, Meter(system).Sample([]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_unreadable_busy_value_is_ignored()
     {
         using var system = new FakeProcFs();
@@ -69,7 +69,7 @@ public class LinuxGpuMeterTests
         Assert.Null(Meter(system).Sample([]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_intel_card_without_clients_has_no_load_to_report()
     {
         using var system = new FakeProcFs();
@@ -81,7 +81,7 @@ public class LinuxGpuMeterTests
         Assert.Null(meter.Sample([]));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_machine_without_any_gpu_source_is_not_available_and_reports_null()
     {
         using var system = new FakeProcFs();
@@ -97,7 +97,7 @@ public class LinuxGpuMeterTests
         system.WriteSys(Path.Combine("bus", "pci", "devices", "0000:01:00.0", "class"), pciClass + "\n");
     }
 
-    [Fact]
+    [LinuxFact]
     public void Nvidia_load_comes_from_nvidia_smi_when_an_nvidia_display_device_exists()
     {
         using var system = new FakeProcFs();
@@ -114,7 +114,7 @@ public class LinuxGpuMeterTests
         Assert.Equal([Path.Combine(system.Root, "bin", "nvidia-smi") + " --query-gpu=utilization.gpu --format=csv,noheader,nounits"], calls);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("0x8086", "0x030000")] // not NVIDIA
     [InlineData("0x10de", "0x040300")] // NVIDIA's HDMI audio function, not a display controller
     public void Nvidia_smi_is_not_started_without_an_nvidia_display_device(string vendor, string pciClass)
@@ -129,7 +129,7 @@ public class LinuxGpuMeterTests
         Assert.Equal(0, calls);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_missing_nvidia_smi_is_remembered_and_never_started()
     {
         using var system = new FakeProcFs();
@@ -142,7 +142,7 @@ public class LinuxGpuMeterTests
         Assert.Equal(0, calls);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_failing_nvidia_smi_is_not_retried_for_30_seconds()
     {
         using var system = new FakeProcFs();
@@ -170,7 +170,7 @@ public class LinuxGpuMeterTests
         Assert.Equal(3, calls);
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_nvidia_and_an_amd_gpu_report_the_busier_one()
     {
         using var system = new FakeProcFs();
