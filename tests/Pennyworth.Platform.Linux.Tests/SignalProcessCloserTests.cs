@@ -9,7 +9,7 @@ public class SignalProcessCloserTests
 {
     private static readonly TimeSpan Short = TimeSpan.FromMilliseconds(600);
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("1234 (sleep) S 1 1234 1234", false)]
     [InlineData("1234 (sleep) Z 1 1234 1234", true)]
     [InlineData("1234 (a) Z (b) R 1 1", false)]
@@ -22,7 +22,7 @@ public class SignalProcessCloserTests
         Assert.Equal(zombie, IsZombie(stat));
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Pid_1_pid_0_negative_and_own_pid_are_never_signalled()
     {
         var sent = new List<(int Pid, int Signal)>();
@@ -35,7 +35,7 @@ public class SignalProcessCloserTests
         Assert.False(closed);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Sends_sigterm_then_sigkill()
     {
         var sent = new List<(int Pid, int Signal)>();
@@ -47,7 +47,7 @@ public class SignalProcessCloserTests
         Assert.Equal([(100, 15), (200, 15), (100, 9)], sent);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task An_already_exited_pid_counts_as_closed()
     {
         var closer = new SignalProcessCloser((_, _) => SignalOutcome.NoSuchProcess, _ => false, ownPid: 4242);
@@ -56,7 +56,7 @@ public class SignalProcessCloserTests
         closer.ForceClose([100]);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task A_denied_signal_is_not_closed_and_does_not_throw()
     {
         var closer = new SignalProcessCloser((_, _) => SignalOutcome.Denied, _ => true, ownPid: 4242);
@@ -65,7 +65,7 @@ public class SignalProcessCloserTests
         closer.ForceClose([100]);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task One_denied_pid_makes_the_whole_close_false_even_if_the_others_exit()
     {
         var closer = new SignalProcessCloser((p, _) => p == 100 ? SignalOutcome.Denied : SignalOutcome.Sent, _ => false, ownPid: 4242);
@@ -73,7 +73,7 @@ public class SignalProcessCloserTests
         Assert.False(await closer.CloseAsync([100, 200], Short, CancellationToken.None));
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Waits_until_the_last_process_is_gone()
     {
         var polls = 0;
@@ -83,7 +83,7 @@ public class SignalProcessCloserTests
         Assert.Equal(4, polls);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task A_process_that_stays_alive_times_out_as_false()
     {
         var closer = new SignalProcessCloser((_, _) => SignalOutcome.Sent, _ => true, ownPid: 4242);
@@ -93,7 +93,7 @@ public class SignalProcessCloserTests
         Assert.InRange(clock.Elapsed, Short, TimeSpan.FromSeconds(10));
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Cancellation_stops_the_wait()
     {
         var closer = new SignalProcessCloser((_, _) => SignalOutcome.Sent, _ => true, ownPid: 4242);

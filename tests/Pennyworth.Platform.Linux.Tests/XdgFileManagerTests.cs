@@ -5,7 +5,7 @@ namespace Pennyworth.Platform.Linux.Tests;
 
 public class XdgFileManagerTests
 {
-    [Theory]
+    [LinuxTheory]
     [InlineData("/home/u/a.txt", "file:///home/u/a.txt")]
     [InlineData("/home/u/my file.txt", "file:///home/u/my%20file.txt")]
     [InlineData("/home/u/a#b", "file:///home/u/a%23b")]
@@ -24,7 +24,7 @@ public class XdgFileManagerTests
         Assert.Equal(expected, XdgFileManager.BuildFileUri(path));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Existing_file_is_revealed_and_its_folder_opened()
     {
         var (reveal, open) = XdgFileManager.ChooseTargets(
@@ -33,7 +33,7 @@ public class XdgFileManagerTests
         Assert.Equal("/a/b", open);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Existing_folder_is_opened_itself()
     {
         var (reveal, open) = XdgFileManager.ChooseTargets("/a/b", _ => false, p => p is "/a" or "/a/b" or "/");
@@ -41,7 +41,7 @@ public class XdgFileManagerTests
         Assert.Equal("/a/b", open);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Mount_root_is_opened_itself()
     {
         var (reveal, open) = XdgFileManager.ChooseTargets("/", _ => false, p => p == "/");
@@ -49,7 +49,7 @@ public class XdgFileManagerTests
         Assert.Equal("/", open);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Missing_path_falls_back_to_the_nearest_existing_parent()
     {
         var (reveal, open) = XdgFileManager.ChooseTargets("/a/b/c/d.txt", _ => false, p => p is "/a" or "/");
@@ -57,7 +57,7 @@ public class XdgFileManagerTests
         Assert.Equal("/a", open);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_file_in_the_way_of_a_missing_path_is_not_mistaken_for_a_folder()
     {
         var (reveal, open) = XdgFileManager.ChooseTargets("/a/f.txt/x", p => p == "/a/f.txt", p => p is "/a" or "/");
@@ -65,7 +65,7 @@ public class XdgFileManagerTests
         Assert.Equal("/a", open);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Gdbus_arguments_carry_the_uri_as_one_argument()
     {
         string[] args = XdgFileManager.GdbusArguments("file:///a%20b");
@@ -73,14 +73,14 @@ public class XdgFileManagerTests
         Assert.Contains("org.freedesktop.FileManager1.ShowItems", args);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Dbus_send_arguments_carry_the_uri_as_one_argument()
     {
         string[] args = XdgFileManager.DbusSendArguments("file:///a%20b");
         Assert.Contains("array:string:file:///a%20b", args);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Falls_back_to_dbus_send_then_xdg_open()
     {
         string dir = Directory.CreateTempSubdirectory("pennyworth-xdg").FullName;
@@ -103,7 +103,7 @@ public class XdgFileManagerTests
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_file_manager_that_answers_means_xdg_open_is_not_used()
     {
         var opened = new List<string>();
@@ -114,14 +114,14 @@ public class XdgFileManagerTests
         Assert.Empty(opened);
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_missing_xdg_open_does_not_throw()
     {
         var launcher = new XdgFileManager((_, _) => null, _ => throw new System.ComponentModel.Win32Exception(2));
         launcher.ShowInExplorer("/");
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_empty_path_does_nothing()
     {
         var launcher = new XdgFileManager((_, _) => throw new InvalidOperationException(), _ => throw new InvalidOperationException());
