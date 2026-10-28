@@ -7,7 +7,7 @@ namespace Pennyworth.Platform.Linux.Tests;
 
 public class XdgTrashParsingTests
 {
-    [Fact]
+    [LinuxFact]
     public void Decodes_percent_escapes_as_utf8()
     {
         var info = TrashInfo.Parse("[Trash Info]\nPath=/home/ana/Meus%20Docs/caf%C3%A9%25.txt\nDeletionDate=2024-03-05T07:08:09\n");
@@ -16,7 +16,7 @@ public class XdgTrashParsingTests
         Assert.Equal(new DateTime(2024, 3, 5, 7, 8, 9), info?.DeletedLocal);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("100%", "100%")]
     [InlineData("a%zzb", "a%zzb")]
     [InlineData("a%2", "a%2")]
@@ -24,7 +24,7 @@ public class XdgTrashParsingTests
     public void Keeps_a_malformed_escape_literally(string raw, string expected) =>
         Assert.Equal(expected, TrashInfo.PercentDecode(raw));
 
-    [Fact]
+    [LinuxFact]
     public void Ignores_other_groups_comments_and_a_second_value()
     {
         var info = TrashInfo.Parse("[Other]\nPath=/wrong\n[Trash Info]\n# Path=/comment\r\nPath=/right\r\nPath=/second\r\nDeletionDate=2024-01-01T00:00:00\r\n[Later]\nPath=/also-wrong\n");
@@ -32,14 +32,14 @@ public class XdgTrashParsingTests
         Assert.Equal("/right", info?.Path);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("Path=/no-group")]
     [InlineData("[Trash Info]\nDeletionDate=2024-01-01T00:00:00")]
     [InlineData("[Trash Info]\nPath=")]
     public void Rejects_a_sidecar_without_a_path(string text) => Assert.Null(TrashInfo.Parse(text));
 
-    [Fact]
+    [LinuxFact]
     public void A_bad_date_leaves_the_time_unknown_but_keeps_the_path()
     {
         var info = TrashInfo.Parse("[Trash Info]\nPath=/x\nDeletionDate=yesterday\n");
@@ -105,7 +105,7 @@ public sealed class XdgTrashTests : IDisposable
             | (sticky ? UnixFileMode.StickyBit : 0));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Lists_the_home_trash_with_decoded_original_and_utc_time()
     {
         string payload = Add(Home, "a b.txt", "12345", Info("/home/ana/a%20b.txt"));
@@ -120,7 +120,7 @@ public sealed class XdgTrashTests : IDisposable
         Assert.Equal(DateTimeKind.Utc, item.ChangedUtc.Kind);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Reads_a_per_volume_trash_and_resolves_a_relative_path_against_the_topdir()
     {
         Add(Path.Combine(_volume, ".Trash-" + Uid), "r.txt", "x", Info("docs/r.txt"));
@@ -132,7 +132,7 @@ public sealed class XdgTrashTests : IDisposable
         Assert.Equal("/elsewhere/abs.txt", items["abs.txt"].OriginalPath);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Uses_the_shared_trash_only_with_the_sticky_bit()
     {
         MakeShared(sticky: false);
@@ -143,7 +143,7 @@ public sealed class XdgTrashTests : IDisposable
         Assert.Single(_trash.List());
     }
 
-    [Fact]
+    [LinuxFact]
     public void Refuses_a_shared_trash_that_is_a_symlink()
     {
         string real = Path.Combine(_root, "real");
@@ -155,7 +155,7 @@ public sealed class XdgTrashTests : IDisposable
         Assert.Empty(_trash.List());
     }
 
-    [Fact]
+    [LinuxFact]
     public void Skips_items_missing_their_sidecar_or_their_payload()
     {
         Add(Home, "ok.txt", "x", Info("/ok"));
@@ -165,7 +165,7 @@ public sealed class XdgTrashTests : IDisposable
         Assert.Equal(["ok.txt"], _trash.List().Select(i => Path.GetFileName(i.Path)));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Sizes_a_directory_recursively_without_following_links_and_sorts_largest_first()
     {
         string small = Add(Home, "small", "1", Info("/small"));
@@ -185,7 +185,7 @@ public sealed class XdgTrashTests : IDisposable
         Assert.Equal(150, items[0].Size);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Delete_removes_payload_and_sidecar_and_nothing_else()
     {
         string payload = Add(Home, "a.txt", "x", Info("/a"));
@@ -206,7 +206,7 @@ public sealed class XdgTrashTests : IDisposable
         Assert.False(_trash.Delete(item), "already gone");
     }
 
-    [Fact]
+    [LinuxFact]
     public void Delete_removes_a_directory_with_read_only_folders_and_links_without_following_them()
     {
         string dir = Path.Combine(Home, "files", "tree");
@@ -228,7 +228,7 @@ public sealed class XdgTrashTests : IDisposable
         Assert.Empty(_trash.List());
     }
 
-    [Fact]
+    [LinuxFact]
     public void Delete_unlinks_a_symlink_payload_not_its_target()
     {
         string target = Path.Combine(_root, "target.txt");
@@ -244,7 +244,7 @@ public sealed class XdgTrashTests : IDisposable
         Assert.Empty(_trash.List());
     }
 
-    [Fact]
+    [LinuxFact]
     public void Delete_refuses_a_path_outside_a_trash_files_folder()
     {
         Add(Home, "a.txt", "x", Info("/a"));
@@ -266,7 +266,7 @@ public sealed class XdgTrashTests : IDisposable
         Assert.True(File.Exists(inSubfolder));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Delete_refuses_a_sidecar_that_does_not_belong_to_the_payload()
     {
         string payload = Add(Home, "a.txt", "x", Info("/a"));

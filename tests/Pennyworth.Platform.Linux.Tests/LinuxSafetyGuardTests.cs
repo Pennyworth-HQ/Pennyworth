@@ -12,7 +12,7 @@ public class LinuxSafetyGuardTests
     private static LinuxSafetyGuard Guard(string home = "/home/ana", Func<string, string?>? variables = null, params string[] mounts) =>
         new(new XdgPaths(name => name == "HOME" ? home : null), () => mounts.Length == 0 ? Mounts : mounts, variables ?? (_ => null));
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("/", false)]
     [InlineData("/etc", false)]
     [InlineData("/etc/ssh", false)]
@@ -46,7 +46,23 @@ public class LinuxSafetyGuardTests
     [InlineData("/mnt/exram", false)]
     [InlineData("relative/dir", false)]
     [InlineData("", false)]
+    [InlineData("/nix", false)]
+    [InlineData("/nix/store/abc-x", false)]
+    [InlineData("/snap", false)]
+    [InlineData("/snap/core/1", false)]
+    [InlineData("/var/spool", false)]
+    [InlineData("/var/spool/cron", false)]
+    [InlineData("/var/mail", false)]
+    [InlineData("/home/ana/.ssh", false)]
+    [InlineData("/home/ana/.ssh/keys", false)]
+    [InlineData("/home/ana/.gnupg", false)]
+    [InlineData("/home/ana/.password-store/work", false)]
+    [InlineData("/home/ana/.local/share/keyrings", false)]
     [InlineData("/etcetera", true)]
+    [InlineData("/snapshots", true)]
+    [InlineData("/nixos", true)]
+    [InlineData("/home/ana/.sshfs-cache", true)]
+    [InlineData("/home/ana/.local/share/Steam", true)]
     [InlineData("/home/ana/.cache", true)]
     [InlineData("/home/ana/.cache/mozilla", true)]
     [InlineData("/home/bob/.cache", true)]
@@ -61,7 +77,7 @@ public class LinuxSafetyGuardTests
     public void Judges_the_table(string folder, bool allowed) =>
         Assert.Equal(allowed, Guard().MayCleanInside(folder));
 
-    [Fact]
+    [LinuxFact]
     public void The_temp_directories_are_cleanable_even_as_a_mount_root()
     {
         var guard = Guard("/home/ana", name => name == "TMPDIR" ? "/scratch/tmp" : null, "/", "/tmp", "/var/tmp", "/scratch/tmp", "/scratch/other");
@@ -72,7 +88,7 @@ public class LinuxSafetyGuardTests
         Assert.False(guard.MayCleanInside("/scratch/other"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_temp_variable_cannot_unlock_the_home_or_the_system_trees()
     {
         var home = Guard("/home/ana", name => name == "TMPDIR" ? "/home/ana" : null);
@@ -82,7 +98,7 @@ public class LinuxSafetyGuardTests
         Assert.False(etc.MayCleanInside("/etc"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Refuses_everything_when_the_environment_is_empty_for_system_folders()
     {
         var guard = new LinuxSafetyGuard(new XdgPaths(name => name == "HOME" ? "/home/ana" : null), () => [], _ => null);
@@ -90,7 +106,7 @@ public class LinuxSafetyGuardTests
         Assert.False(guard.MayCleanInside("/etc"));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Refuses_when_the_mount_list_cannot_be_read()
     {
         var guard = new LinuxSafetyGuard(new XdgPaths(name => name == "HOME" ? "/home/ana" : null), () => throw new IOException("no"), _ => null);

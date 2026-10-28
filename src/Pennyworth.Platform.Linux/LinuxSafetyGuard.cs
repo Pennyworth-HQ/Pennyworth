@@ -7,7 +7,8 @@ namespace Pennyworth.Platform.Linux;
 /// <c>/etc</c>; both the path as written and the resolved path must pass. Comparisons are ordinal.
 /// <list type="table">
 /// <listheader><term>Rule</term><description>Paths</description></listheader>
-/// <item><term>Refused with everything below</term><description><c>/bin /boot /dev /etc /lib /lib32 /lib64 /proc /root /run /sbin /sys /usr /var/lib</c></description></item>
+/// <item><term>Refused with everything below</term><description><c>/bin /boot /dev /etc /lib /lib32 /lib64 /nix /proc /root /run /sbin /snap /sys /usr /var/lib /var/mail /var/spool</c></description></item>
+/// <item><term>Refused with everything below, inside the user's home</term><description>the credential stores <c>.ssh .gnupg .password-store .local/share/keyrings</c>: a cleanup never has a reason to touch them</description></item>
 /// <item><term>Refused exactly (their contents may be cleaned)</term><description><c>/</c>, <c>/home</c>, any direct child of <c>/home</c> (another user's home), the user's home, <c>/opt /srv /mnt /media /var</c>, and every mount root</description></item>
 /// <item><term>Mount root exception</term><description><c>/tmp</c>, <c>$TMPDIR</c> and <c>/var/tmp</c> may be cleaned even when they are their own mount</description></item>
 /// <item><term>Everything else</term><description>allowed, e.g. <c>$HOME/.cache</c>, <c>/var/cache</c>, <c>/var/log</c>, <c>/opt/app/cache</c></description></item>
@@ -19,7 +20,13 @@ internal sealed class LinuxSafetyGuard(XdgPaths paths, Func<IReadOnlyList<string
     private const int MaxLinkHops = 40;
 
     private static readonly string[] ProtectedTrees =
-        ["/bin", "/boot", "/dev", "/etc", "/lib", "/lib32", "/lib64", "/proc", "/root", "/run", "/sbin", "/sys", "/usr", "/var/lib"];
+        [
+            "/bin", "/boot", "/dev", "/etc", "/lib", "/lib32", "/lib64", "/nix", "/proc", "/root", "/run", "/sbin", "/snap",
+            "/sys", "/usr", "/var/lib", "/var/mail", "/var/spool",
+        ];
+
+    /// <summary>Folders in the user's home that hold keys and secrets.</summary>
+    private static readonly string[] ProtectedInHome = [".ssh", ".gnupg", ".password-store", ".local/share/keyrings"];
 
     private static readonly string[] ProtectedFolders = ["/", "/home", "/opt", "/srv", "/mnt", "/media", "/var"];
 
@@ -78,6 +85,11 @@ internal sealed class LinuxSafetyGuard(XdgPaths paths, Func<IReadOnlyList<string
         }
 
         if (ProtectedFolders.Contains(path) || homes.Contains(path) || IsUserHomeFolder(path))
+        {
+            return false;
+        }
+
+        if (homes.Any(home => ProtectedInHome.Any(secret => IsInside(path, home + "/" + secret))))
         {
             return false;
         }
