@@ -9,7 +9,8 @@
         Icon="/Assets/pennyworth.ico"
         Width="1100" Height="760" MinWidth="720" MinHeight="520"
         WindowStartupLocation="CenterScreen"
-        ExtendClientAreaToDecorationsHint="True">
+        ExtendClientAreaToDecorationsHint="True"
+        DragDrop.AllowDrop="True">
   <Window.Styles>
     <!-- Sidebar entries: index, label and a one-line hint. -->
     <Style Selector="Button.nav">
@@ -202,11 +203,12 @@
               <Button Classes="segment" Padding="10,0" Classes.selected="{Binding IsEnglish}" Content="EN" Command="{Binding SetEnglishCommand}" />
             </StackPanel>
           </Border>
+          <!-- Theme, language, the pet and starting with the PC live on the Settings page. -->
           <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="28" Padding="12,0"
-                  Foreground="{DynamicResource Brush.TextSecondary}" Command="{Binding ToggleThemeCommand}">
+                  Foreground="{DynamicResource Brush.TextSecondary}" Command="{Binding GoSettingsCommand}" ToolTip.Tip="{l:Tr NavSettingsHint}">
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <TextBlock Text="◐" />
-              <TextBlock Text="{Binding ThemeLabel, Converter={x:Static controls:TextCase.Upper}}" />
+              <TextBlock Text="⚙" />
+              <TextBlock Text="{l:Tr NavSettings, Upper=True}" />
             </StackPanel>
           </Button>
         </StackPanel>
@@ -278,6 +280,24 @@
                   <StackPanel Grid.Column="1" Spacing="2">
                     <TextBlock Text="{l:Tr NavAsk}" />
                     <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavAskHint}" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.selected="{Binding IsAlertsPage}" Command="{Binding GoAlertsCommand}">
+                <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                  <TextBlock Classes="label index" Text="08" Margin="0,3,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{l:Tr NavAlerts}" />
+                    <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavAlertsHint}" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.selected="{Binding IsSettingsPage}" Command="{Binding GoSettingsCommand}">
+                <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                  <TextBlock Classes="label index" Text="09" Margin="0,3,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{l:Tr NavSettings}" />
+                    <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavSettingsHint}" />
                   </StackPanel>
                 </Grid>
               </Button>

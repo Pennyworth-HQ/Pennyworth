@@ -402,4 +402,73 @@
   <data name="ActionUnlock" xml:space="preserve"><value>Unlock full scan</value></data>
   <data name="DeviceGpu" xml:space="preserve"><value>{0} on the graphics card</value></data>
   <data name="DeviceCpu" xml:space="preserve"><value>{0} on the processor</value></data>
+  <data name="NavAlerts" xml:space="preserve"><value>Alerts</value></data>
+  <data name="NavAlertsHint" xml:space="preserve"><value>Watch the PC from the tray</value></data>
+  <data name="AlertsTitle" xml:space="preserve"><value>Tell me when the PC is struggling</value></data>
+  <data name="AlertsSub" xml:space="preserve"><value>Pennyworth can stay next to the clock after you close the window and notify you when a part stays above its limit for 10 seconds. Each alert fires once, then waits for that part to calm down before it can fire again.</value></data>
+  <data name="AlertsEnabled" xml:space="preserve"><value>Send notifications</value></data>
+  <data name="AlertsBackground" xml:space="preserve"><value>Keep running in the tray when I close the window</value></data>
+  <data name="AlertsNoTray" xml:space="preserve"><value>This system has no tray icon, so alerts only show while the window is open.</value></data>
+  <data name="AlertsRules" xml:space="preserve"><value>Rules</value></data>
+  <data name="AlertsRulesHint" xml:space="preserve"><value>Add your own rules to watch other limits or to be told in your own words.</value></data>
+  <data name="AlertsAbove" xml:space="preserve"><value>Above</value></data>
+  <data name="AlertsMessage" xml:space="preserve"><value>Your own message (optional)</value></data>
+  <data name="AlertsAdd" xml:space="preserve"><value>Add alert</value></data>
+  <data name="AlertsRemove" xml:space="preserve"><value>Remove</value></data>
+  <data name="AlertsTest" xml:space="preserve"><value>Send a test</value></data>
+  <data name="AlertsRecent" xml:space="preserve"><value>Recent alerts</value></data>
+  <data name="AlertsNoRecent" xml:space="preserve"><value>Nothing yet. That's good news.</value></data>
+  <data name="AlertShortCpu" xml:space="preserve"><value>CPU</value></data>
+  <data name="AlertShortMemory" xml:space="preserve"><value>RAM</value></data>
+  <data name="AlertShortGpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="AlertShortDisk" xml:space="preserve"><value>Disk</value></data>
+  <data name="AlertDiskName" xml:space="preserve"><value>Drive {0}</value></data>
+  <data name="AlertTitle" xml:space="preserve"><value>{0} at {1:N0}%</value></data>
+  <data name="AlertBodyCpu" xml:space="preserve"><value>Something is keeping the processor busy. Click to see which apps.</value></data>
+  <data name="AlertBodyMemory" xml:space="preserve"><value>Memory is almost full and the PC may slow down. Click to see which apps use it.</value></data>
+  <data name="AlertBodyGpu" xml:space="preserve"><value>The graphics card is working at full load. Click to see which apps.</value></data>
+  <data name="AlertBodyDisk" xml:space="preserve"><value>Drive {0} is almost full. Click to see what takes the space.</value></data>
+  <data name="AlertTestTitle" xml:space="preserve"><value>Pennyworth alerts are on</value></data>
+  <data name="AlertTestBody" xml:space="preserve"><value>This is how a notification will look.</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Open Pennyworth</value></data>
+  <data name="TrayPause" xml:space="preserve"><value>Pause alerts</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Exit</value></data>
+  <data name="BackgroundHintTitle" xml:space="preserve"><value>Pennyworth is still running</value></data>
+  <data name="BackgroundHintBody" xml:space="preserve"><value>I'll keep an eye on the PC from the tray. Right-click the icon to exit.</value></data>
+  <data name="AlertNameCpu" xml:space="preserve"><value>Processor</value></data>
+  <data name="AlertNameMemory" xml:space="preserve"><value>Memory</value></data>
+  <data name="AlertNameGpu" xml:space="preserve"><value>Graphics card</value></data>
+  <data name="PetHelloTitle" xml:space="preserve"><value>Hi! {0} here.</value></data>
+  <data name="PetHelloBody" xml:space="preserve"><value>I'll keep an eye on the PC and tell you here when something runs hot.</value></data>
+  <data name="PetDismiss" xml:space="preserve"><value>Dismiss</value></data>
+  <data name="PetTip" xml:space="preserve"><value>Drag to move · double-click to open Pennyworth</value></data>
+  <data name="PetPickerTitle" xml:space="preserve"><value>Choose a pet downloaded from Petdex</value></data>
+  <data name="PetPickerFilter" xml:space="preserve"><value>Codex pets</value></data>
+  <data name="PetRemoved" xml:space="preserve"><value>{0} went home.</value></data>
+  <data name="PetNotAPet" xml:space="preserve"><value>That file is not a Codex pet: it needs a pet.json and a spritesheet.</value></data>
+  <data name="PetBadSpritesheet" xml:space="preserve"><value>That spritesheet is not a Codex pet grid of 8 × 9 or 8 × 11 frames.</value></data>
+  <data name="PetUnreadable" xml:space="preserve"><value>Could not read the pet file.</value></data>
+  <data name="PetAdd" xml:space="preserve"><value>Add a pet…</value></data>
+  <data name="PetChange" xml:space="preserve"><value>Change pet…</value></data>
+  <data name="PetRemove" xml:space="preserve"><value>Remove pet</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Settings</value></data>
+  <data name="NavSettingsHint" xml:space="preserve"><value>Theme, pet and startup</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Make Pennyworth yours</value></data>
+  <data name="SettingsSub" xml:space="preserve"><value>How it looks, who keeps you company and whether it opens with the PC. Changes apply right away.</value></data>
+  <data name="SettingsAppearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="SettingsTheme" xml:space="preserve"><value>Theme</value></data>
+  <data name="SettingsThemeHint" xml:space="preserve"><value>System follows Windows, light or dark.</value></data>
+  <data name="SettingsLanguage" xml:space="preserve"><value>Language</value></data>
+  <data name="SettingsLanguageHint" xml:space="preserve"><value>System uses the language Windows is set to.</value></data>
+  <data name="SettingsSystem" xml:space="preserve"><value>System</value></data>
+  <data name="SettingsPet" xml:space="preserve"><value>Pet</value></data>
+  <data name="SettingsNoPet" xml:space="preserve"><value>No pet yet</value></data>
+  <data name="SettingsPetHint" xml:space="preserve"><value>A Codex pet sits in the corner of the screen and says the alerts in a speech bubble instead of a Windows notification. Download one from Petdex or another pet site and add its file here, or drop it on the window. Drag the pet anywhere; double-click it to open Pennyworth.</value></data>
+  <data name="SettingsStartup" xml:space="preserve"><value>Startup</value></data>
+  <data name="SettingsStartWithPc" xml:space="preserve"><value>Start with Windows, hidden in the tray</value></data>
+  <data name="SettingsStartWithPcHint" xml:space="preserve"><value>Pennyworth starts after you sign in and keeps watching the PC from the tray. You can also turn this off in Task Manager, under Startup apps.</value></data>
+  <data name="SettingsStartupUnavailable" xml:space="preserve"><value>Starting with the PC is not available on this system.</value></data>
+  <data name="StartupOnToast" xml:space="preserve"><value>Pennyworth will start with Windows.</value></data>
+  <data name="StartupOffToast" xml:space="preserve"><value>Pennyworth won't start by itself any more.</value></data>
+  <data name="StartupFailed" xml:space="preserve"><value>Windows didn't let me change the startup apps.</value></data>
 </root>

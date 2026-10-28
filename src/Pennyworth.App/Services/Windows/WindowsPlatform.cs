@@ -46,4 +46,8 @@ public sealed class WindowsPlatform : IPlatform
         LocalModelStore.DefaultRoot,
         availableMemory,
         folder => new DriveInfo(Path.GetPathRoot(Path.GetFullPath(folder))!).AvailableFreeSpace);
+
+    public ITray? CreateTray() => new WindowsTray();
+
+    public IStartupRegistration? Startup { get; } = new WindowsStartupRegistration();
 }

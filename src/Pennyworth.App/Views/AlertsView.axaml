@@ -1,0 +1,116 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Pennyworth.App.ViewModels"
+             xmlns:l="using:Pennyworth.App.Localization"
+             xmlns:alerts="using:Pennyworth.Monitoring.Alerts"
+             x:Class="Pennyworth.App.Views.AlertsView"
+             x:DataType="vm:AlertsViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBox.field">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.BorderStrong}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="CaretBrush" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="TextBox.field:focus /template/ Border">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+    <Style Selector="Button.segment">
+      <Setter Property="Padding" Value="10,0" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="36,28,36,28" Spacing="20" MaxWidth="900" HorizontalAlignment="Left">
+
+      <StackPanel Spacing="8">
+        <TextBlock Classes="label">
+          <Run Text="08 / " />
+          <Run Text="{l:Tr NavAlerts, Upper=True}" />
+        </TextBlock>
+        <TextBlock Classes="title" Text="{l:Tr AlertsTitle}" />
+        <TextBlock Classes="secondary" FontSize="13.5" LineHeight="20" MaxWidth="640" HorizontalAlignment="Left" TextWrapping="Wrap" Text="{l:Tr AlertsSub}" />
+      </StackPanel>
+
+      <!-- Background and notifications. -->
+      <Border BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" Padding="22,18">
+        <StackPanel Spacing="10">
+          <CheckBox IsChecked="{Binding Enabled}" Content="{l:Tr AlertsEnabled}" />
+          <CheckBox IsChecked="{Binding RunInBackground}" Content="{l:Tr AlertsBackground}" IsVisible="{Binding HasNotifications}" />
+          <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr AlertsNoTray}" IsVisible="{Binding !HasNotifications}" />
+          <Button Classes="small" HorizontalAlignment="Left" Margin="0,4,0,0" Content="{l:Tr AlertsTest, Upper=True}" Command="{Binding SendTestCommand}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Rules. -->
+      <StackPanel Spacing="6">
+        <TextBlock Classes="label" FontSize="10" Text="{l:Tr AlertsRules, Upper=True}" />
+        <TextBlock Classes="caption" TextWrapping="Wrap" Text="{l:Tr AlertsRulesHint}" />
+      </StackPanel>
+      <ItemsControl ItemsSource="{Binding Rules}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:AlertRuleViewModel">
+            <Border Classes="rule" Padding="0,12">
+              <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="8">
+                <CheckBox IsChecked="{Binding Enabled}" VerticalAlignment="Center" />
+                <Border Grid.Column="1" Classes="group" VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal">
+                    <Button Classes="segment" Classes.selected="{Binding IsCpu}" Content="{l:Tr AlertShortCpu, Upper=True}"
+                            Command="{Binding SetComponentCommand}" CommandParameter="{x:Static alerts:AlertComponent.Cpu}" />
+                    <Button Classes="segment" Classes.selected="{Binding IsMemory}" Content="{l:Tr AlertShortMemory, Upper=True}"
+                            Command="{Binding SetComponentCommand}" CommandParameter="{x:Static alerts:AlertComponent.Memory}" />
+                    <Button Classes="segment" Classes.selected="{Binding IsGpu}" Content="{l:Tr AlertShortGpu, Upper=True}"
+                            Command="{Binding SetComponentCommand}" CommandParameter="{x:Static alerts:AlertComponent.Gpu}" />
+                    <Button Classes="segment" Classes.selected="{Binding IsDisk}" Content="{l:Tr AlertShortDisk, Upper=True}"
+                            Command="{Binding SetComponentCommand}" CommandParameter="{x:Static alerts:AlertComponent.Disk}" />
+                  </StackPanel>
+                </Border>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock Classes="caption" VerticalAlignment="Center" Text="{l:Tr AlertsAbove}" />
+                  <Border Classes="group">
+                    <StackPanel Orientation="Horizontal">
+                      <Button Classes="segment" Content="−" Command="{Binding LowerCommand}" />
+                      <TextBlock Classes="mono" MinWidth="52" TextAlignment="Center" VerticalAlignment="Center" Text="{Binding ThresholdText}" />
+                      <Button Classes="segment" Content="+" Command="{Binding RaiseCommand}" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+                <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="4" Classes="field" MaxLength="200"
+                         PlaceholderText="{l:Tr AlertsMessage}" Text="{Binding Message}" />
+                <Button Grid.Column="4" Classes="small" VerticalAlignment="Center" Content="{l:Tr AlertsRemove, Upper=True}"
+                        Command="{Binding $parent[UserControl].((vm:AlertsViewModel)DataContext).RemoveRuleCommand}" CommandParameter="{Binding}" />
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Button Classes="small" HorizontalAlignment="Left" Content="{l:Tr AlertsAdd, Upper=True}" Command="{Binding AddRuleCommand}" />
+
+      <!-- What fired lately. -->
+      <TextBlock Classes="label" FontSize="10" Margin="0,8,0,0" Text="{l:Tr AlertsRecent, Upper=True}" />
+      <TextBlock Classes="secondary" FontSize="13" Text="{l:Tr AlertsNoRecent}" IsVisible="{Binding !HasRecent}" />
+      <ItemsControl ItemsSource="{Binding Recent}" IsVisible="{Binding HasRecent}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:AlertLogEntry">
+            <Border Classes="rule" Padding="0,8">
+              <Grid ColumnDefinitions="52,*" ColumnSpacing="10">
+                <TextBlock Classes="mono tertiary" FontSize="12" Text="{Binding Time}" />
+                <StackPanel Grid.Column="1" Spacing="2">
+                  <TextBlock FontSize="13.5" Text="{Binding Title}" />
+                  <TextBlock Classes="secondary" FontSize="12.5" TextWrapping="Wrap" Text="{Binding Message}" />
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

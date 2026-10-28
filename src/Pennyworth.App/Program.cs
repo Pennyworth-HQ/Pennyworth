@@ -1,4 +1,5 @@
 using Avalonia;
+using Pennyworth.App.Services;
 using Pennyworth.App.Services.Windows;
 
 namespace Pennyworth.App;
@@ -13,6 +14,12 @@ internal static class Program
         if (OperatingSystem.IsWindows() && ElevatedHiddenSpaceService.TryRunHelper(args, out int exitCode))
         {
             return exitCode;
+        }
+
+        // Already running (perhaps hidden in the tray): that copy shows its window instead.
+        if (OperatingSystem.IsWindows() && !SingleInstance.TryClaim(args))
+        {
+            return 0;
         }
 
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

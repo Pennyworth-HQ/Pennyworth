@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Pennyworth.App.Localization;
 using Pennyworth.Assistant;
+using Pennyworth.Monitoring.Alerts;
 
 namespace Pennyworth.App.Services;
 
@@ -21,8 +22,14 @@ public sealed record AppSettings
     /// <summary>The welcome screen is shown until the first "Analyze my PC".</summary>
     public bool WelcomeSeen { get; init; }
 
+    /// <summary>The pet on the desktop (its folder in the pet library), or null for none.</summary>
+    public string? PetId { get; init; }
+
     /// <summary>Never null: a settings file from before the assistant has no "assistant" key, and the JSON source generator passes null for missing init properties.</summary>
     public AssistantSettings Assistant { get => field ?? new(); init; }
+
+    /// <summary>Never null, for the same reason as <see cref="Assistant"/>.</summary>
+    public AlertSettings Alerts { get => field ?? new(); init; }
 
     /// <summary>By what the properties return, so a missing "assistant" key equals the default.</summary>
     public bool Equals(AppSettings? other) =>
@@ -30,9 +37,11 @@ public sealed record AppSettings
         && Language == other.Language
         && Theme == other.Theme
         && WelcomeSeen == other.WelcomeSeen
-        && Assistant.Equals(other.Assistant);
+        && PetId == other.PetId
+        && Assistant.Equals(other.Assistant)
+        && Alerts.Equals(other.Alerts);
 
-    public override int GetHashCode() => HashCode.Combine(Language, Theme, WelcomeSeen);
+    public override int GetHashCode() => HashCode.Combine(Language, Theme, WelcomeSeen, PetId);
 }
 
 /// <summary>How the assistant answers. API keys are never here; they live in the Windows Credential Manager.</summary>
@@ -56,6 +65,31 @@ public sealed record AssistantSettings
         && HidePreviewFor.SequenceEqual(other.HidePreviewFor);
 
     public override int GetHashCode() => HashCode.Combine(DefaultProfileId, Profiles.Count, HidePreviewFor.Count);
+}
+
+/// <summary>Watching the PC from the tray and the notifications it sends.</summary>
+public sealed record AlertSettings
+{
+    /// <summary>Off pauses every notification; the rules stay as they are.</summary>
+    public bool Enabled { get; init; } = true;
+
+    /// <summary>Closing the window hides it in the tray instead of quitting.</summary>
+    public bool RunInBackground { get; init; } = true;
+
+    /// <summary>The "still running in the tray" notification is shown once, the first time the window hides.</summary>
+    public bool BackgroundHintShown { get; init; }
+
+    /// <summary>Missing in older files means the defaults; an empty list means the person removed them all.</summary>
+    public IReadOnlyList<AlertRule> Rules { get => field ?? AlertRule.Defaults; init; }
+
+    public bool Equals(AlertSettings? other) =>
+        other is not null
+        && Enabled == other.Enabled
+        && RunInBackground == other.RunInBackground
+        && BackgroundHintShown == other.BackgroundHintShown
+        && Rules.SequenceEqual(other.Rules);
+
+    public override int GetHashCode() => HashCode.Combine(Enabled, RunInBackground, Rules.Count);
 }
 
 public interface ISettingsStore

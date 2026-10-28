@@ -8,6 +8,7 @@ using Pennyworth.Cleanup;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
 using Pennyworth.Monitoring;
+using Pennyworth.Monitoring.Alerts;
 using Pennyworth.Monitoring.Hardware;
 using Pennyworth.Platform;
 using Pennyworth.Scanning;
@@ -32,7 +33,11 @@ public sealed record AppServices(
     CleanupHistory? CleanupHistory = null,
     Func<DateTimeOffset>? Clock = null,
     IClipboardService? Clipboard = null,
-    AssistantServices? Assistant = null);
+    AssistantServices? Assistant = null,
+    INotifier? Notifier = null,
+    IStartupRegistration? Startup = null,
+    PetLibrary? Pets = null,
+    IFilePicker? Files = null);
 
 public enum Page
 {
@@ -44,13 +49,15 @@ public enum Page
     Folders,
     Specs,
     Ask,
+    Alerts,
+    Settings,
 }
 
 /// <summary>
 /// The app shell: pages, Simple/3D mode, scans per drive, live monitoring, dialogs, toasts,
 /// language and theme. Pages call back into it through small host interfaces.
 /// </summary>
-public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost, IMemoryHost, IAskHost
+public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost, IMemoryHost, IAskHost, IAlertsHost, IPetHost, ISettingsHost
 {
     private static readonly TimeSpan ToastDuration = TimeSpan.FromSeconds(3.4);
 
@@ -69,6 +76,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         _clock = services.Clock ?? (() => DateTimeOffset.Now);
         _settings = services.Settings.Load();
         Language = _settings.Language;
+        Theme = _settings.Theme;
         Localizer.Instance.SetLanguage(Language);
         IsDarkTheme = _settings.Theme switch
         {
@@ -85,6 +93,9 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Folders = new FolderBrowserViewModel(this);
         Pc = new PcViewModel(this);
         Specs = new SpecsViewModel(services.Specs, this, services.Clipboard);
+        Pet = new PetViewModel(services.Pets, services.Files, this, _clock, _settings.PetId);
+        Alerts = new AlertsViewModel(this, services.Notifier, services.Drives, Pet, _clock);
+        Settings = new SettingsViewModel(this, Pet, services.Startup);
         Ask = services.Assistant is { } assistant ? new AskViewModel(assistant, this, _clock) : null;
         if (Ask is not null)
         {
@@ -111,6 +122,25 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public PcViewModel Pc { get; }
 
     public SpecsViewModel Specs { get; }
+
+    public AlertsViewModel Alerts { get; }
+
+    /// <summary>The Codex pet on the desktop, when the person added one.</summary>
+    public PetViewModel Pet { get; }
+
+    public SettingsViewModel Settings { get; }
+
+    /// <summary>The window asks to come back from the tray, after a click on a notification.</summary>
+    public event EventHandler? ShowWindowRequested;
+
+    /// <summary>
+    /// True while the window is hidden in the tray: samples still feed the alerts, but no
+    /// screen is refreshed for nobody to see.
+    /// </summary>
+    public bool InBackground { get; set; }
+
+    /// <summary>Closing the window hides it in the tray instead of quitting.</summary>
+    public bool RunInBackground => _settings.Alerts.RunInBackground;
 
     /// <summary>The assistant screen; null when the app runs without assistant services (some tests).</summary>
     public AskViewModel? Ask { get; }
@@ -156,7 +186,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentPage), nameof(MainContent), nameof(ShowSidebar),
-        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage))]
+        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage), nameof(IsAlertsPage), nameof(IsSettingsPage))]
     public partial Page Page { get; private set; }
 
     /// <summary>3D mode replaces the pages with the ASCII PC.</summary>
@@ -174,6 +204,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Page.Memory => Memory,
         Page.Specs => Specs,
         Page.Ask => Ask,
+        Page.Alerts => Alerts,
+        Page.Settings => Settings,
         _ => Folders,
     };
 
@@ -195,6 +227,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public bool IsSpecsPage => Page == Page.Specs;
 
     public bool IsAskPage => Page == Page.Ask;
+
+    public bool IsAlertsPage => Page == Page.Alerts;
+
+    public bool IsSettingsPage => Page == Page.Settings;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RescanCommand))]
@@ -225,6 +261,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public bool IsPortuguese => Localizer.Instance.IsPortuguese;
 
     public bool IsEnglish => !IsPortuguese;
+
+    /// <summary>What the person chose; with System the window follows Windows.</summary>
+    [ObservableProperty]
+    public partial ThemePreference Theme { get; private set; }
 
     /// <summary>Null until the view reports the system theme.</summary>
     [ObservableProperty]
@@ -290,6 +330,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             try
             {
                 MonitorSample sample = await Task.Run(monitor.Sample);
+                Alerts.Check(sample);
                 Live.Apply(sample);
                 _recentSamples.Enqueue(sample);
                 while (_recentSamples.Count > FactCollector.SustainedSamples)
@@ -308,6 +349,13 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         else
         {
             Live.Flicker();
+        }
+
+        // The pet stays on the desktop while the window is hidden in the tray.
+        Pet.Update(IsScanning ? PetActivity.Working : Ask?.IsBusy == true ? PetActivity.Thinking : PetActivity.Resting);
+        if (InBackground)
+        {
+            return;
         }
 
         try
@@ -371,10 +419,29 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Localizer.Instance.SetLanguage(language);
         SaveSettings(_settings with { Language = language });
         Welcome.Refresh();
+        Settings.Refresh();
     }
 
-    /// <summary>The view reports the Windows theme until the user picks one.</summary>
-    public void SyncSystemTheme(bool isDark) => IsDarkTheme ??= isDark;
+    /// <summary>The view reports the Windows theme; it is used while the person's choice is System.</summary>
+    public void SyncSystemTheme(bool isDark)
+    {
+        if (Theme == ThemePreference.System)
+        {
+            IsDarkTheme = isDark;
+        }
+    }
+
+    public void SetTheme(ThemePreference theme)
+    {
+        Theme = theme;
+        if (theme != ThemePreference.System)
+        {
+            IsDarkTheme = theme == ThemePreference.Dark;
+        }
+
+        SaveSettings(_settings with { Theme = theme });
+        Settings.Refresh();
+    }
 
     public void ShowDialog(object dialog) => Dialog = dialog;
 
@@ -497,6 +564,51 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     }
 
     [RelayCommand]
+    private void GoAlerts() => Navigate(Page.Alerts);
+
+    [RelayCommand]
+    private void GoSettings()
+    {
+        Navigate(Page.Settings);
+        Settings.Refresh();
+    }
+
+    void IPetHost.SavePetId(string? id) => SaveSettings(_settings with { PetId = id });
+
+    AlertSettings IAlertsHost.AlertSettings => _settings.Alerts;
+
+    void IAlertsHost.SaveAlertSettings(AlertSettings settings) => SaveSettings(_settings with { Alerts = settings });
+
+    void IAlertsHost.OpenFromAlert(AlertComponent component)
+    {
+        if (component == AlertComponent.Disk)
+        {
+            ShowStorageCommand.Execute(null);
+        }
+        else
+        {
+            Navigate(Page.Memory);
+        }
+
+        RequestShowWindow();
+    }
+
+    /// <summary>Brings the window back, from the tray or from behind other apps.</summary>
+    public void RequestShowWindow() => ShowWindowRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>True the first time the window hides in the tray, so the person learns where it went.</summary>
+    public bool TakeBackgroundHint()
+    {
+        if (_settings.Alerts.BackgroundHintShown)
+        {
+            return false;
+        }
+
+        SaveSettings(_settings with { Alerts = _settings.Alerts with { BackgroundHintShown = true } });
+        return true;
+    }
+
+    [RelayCommand]
     private void GoAsk()
     {
         if (Ask is { } ask)
@@ -612,11 +724,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     private void SetPortuguese() => SetLanguage(LanguagePreference.Portuguese);
 
     [RelayCommand]
-    private void ToggleTheme()
-    {
-        IsDarkTheme = IsDarkTheme == false;
-        SaveSettings(_settings with { Theme = IsDarkTheme == true ? ThemePreference.Dark : ThemePreference.Light });
-    }
+    private void ToggleTheme() => SetTheme(IsDarkTheme == false ? ThemePreference.Dark : ThemePreference.Light);
 
     [RelayCommand(CanExecute = nameof(CanRescan))]
     private void Rescan()
@@ -754,6 +862,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Cleanup.RefreshTexts();
         Memory.RefreshTexts();
         Specs.RefreshTexts();
+        Alerts.RefreshTexts();
+        Settings.Refresh();
         Ask?.RefreshTexts();
         Welcome.Refresh();
         RefreshPages();
