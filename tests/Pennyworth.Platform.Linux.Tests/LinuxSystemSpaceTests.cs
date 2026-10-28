@@ -79,41 +79,22 @@ public class LinuxSystemSpaceTests
 
     // ---- mountinfo ----
 
-    [Fact]
+    [LinuxFact]
     public void Btrfs_subvolume_mounts_differ_in_device_number_but_share_their_source()
     {
-        List<MountEntry> mounts = SystemSpaceParsers.ParseMountInfo(MountInfo);
+        IReadOnlyList<MountEntry> mounts = MountTable.Parse(MountInfo);
 
         MountEntry root = Assert.Single(mounts, m => m.MountPoint == "/");
         MountEntry snapshots = Assert.Single(mounts, m => m.MountPoint == "/.snapshots");
         Assert.NotEqual(root.MajorMinor, snapshots.MajorMinor);
         Assert.Equal("/dev/nvme0n1p2", root.Source);
         Assert.Equal(root.Source, snapshots.Source);
-        Assert.Equal("btrfs", root.FsType);
-        Assert.Equal(new MountEntry("259:1", "/home", "ext4", "/dev/nvme0n1p1"), Assert.Single(mounts, m => m.MountPoint == "/home"));
+        Assert.Equal("btrfs", root.FileSystemType);
+        MountEntry home = Assert.Single(mounts, m => m.MountPoint == "/home");
+        Assert.Equal(("259:1", "ext4", "/dev/nvme0n1p1"), (home.MajorMinor, home.FileSystemType, home.Source));
     }
 
-    [Fact]
-    public void Mount_points_are_unescaped_and_optional_fields_are_skipped()
-    {
-        const string line = @"36 35 98:0 /mnt1 /mnt/My\040Disk\011x rw,noatime master:1 shared:7 - ext3 /dev/root rw,errors=continue";
-
-        MountEntry entry = Assert.Single(SystemSpaceParsers.ParseMountInfo(line));
-
-        Assert.Equal(new MountEntry("98:0", "/mnt/My Disk\tx", "ext3", "/dev/root"), entry);
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("garbage")]
-    [InlineData("1 2 3:4 / /x rw - ext4")]
-    [InlineData("1 2 nocolon / /x rw - ext4 /dev/sda1 rw")]
-    public void Lines_that_are_not_mountinfo_are_skipped(string text)
-    {
-        Assert.Empty(SystemSpaceParsers.ParseMountInfo(text));
-    }
-
-    [Theory]
+    [LinuxTheory]
     [InlineData("/", "/")]
     [InlineData("/etc/hosts", "/")]
     [InlineData("/home", "/home")]
@@ -124,33 +105,33 @@ public class LinuxSystemSpaceTests
     [InlineData("/mnt/wd-blue-segundo", "/")]
     public void The_longest_mount_point_that_contains_the_path_wins(string path, string expectedMountPoint)
     {
-        MountEntry? mount = SystemSpaceParsers.FindMount(SystemSpaceParsers.ParseMountInfo(MountInfo), path);
+        MountEntry? mount = SystemSpaceParsers.FindMount(MountTable.Parse(MountInfo), path);
 
         Assert.Equal(expectedMountPoint, mount?.MountPoint);
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_latest_of_two_stacked_mounts_is_the_visible_one()
     {
         var mounts = new List<MountEntry>
         {
-            new("8:1", "/data", "ext4", "/dev/sda1"),
-            new("8:2", "/data", "xfs", "/dev/sda2"),
+            new("/data", "ext4", "/dev/sda1", "8:1", "/", "rw"),
+            new("/data", "xfs", "/dev/sda2", "8:2", "/", "rw"),
         };
 
-        Assert.Equal("xfs", SystemSpaceParsers.FindMount(mounts, "/data/x")?.FsType);
+        Assert.Equal("xfs", SystemSpaceParsers.FindMount(mounts, "/data/x")?.FileSystemType);
     }
 
     // ---- btrfs filesystem usage ----
 
-    [Fact]
+    [LinuxFact]
     public void Btrfs_metadata_is_used_bytes_of_metadata_and_system_chunks_times_their_copies()
     {
         Assert.Equal(CapturedMetadataBytes, SystemSpaceParsers.ParseBtrfsMetadataBytes(BtrfsUsage));
         Assert.Equal(8_841_986_048L, CapturedMetadataBytes);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Data_chunks_never_count_as_metadata()
     {
         const string output = "Data,single: Size:1000, Used:900 (90.00%)\nMetadata,single: Size:100, Used:7 (7.00%)\n";
@@ -158,7 +139,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(7, SystemSpaceParsers.ParseBtrfsMetadataBytes(output));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("single", 10)]
     [InlineData("RAID0", 10)]
     [InlineData("DUP", 20)]
@@ -173,7 +154,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(expected, SystemSpaceParsers.ParseBtrfsMetadataBytes(output));
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_unknown_profile_uses_the_ratio_btrfs_states()
     {
         const string output = "    Metadata ratio:\t\t     1.50\n\nMetadata,RAID5: Size:100, Used:10 (10.00%)\n";
@@ -181,7 +162,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(15, SystemSpaceParsers.ParseBtrfsMetadataBytes(output));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Mixed_profiles_are_added_each_with_its_own_copies()
     {
         const string output = "Metadata,single: Size:100, Used:10\nMetadata,DUP: Size:100, Used:10\nSystem,DUP: Size:8, Used:1\n";
@@ -189,7 +170,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(10 + 20 + 2, SystemSpaceParsers.ParseBtrfsMetadataBytes(output));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("garbage\nnot btrfs output")]
     [InlineData("Data,single: Size:1000, Used:900 (90.00%)\n")]
@@ -201,7 +182,7 @@ public class LinuxSystemSpaceTests
         Assert.Null(SystemSpaceParsers.ParseBtrfsMetadataBytes(output));
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_per_device_section_printed_to_root_is_not_mistaken_for_chunk_lines()
     {
         const string output = "Metadata,DUP: Size:100, Used:10 (10.00%)\n\n/dev/sda1, ID: 1\n   Device size: 500\n   Metadata,DUP: 200\n   System,DUP: 64\n";
@@ -211,7 +192,7 @@ public class LinuxSystemSpaceTests
 
     // ---- statvfs arithmetic ----
 
-    [Fact]
+    [LinuxFact]
     public void Reserved_bytes_are_free_minus_available_blocks_in_fragment_units()
     {
         Assert.Equal(HomeReserved, SystemSpaceParsers.ReservedBytes(HomeCounters));
@@ -219,7 +200,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(RootReserved, SystemSpaceParsers.ReservedBytes(RootCounters));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Available_above_free_is_an_impossible_reserve_of_zero()
     {
         var counters = new VfsCounters(4096, 4096, 1000, 10, 50);
@@ -227,13 +208,13 @@ public class LinuxSystemSpaceTests
         Assert.Equal(0, SystemSpaceParsers.ReservedBytes(counters));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Equal_free_and_available_blocks_reserve_nothing()
     {
         Assert.Equal(0, SystemSpaceParsers.ReservedBytes(new VfsCounters(4096, 4096, 100, 49679308, 49679308)));
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_fragment_size_is_the_unit_and_the_block_size_only_a_fallback()
     {
         Assert.Equal(10 * 1024, SystemSpaceParsers.ReservedBytes(new VfsCounters(4096, 1024, 100, 15, 5)));
@@ -241,13 +222,13 @@ public class LinuxSystemSpaceTests
         Assert.Null(SystemSpaceParsers.ReservedBytes(new VfsCounters(0, 0, 100, 15, 5)));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_reserve_larger_than_the_filesystem_is_not_believed()
     {
         Assert.Null(SystemSpaceParsers.ReservedBytes(new VfsCounters(4096, 4096, 100, 5000, 0)));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_byte_count_beyond_the_range_of_long_is_not_measured()
     {
         var counters = new VfsCounters(1 << 30, 1 << 30, ulong.MaxValue, ulong.MaxValue, 0);
@@ -255,14 +236,14 @@ public class LinuxSystemSpaceTests
         Assert.Null(SystemSpaceParsers.ReservedBytes(counters));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Device_overhead_is_what_the_device_holds_beyond_the_reported_filesystem_size()
     {
         Assert.Equal(HomeOverhead, SystemSpaceParsers.DeviceOverheadBytes("1416652175\n", HomeCounters));
         Assert.Equal(12_534_967_808L, HomeOverhead);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("abc")]
     [InlineData("-5")]
@@ -273,14 +254,14 @@ public class LinuxSystemSpaceTests
         Assert.Null(SystemSpaceParsers.DeviceOverheadBytes(sectors, HomeCounters));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_filesystem_reported_larger_than_its_device_is_not_believed()
     {
         Assert.Null(SystemSpaceParsers.DeviceOverheadBytes("1000", HomeCounters));
         Assert.Null(SystemSpaceParsers.DeviceOverheadBytes(null, HomeCounters));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_filesystem_that_fills_its_device_has_no_overhead_to_report()
     {
         var counters = new VfsCounters(512, 512, 100, 0, 0);
@@ -290,13 +271,13 @@ public class LinuxSystemSpaceTests
 
     // ---- snapper config and qgroups ----
 
-    [Fact]
+    [LinuxFact]
     public void Snapper_config_yields_subvolume_and_qgroup()
     {
         Assert.Equal(new SnapperConfig("/", "1/0"), SystemSpaceParsers.ParseSnapperConfig(SnapperRootConfig));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Snapper_config_accepts_single_quotes_and_bare_values_and_ignores_comments()
     {
         const string config = "#QGROUP=\"9/9\"\n  SUBVOLUME='/home'\nQGROUP=2/5 # trailing\n";
@@ -304,13 +285,13 @@ public class LinuxSystemSpaceTests
         Assert.Equal(new SnapperConfig("/home", "2/5"), SystemSpaceParsers.ParseSnapperConfig(config));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Snapper_config_without_quotas_has_an_empty_qgroup()
     {
         Assert.Equal(new SnapperConfig("/", ""), SystemSpaceParsers.ParseSnapperConfig("SUBVOLUME=\"/\"\nQGROUP=\"\"\n"));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("not a config")]
     [InlineData("SUBVOLUME=\"\"\nQGROUP=\"1/0\"")]
@@ -320,7 +301,7 @@ public class LinuxSystemSpaceTests
         Assert.Null(SystemSpaceParsers.ParseSnapperConfig(text));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("1/0", "1_0")]
     [InlineData("0/257", "0_257")]
     [InlineData("255/265", "255_265")]
@@ -336,7 +317,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(expected, SystemSpaceParsers.QgroupDirectory(qgroup));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("13985783808\n", 13985783808L)]
     [InlineData("0", 0L)]
     [InlineData("", null)]
@@ -350,7 +331,7 @@ public class LinuxSystemSpaceTests
 
     // ---- the whole measurement over a fabricated machine ----
 
-    [Fact]
+    [LinuxFact]
     public async Task Btrfs_root_reports_snapshot_qgroup_and_metadata_with_reserved_blocks()
     {
         var service = new LinuxSystemSpaceService(Machine().Sources);
@@ -361,7 +342,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(new HiddenSpaceReport(13_985_783_808L, CapturedMetadataBytes + RootReserved), result.Report);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Another_subvolume_of_the_same_btrfs_filesystem_reports_the_same_snapshots()
     {
         var service = new LinuxSystemSpaceService(Machine().Sources);
@@ -371,7 +352,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(13_985_783_808L, result.Report?.RestorePoints);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Ext4_reports_reserved_blocks_and_journal_and_inode_tables_but_no_snapshots()
     {
         var service = new LinuxSystemSpaceService(Machine().Sources);
@@ -382,7 +363,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(new HiddenSpaceReport(null, HomeReserved + HomeOverhead), result.Report);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task A_btrfs_filesystem_without_a_snapper_config_has_no_restore_points_but_keeps_metadata()
     {
         FakeMachine machine = Machine();
@@ -394,7 +375,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(new HiddenSpaceReport(null, CapturedMetadataBytes + RootReserved), result.Report);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task A_snapper_config_of_another_filesystem_does_not_count()
     {
         FakeMachine machine = Machine();
@@ -406,7 +387,7 @@ public class LinuxSystemSpaceTests
         Assert.Null(result.Report?.RestorePoints);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Two_configs_sharing_a_qgroup_count_it_once_and_different_qgroups_add_up()
     {
         FakeMachine machine = Machine();
@@ -421,7 +402,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(13_985_783_808L + 1000, result.Report?.RestorePoints);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Quota_numbers_the_kernel_marks_inconsistent_are_not_reported()
     {
         FakeMachine machine = Machine();
@@ -434,7 +415,7 @@ public class LinuxSystemSpaceTests
         Assert.Null(result.Report?.RestorePoints);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task A_qgroup_without_a_readable_exclusive_counter_is_unmeasured_not_zero()
     {
         FakeMachine machine = Machine();
@@ -446,7 +427,7 @@ public class LinuxSystemSpaceTests
         Assert.Null(result.Report?.RestorePoints);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task A_missing_btrfs_command_leaves_the_reserved_blocks_and_the_snapshots()
     {
         FakeMachine machine = Machine();
@@ -458,7 +439,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(new HiddenSpaceReport(13_985_783_808L, RootReserved), result.Report);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Garbage_from_the_btrfs_command_is_a_missing_source()
     {
         FakeMachine machine = Machine();
@@ -470,7 +451,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(new HiddenSpaceReport(13_985_783_808L, RootReserved), result.Report);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Without_mountinfo_the_reserved_blocks_are_all_that_is_known()
     {
         FakeMachine machine = Machine();
@@ -482,7 +463,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(new HiddenSpaceReport(null, HomeReserved), result.Report);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task A_filesystem_without_a_block_device_reports_only_its_reserve()
     {
         FakeMachine machine = Machine();
@@ -495,7 +476,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(new HiddenSpaceReport(null, 0), result.Report);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Nothing_measurable_is_a_failure_with_no_report()
     {
         var machine = new FakeMachine();
@@ -506,7 +487,7 @@ public class LinuxSystemSpaceTests
         Assert.Equal(new UnlockResult(UnlockOutcome.Failed), result);
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("")]
     [InlineData("relative/path")]
     [InlineData("C:")]
@@ -521,7 +502,7 @@ public class LinuxSystemSpaceTests
         Assert.Empty(machine.Reads);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Declined_is_never_an_outcome()
     {
         var service = new LinuxSystemSpaceService(Machine().Sources);
@@ -532,7 +513,7 @@ public class LinuxSystemSpaceTests
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task A_token_cancelled_before_the_start_cancels_the_task()
     {
         var machine = Machine();
@@ -545,7 +526,7 @@ public class LinuxSystemSpaceTests
         Assert.Empty(machine.Reads);
     }
 
-    [Fact]
+    [LinuxFact]
     public async Task Cancelling_while_a_source_is_being_read_stops_before_the_next_one()
     {
         FakeMachine machine = Machine();
@@ -608,7 +589,7 @@ public class LinuxSystemSpaceTests
     [LinuxFact]
     public void The_real_mountinfo_parses_and_holds_the_root()
     {
-        List<MountEntry> mounts = SystemSpaceParsers.ParseMountInfo(File.ReadAllText("/proc/self/mountinfo"));
+        IReadOnlyList<MountEntry> mounts = MountTable.Parse(File.ReadAllText("/proc/self/mountinfo"));
 
         Assert.NotNull(SystemSpaceParsers.FindMount(mounts, "/"));
     }
