@@ -17,7 +17,7 @@ public partial class LinuxKnowledgeBaseTests
     [GeneratedRegex("%([^%]+)%")]
     private static partial Regex VariablePattern();
 
-    [Fact]
+    [LinuxFact]
     public void Every_variable_in_the_linux_data_resolves_with_the_environment_scope()
     {
         var scope = new EnvironmentScope(new XdgPaths(name => name == "HOME" ? "/home/ana" : null));
@@ -31,7 +31,7 @@ public partial class LinuxKnowledgeBaseTests
         Assert.All(names, name => Assert.False(string.IsNullOrEmpty(scope.Resolve(name)), name));
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_guard_accepts_every_cleanup_path_for_a_typical_home()
     {
         var paths = new XdgPaths(name => name == "HOME" ? "/home/ana" : null);
@@ -120,7 +120,7 @@ public partial class LinuxKnowledgeBaseTests
         Assert.Equal(KnowledgeBaseLoader.Linux, new LinuxPlatform().Name);
     }
 
-    [Fact]
+    [LinuxFact]
     public void Windows_variable_names_do_not_resolve_so_the_windows_rules_resolve_to_nothing_here()
     {
         var scope = new EnvironmentScope(new XdgPaths(name => name == "HOME" ? "/home/ana" : null));

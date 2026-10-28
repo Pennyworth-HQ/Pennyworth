@@ -1,3 +1,4 @@
+using Pennyworth.Tests;
 using System.Globalization;
 using Pennyworth.Platform.Linux;
 
@@ -25,7 +26,7 @@ public class FlatpakAppNamesTests
     private static readonly CultureInfo En = CultureInfo.GetCultureInfo("en");
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
-    [Fact]
+    [LinuxFact]
     public void The_name_follows_the_language_then_falls_back_to_the_plain_name()
     {
         Assert.Equal("Garrafas", DesktopEntry.Name(Bottles, PtBr));
@@ -34,7 +35,7 @@ public class FlatpakAppNamesTests
         Assert.Equal("Bottles", DesktopEntry.Name(Bottles, CultureInfo.GetCultureInfo("ja")));
     }
 
-    [Fact]
+    [LinuxFact]
     public void A_regional_name_beats_the_language_name_and_the_language_name_beats_nothing()
     {
         const string entry = "[Desktop Entry]\nName=App\nName[pt]=Aplicativo\nName[pt_BR]=Aplicação\n";
@@ -43,7 +44,7 @@ public class FlatpakAppNamesTests
         Assert.Equal("Aplicativo", DesktopEntry.Name(entry, CultureInfo.GetCultureInfo("pt-PT")));
     }
 
-    [Fact]
+    [LinuxFact]
     public void Names_of_actions_comments_and_blank_values_are_ignored()
     {
         Assert.Null(DesktopEntry.Name("[Desktop Action x]\nName=Only an action\n", En));
@@ -52,7 +53,7 @@ public class FlatpakAppNamesTests
         Assert.Equal("Spaced", DesktopEntry.Name("[Desktop Entry]\r\nName = Spaced\r\n", En));
     }
 
-    [Theory]
+    [LinuxTheory]
     [InlineData("/home/ana/.var/app/com.google.Chrome", "com.google.Chrome")]
     [InlineData("/home/ana/.local/share/flatpak/app/org.mozilla.firefox", "org.mozilla.firefox")]
     [InlineData("/var/lib/flatpak/app/net.davidotek.pupgui2", "net.davidotek.pupgui2")]
@@ -75,7 +76,7 @@ public class FlatpakAppNamesTests
             return files.GetValueOrDefault(path);
         });
 
-    [Fact]
+    [LinuxFact]
     public void Reads_the_entry_of_the_user_installation_then_the_system_one()
     {
         var names = Names(new()
@@ -90,7 +91,7 @@ public class FlatpakAppNamesTests
         Assert.Equal("Krita", names.NameOf("/home/ana/.var/app/org.kde.krita", En));
     }
 
-    [Fact]
+    [LinuxFact]
     public void An_app_without_an_entry_and_a_folder_that_is_no_app_have_no_name_and_the_lookup_is_cached()
     {
         var reads = new List<string>();

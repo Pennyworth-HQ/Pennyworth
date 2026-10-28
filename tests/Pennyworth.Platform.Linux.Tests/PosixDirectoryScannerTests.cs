@@ -427,7 +427,7 @@ public sealed class PosixDirectoryScannerTests : IDisposable
         97 45 0:53 / /mnt/exram rw,relatime shared:63 - btrfs /dev/sda1 rw,subvolid=5,subvol=/
         """;
 
-    [Fact]
+    [LinuxFact]
     public void Subvolumes_of_the_roots_own_btrfs_are_part_of_the_drive_but_snapshots_and_other_disks_are_not()
     {
         Assert.Equal(
@@ -435,7 +435,7 @@ public sealed class PosixDirectoryScannerTests : IDisposable
             PosixDirectoryScanner.SameDriveMounts("/", SubvolumeMounts).Order());
     }
 
-    [Fact]
+    [LinuxFact]
     public void Only_mounts_below_the_scan_root_count_and_other_file_systems_have_none()
     {
         Assert.Equal(["/usr/local"], PosixDirectoryScanner.SameDriveMounts("/usr", SubvolumeMounts));
