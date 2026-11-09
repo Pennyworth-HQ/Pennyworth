@@ -63,6 +63,7 @@ public sealed partial class App : Application
             {
                 viewModel.Stress.Shutdown();
                 viewModel.Specs.CancelModulesRead(); // Withdraws a pending password request.
+                platform.Privileged?.Access.Lock(); // Ends the administrator session; the helper would also stop when the pipe closes.
                 (monitor as IDisposable)?.Dispose();
             };
             viewModel.Initialize();

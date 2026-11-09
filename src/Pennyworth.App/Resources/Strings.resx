@@ -588,4 +588,6 @@
   <data name="AdminSetupHelperLine" xml:space="preserve"><value>• the helper → {0} ({1})</value></data>
   <data name="AdminSetupPolicyLine" xml:space="preserve"><value>• its polkit policy → {0}</value></data>
   <data name="AdminSetupFingerprints" xml:space="preserve"><value>Fingerprints (SHA-256, first 16 digits): helper {0}, policy {1}</value></data>
+  <data name="LockedRetryOne" xml:space="preserve"><value>{0} folder couldn't be measured with administrator access this time, so it is still not in these totals.</value></data>
+  <data name="LockedRetryMany" xml:space="preserve"><value>{0} folders couldn't be measured with administrator access this time, so they are still not in these totals.</value></data>
 </root>

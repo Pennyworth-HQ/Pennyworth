@@ -588,4 +588,6 @@
   <data name="AdminSetupHelperLine" xml:space="preserve"><value>• o auxiliar → {0} ({1})</value></data>
   <data name="AdminSetupPolicyLine" xml:space="preserve"><value>• a política do polkit → {0}</value></data>
   <data name="AdminSetupFingerprints" xml:space="preserve"><value>Impressões digitais (SHA-256, 16 primeiros dígitos): auxiliar {0}, política {1}</value></data>
+  <data name="LockedRetryOne" xml:space="preserve"><value>{0} pasta não pôde ser medida com o acesso de administrador desta vez, então ainda não está nestes totais.</value></data>
+  <data name="LockedRetryMany" xml:space="preserve"><value>{0} pastas não puderam ser medidas com o acesso de administrador desta vez, então ainda não estão nestes totais.</value></data>
 </root>

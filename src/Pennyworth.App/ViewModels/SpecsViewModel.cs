@@ -136,7 +136,7 @@ public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host
             ReadModulesCommand.NotifyCanExecuteChanged();
             RefreshAccess();
         }
-        else if (promptIfNeeded)
+        else
         {
             _modulesFailure = result.Outcome;
             _modulesReason = result.Reason;

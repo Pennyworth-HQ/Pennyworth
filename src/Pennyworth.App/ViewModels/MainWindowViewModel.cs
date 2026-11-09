@@ -514,7 +514,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     {
         if (_services.Privileged is not { } privileged)
         {
-            CloseDialog();
+            dialog.Failed(); // Not offered without it; if it ever happens, it is said, not swallowed.
             return;
         }
 
@@ -599,7 +599,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     {
         if (_services.Privileged is not { } privileged || dialog.Plan is not { } plan)
         {
-            CloseDialog();
+            dialog.Failed();
             return;
         }
 
@@ -740,7 +740,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     {
         if (SystemDrive is null || _services.Privileged is null)
         {
-            CloseDialog();
+            dialog.Failed();
             return;
         }
 
@@ -864,7 +864,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     {
         if (_services.Privileged is null || dialog.Summary.Tree is null)
         {
-            CloseDialog();
+            dialog.Failed();
             return;
         }
 
@@ -949,6 +949,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
         if (result.Outcome != PrivilegedOutcome.Done || result.Value is not { } folders)
         {
+            if (!promptIfNeeded)
+            {
+                summary.MarkAdminFailed(); // Nobody is looking at a dialog: the banner says it did not work and offers another try.
+            }
+
             return new LockedMeasure(result.Outcome, result.Reason, 0, 0, 0);
         }
 

@@ -479,6 +479,31 @@ public class AdministratorAccessUiTests
     }
 
     [Fact]
+    public async Task A_measurement_that_fails_inside_the_session_is_said_and_can_be_tried_again()
+    {
+        FakePrivileged ops = Ops();
+        ops.FoldersResult = _ => PrivilegedResult<IReadOnlyList<MeasuredFolder>>.Failed("boom");
+        MainWindowViewModel viewModel = await Scanned(ops);
+        StorageSummaryViewModel summary = viewModel.SystemSummary!;
+
+        ops.Access.Set(AdministratorAccessState.Active);
+        await viewModel.AccessWork;
+
+        Assert.True(summary.ShowLockedRetry);
+        Assert.True(summary.ShowLockedBanner);
+        Assert.Equal(string.Format(Strings.LockedRetryOne, 1), summary.LockedBannerText);
+        Assert.Equal(Strings.PrivTryAgain, summary.LockedCta);
+
+        ops.FoldersResult = paths => PrivilegedResult<IReadOnlyList<MeasuredFolder>>.Done([new MeasuredFolder(paths[0], 3 * Gb, 3 * Gb, 5, true)]);
+        summary.MeasureLockedCommand.Execute(null);
+        await viewModel.AccessWork;
+
+        Assert.Equal(0, summary.LockedCount);
+        Assert.False(summary.ShowLockedRetry);
+        Assert.False(summary.ShowLockedBanner);
+    }
+
+    [Fact]
     public async Task A_scan_that_finishes_while_access_is_on_measures_its_locked_folders_at_once()
     {
         FakePrivileged ops = Ops(AdministratorAccessState.Active);
@@ -640,6 +665,18 @@ public class AdministratorAccessUiTests
         await specs.ReadModulesCommand.ExecuteAsync(null);
 
         Assert.Equal([true], reader.PromptFlags);
+    }
+
+    [Fact]
+    public async Task A_read_in_the_running_session_that_fails_says_so_instead_of_leaving_the_button_silent()
+    {
+        var (viewModel, _, ops) = await SpecsApp(AdministratorAccessState.Off, MemoryModulesResult.Unavailable);
+
+        ops.Access.Set(AdministratorAccessState.Active);
+        await viewModel.AccessWork;
+
+        Assert.Equal(Strings.SpecsModulesUnavailable, viewModel.Specs.ModulesMessage);
+        Assert.True(viewModel.Specs.CanReadModules);
     }
 
     [Fact]

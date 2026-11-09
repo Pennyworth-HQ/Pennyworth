@@ -31,6 +31,7 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
     private IReadOnlyList<StorageNode> _lockedFolders = [];
     private IReadOnlyList<StorageNode> _measuredByAdmin = [];
     private bool _adminTriedLocked;
+    private bool _adminFailed;
     private StorageTree? _tree;
     private long[] _categoryBytes = new long[StorageCategories.Count];
     private HiddenSpaceReport? _hidden;
@@ -149,18 +150,23 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
         Reason: PrivilegedUnavailableReason.HelperNotInstalled or PrivilegedUnavailableReason.HelperNotTrusted or PrivilegedUnavailableReason.HelperOutdated,
     };
 
-    /// <summary>"Measure 3 folders I couldn't read": offered when they can be measured now, or after the one-time setup (the dialog says which).</summary>
-    public bool ShowLockedBanner => LockedCapability is { Available: true } || LockedNeedsSetup;
+    /// <summary>Administrator access is on, and measuring this drive's locked folders in its session did not work: the banner says so and offers another try.</summary>
+    public bool ShowLockedRetry => AccessActive && _adminFailed && LockedCount > 0;
+
+    /// <summary>"Measure 3 folders I couldn't read": offered when they can be measured now, or after the one-time setup (the dialog says which), or again after a failure.</summary>
+    public bool ShowLockedBanner => LockedCapability is { Available: true } || LockedNeedsSetup || ShowLockedRetry;
 
     /// <summary>Why they cannot be measured at all on this system (no way to ask), in place of the button.</summary>
     public bool ShowLockedReason => LockedCapability is { Available: false } && !LockedNeedsSetup;
 
-    public string LockedBannerText => LockedNeedsSetup
-        ? string.Format(LockedCount == 1 ? Strings.LockedSetupOne : Strings.LockedSetupMany, LockedCount)
-        : string.Format(LockedCount == 1 ? Strings.LockedBannerOne : Strings.LockedBannerMany, LockedCount);
+    public string LockedBannerText => ShowLockedRetry
+        ? string.Format(LockedCount == 1 ? Strings.LockedRetryOne : Strings.LockedRetryMany, LockedCount)
+        : LockedNeedsSetup
+            ? string.Format(LockedCount == 1 ? Strings.LockedSetupOne : Strings.LockedSetupMany, LockedCount)
+            : string.Format(LockedCount == 1 ? Strings.LockedBannerOne : Strings.LockedBannerMany, LockedCount);
 
-    /// <summary>The banner's button: measure now, or start with the setup.</summary>
-    public string LockedCta => LockedNeedsSetup ? Strings.AdminSetupCta : Strings.LockedMeasureCta;
+    /// <summary>The banner's button: measure now, or start with the setup, or try again.</summary>
+    public string LockedCta => ShowLockedRetry ? Strings.PrivTryAgain : LockedNeedsSetup ? Strings.AdminSetupCta : Strings.LockedMeasureCta;
 
     public string? LockedReasonText => LockedCapability is { Available: false } missing && !LockedNeedsSetup
         ? string.Format(Strings.LockedUnavailable, PrivilegedText.Reason(missing.Reason))
@@ -300,6 +306,14 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
     internal void MarkAdminMeasured()
     {
         _adminTriedLocked = true;
+        _adminFailed = false;
+        RaiseAdminOffers();
+    }
+
+    /// <summary>Measuring this drive's locked folders in the running session failed; see <see cref="ShowLockedRetry"/>.</summary>
+    internal void MarkAdminFailed()
+    {
+        _adminFailed = true;
         RaiseAdminOffers();
     }
 
@@ -315,6 +329,7 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
         OnPropertyChanged(nameof(LockedBannerText));
         OnPropertyChanged(nameof(LockedReasonText));
         OnPropertyChanged(nameof(LockedCta));
+        OnPropertyChanged(nameof(ShowLockedRetry));
         OnPropertyChanged(nameof(ShowLockedLeft));
         OnPropertyChanged(nameof(LockedLeftText));
         OnPropertyChanged(nameof(HasMeasuredByAdmin));
