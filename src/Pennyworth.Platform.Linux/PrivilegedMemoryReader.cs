@@ -15,9 +15,9 @@ namespace Pennyworth.Platform.Linux;
 /// </remarks>
 internal sealed class PrivilegedMemoryReader(IPrivilegedOperations privileged) : IMemoryModuleReader
 {
-    public async Task<MemoryModulesResult> ReadAsync(CancellationToken cancellationToken)
+    public async Task<MemoryModulesResult> ReadAsync(CancellationToken cancellationToken, bool promptIfNeeded = true)
     {
-        PrivilegedResult<byte[]> table = await privileged.ReadFirmwareTablesAsync(cancellationToken);
+        PrivilegedResult<byte[]> table = await privileged.ReadFirmwareTablesAsync(cancellationToken, promptIfNeeded);
         if (table.Outcome != PrivilegedOutcome.Done)
         {
             return Settle(table.Outcome, table.Reason);
@@ -27,6 +27,11 @@ internal sealed class PrivilegedMemoryReader(IPrivilegedOperations privileged) :
         if (info.Modules.Count > 0)
         {
             return MemoryModulesResult.Read(info.Modules, info.MemorySlots);
+        }
+
+        if (!promptIfNeeded)
+        {
+            return MemoryModulesResult.Unavailable; // dmidecode is always a one-off prompt of its own.
         }
 
         PrivilegedResult<string> text = await privileged.ReadMemoryDevicesTextAsync(cancellationToken);

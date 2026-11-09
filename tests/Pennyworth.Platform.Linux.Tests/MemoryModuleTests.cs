@@ -22,12 +22,12 @@ public class MemoryModuleTests
     private static PrivilegedMemoryReader Reader(FakeRunner runner, params string[] installed) =>
         new(Privileged.Ops(runner, Privileged.MissingLstat, installed));
 
-    /// <summary>The reader over the helper (installed and trusted).</summary>
-    private static PrivilegedMemoryReader HelperReader(FakeRunner runner, params string[] installed) =>
-        new(Privileged.Ops(runner, Privileged.TrustedLstat, installed));
+    /// <summary>The reader over the helper's session (installed and trusted), whose firmware answer is <paramref name="table"/>.</summary>
+    private static PrivilegedMemoryReader HelperReader(FakeRunner runner, FakeLauncher launcher, params string[] installed) =>
+        new(Privileged.Ops(runner, Privileged.TrustedLstat, installed, launcher: launcher));
 
-    private static ElevatedRun HelperTable(byte[] table) =>
-        Privileged.Json(new FirmwareTablesResponse(HelperProtocol.Version, Convert.ToBase64String(table)), HelperJson.Default.FirmwareTablesResponse);
+    private static FakeLauncher Serving(byte[] table) =>
+        FakeLauncher.Serving(ServeFakes.Seams(firmware: _ => new FirmwareTablesResponse(HelperProtocol.Version, Convert.ToBase64String(table))));
 
     // ---- the synthetic table, through the reader Windows uses ----
 
@@ -132,13 +132,15 @@ public class MemoryModuleTests
     [LinuxFact]
     public async Task Reads_the_table_through_the_helper_when_it_is_trusted()
     {
-        var runner = new FakeRunner(HelperTable(SmbiosTable.ThreeSlots()));
+        var runner = new FakeRunner();
+        FakeLauncher launcher = Serving(SmbiosTable.ThreeSlots());
 
-        MemoryModulesResult result = await HelperReader(runner, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken);
+        MemoryModulesResult result = await HelperReader(runner, launcher, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(MemoryModulesOutcome.Read, result.Outcome);
         Assert.Equal(["DIMM_A1", "DIMM_B1"], result.Modules.Select(m => m.Slot));
-        Assert.Equal([$"{Pkexec} {HelperProtocol.InstalledPath} read-firmware-tables"], runner.Lines);
+        Assert.Equal([$"{Pkexec} {HelperProtocol.InstalledPath} serve"], launcher.Lines);
+        Assert.Empty(runner.Calls);
     }
 
     [LinuxTheory]
@@ -158,12 +160,14 @@ public class MemoryModuleTests
     [LinuxFact]
     public async Task A_dismissed_helper_prompt_is_cancelled_and_not_asked_again()
     {
-        var runner = new FakeRunner(Exit(126));
+        var runner = new FakeRunner();
+        var launcher = new FakeLauncher(() => FakeChannel.Exits(126));
 
-        MemoryModulesResult result = await HelperReader(runner, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken);
+        MemoryModulesResult result = await HelperReader(runner, launcher, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(MemoryModulesOutcome.Cancelled, result.Outcome);
-        Assert.Single(runner.Calls);
+        Assert.Equal(1, launcher.Starts);
+        Assert.Empty(runner.Calls);
     }
 
     [LinuxFact]
@@ -176,6 +180,18 @@ public class MemoryModuleTests
         Assert.Equal(MemoryModulesOutcome.Unavailable, result.Outcome);
         Assert.Equal(PrivilegedUnavailableReason.NoAuthenticationAgent, result.Reason);
         Assert.Single(runner.Calls);
+    }
+
+    [LinuxFact]
+    public async Task A_refresh_nobody_asked_for_never_prompts_and_never_runs_dmidecode()
+    {
+        var runner = new FakeRunner();
+        FakeLauncher launcher = Serving([0xFF, 0xFF, 0xFF, 0xFF]);
+        PrivilegedMemoryReader reader = HelperReader(runner, launcher, Pkexec, "/usr/bin/cat", Dmidecode);
+
+        MemoryModulesResult cold = await reader.ReadAsync(TestContext.Current.CancellationToken, promptIfNeeded: false);
+        Assert.Equal(PrivilegedUnavailableReason.NotActive, cold.Reason);
+        Assert.Equal(0, launcher.Starts);
     }
 
     [LinuxFact]
@@ -193,13 +209,14 @@ public class MemoryModuleTests
     [LinuxFact]
     public async Task An_outdated_helper_is_unavailable_with_its_reason()
     {
-        var runner = new FakeRunner(Privileged.Json(new FirmwareTablesResponse(HelperProtocol.Version + 1, ""), HelperJson.Default.FirmwareTablesResponse));
+        var runner = new FakeRunner();
+        var launcher = new FakeLauncher(() => FakeChannel.Exits(2, "pennyworth-helper: unknown subcommand")); // an older helper has no "serve"
 
-        MemoryModulesResult result = await HelperReader(runner, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken);
+        MemoryModulesResult result = await HelperReader(runner, launcher, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(MemoryModulesOutcome.Unavailable, result.Outcome);
         Assert.Equal(PrivilegedUnavailableReason.HelperOutdated, result.Reason);
-        Assert.Single(runner.Calls);
+        Assert.Equal(1, launcher.Starts);
     }
 
     [LinuxTheory]
@@ -232,13 +249,15 @@ public class MemoryModuleTests
     [InlineData(6)] // the table is not there
     public async Task A_failing_helper_is_unavailable_and_does_not_prompt_again(int exitCode)
     {
-        var runner = new FakeRunner(Exit(exitCode, error: "pennyworth-helper: no table\n"));
+        var runner = new FakeRunner();
+        var launcher = FakeLauncher.Serving(ServeFakes.Seams(firmware: _ => throw new HelperException(exitCode, "no table")));
 
-        MemoryModulesResult result = await HelperReader(runner, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken);
+        MemoryModulesResult result = await HelperReader(runner, launcher, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(MemoryModulesOutcome.Unavailable, result.Outcome);
         Assert.Null(result.Reason);
-        Assert.Single(runner.Calls);
+        Assert.Empty(runner.Calls);
+        Assert.Equal(1, launcher.Starts);
     }
 
     [LinuxFact]
@@ -270,12 +289,14 @@ public class MemoryModuleTests
     [LinuxFact]
     public async Task The_helper_then_dmidecode_when_the_table_it_returns_gives_nothing()
     {
-        var runner = new FakeRunner(HelperTable([0xFF, 0xFF, 0xFF, 0xFF]), Text(SmbiosTable.ThreeSlotsDmidecode));
+        var runner = new FakeRunner(Text(SmbiosTable.ThreeSlotsDmidecode));
+        FakeLauncher launcher = Serving([0xFF, 0xFF, 0xFF, 0xFF]);
 
-        MemoryModulesResult result = await HelperReader(runner, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken);
+        MemoryModulesResult result = await HelperReader(runner, launcher, Pkexec, "/usr/bin/cat", Dmidecode).ReadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(MemoryModulesOutcome.Read, result.Outcome);
-        Assert.Equal([$"{Pkexec} {HelperProtocol.InstalledPath} read-firmware-tables", $"{Pkexec} {Dmidecode} -t 17"], runner.Lines);
+        Assert.Equal([$"{Pkexec} {HelperProtocol.InstalledPath} serve"], launcher.Lines);
+        Assert.Equal([$"{Pkexec} {Dmidecode} -t 17"], runner.Lines); // dmidecode is a one-off prompt of its own
     }
 
     [LinuxFact]

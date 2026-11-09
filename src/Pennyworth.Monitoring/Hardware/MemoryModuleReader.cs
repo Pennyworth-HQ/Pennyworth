@@ -37,5 +37,9 @@ public interface IMemoryModuleReader
     /// Asks for the administrator's authorization and reads the modules. Waits for a person, so it can take
     /// minutes; cancelling the token closes the request.
     /// </summary>
-    Task<MemoryModulesResult> ReadAsync(CancellationToken cancellationToken);
+    /// <param name="promptIfNeeded">
+    /// False for a refresh nobody asked for (administrator access just turned on): nothing that needs a prompt is started, and an
+    /// answer that would need one is <see cref="MemoryModulesOutcome.Unavailable"/>.
+    /// </param>
+    Task<MemoryModulesResult> ReadAsync(CancellationToken cancellationToken, bool promptIfNeeded = true);
 }

@@ -92,6 +92,38 @@ public class PolkitPolicyTests
     }
 
     [Fact]
+    public void The_serve_action_is_what_the_app_prompts_with_and_it_names_every_use_and_the_idle_time()
+    {
+        XElement action = Actions().Single(a => (string?)a.Attribute("id") == HelperProtocol.ActionId(HelperProtocol.Serve));
+        string idle = ((int)HelperProtocol.IdleTimeout.TotalMinutes).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        Assert.Equal("app.pennyworth.serve", HelperProtocol.ActionId(HelperProtocol.Serve));
+        Assert.Equal("auth_admin_keep", action.Element("defaults")!.Element("allow_active")!.Value);
+        foreach (XElement message in action.Elements("message"))
+        {
+            string text = message.Value;
+            bool portuguese = (string?)message.Attribute(XmlNs + "lang") == "pt_BR";
+
+            Assert.Contains(idle, text, StringComparison.Ordinal);
+            Assert.Contains(portuguese ? "memória" : "memory", text, StringComparison.Ordinal);
+            Assert.Contains(portuguese ? "snapshots" : "snapshots", text, StringComparison.Ordinal);
+            Assert.Contains(portuguese ? "pastas" : "folders", text, StringComparison.Ordinal);
+            Assert.Contains(portuguese ? "apagar" : "delete", text, StringComparison.Ordinal);
+            Assert.Contains(portuguese ? "bloqueia" : "lock", text, StringComparison.Ordinal);
+            Assert.Contains(portuguese ? "fecha" : "closes", text, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void The_policy_file_parses_as_xml_and_names_the_dtd_polkit_expects()
+    {
+        string text = File.ReadAllText(Path.Combine(RepoRoot, "tools", "package", "linux", "app.pennyworth.policy"));
+
+        Assert.Contains("-//freedesktop//DTD polkit Policy Configuration 1.0//EN", text, StringComparison.Ordinal);
+        Assert.NotEmpty(Actions());
+    }
+
+    [Fact]
     public void The_installed_path_is_named_once_per_action_and_nowhere_else()
     {
         string text = File.ReadAllText(Path.Combine(RepoRoot, "tools", "package", "linux", "app.pennyworth.policy"));

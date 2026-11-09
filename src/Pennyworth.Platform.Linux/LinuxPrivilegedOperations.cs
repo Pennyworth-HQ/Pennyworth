@@ -17,14 +17,17 @@ namespace Pennyworth.Platform.Linux;
 /// </para>
 /// <list type="bullet">
 /// <item><description>
-/// The helper, <see cref="HelperProtocol.InstalledPath"/>, run as <c>pkexec &lt;helper&gt; &lt;subcommand&gt; [argument]</c>,
-/// only when <see cref="HelperTrust"/> finds it and every folder above it owned by root and unwritable by others. Needed by
-/// everything that goes beyond reading: <see cref="PrivilegedOperation.Folders"/> and <see cref="PrivilegedOperation.SystemCleanup"/>.
+/// The helper's session (<see cref="LinuxAdministratorAccess"/>): one <c>pkexec &lt;helper&gt; serve</c>, started by the first request
+/// that may ask and reused by every later one, only when <see cref="HelperTrust"/> finds the helper and every folder above it owned
+/// by root and unwritable by others. Everything goes through it when it can: reading the firmware table and the system space, and
+/// the two features that go beyond reading, <see cref="PrivilegedOperation.Folders"/> and <see cref="PrivilegedOperation.SystemCleanup"/>.
 /// </description></item>
 /// <item><description>
-/// Without a trusted helper, the features that only read fall back to <c>pkexec</c> of fixed system tools found in fixed
+/// Without a usable helper, the two features that only read fall back to <c>pkexec</c> of fixed system tools found in fixed
 /// folders (<c>cat</c> of the firmware table, <c>dmidecode</c>, <c>btrfs</c>), which the polkit agent presents as a generic
-/// "run this program as root". Deleting and measuring folders never fall back: nothing arbitrary is ever run as root.
+/// "run this program as root" and which are one-off: each asks again and none starts the session. Deleting and measuring folders
+/// never fall back: nothing arbitrary is ever run as root, and those two say they need the setup
+/// (<see cref="IAdministratorAccess.SetupAsync"/>).
 /// </description></item>
 /// </list>
 /// <para>
@@ -37,44 +40,66 @@ internal sealed class LinuxPrivilegedOperations : IPrivilegedOperations
     /// <summary>Long enough for a person to find the password, short enough to end if the prompt was forgotten.</summary>
     internal static readonly TimeSpan PromptTimeout = TimeSpan.FromSeconds(120);
 
-    private static readonly string[] Pkexec = ["/usr/bin/pkexec", "/bin/pkexec"];
+    private static readonly string[] Pkexec = LinuxAdministratorAccess.Pkexec;
     private static readonly string[] Cat = ["/usr/bin/cat", "/bin/cat"];
     private static readonly string[] Dmidecode = ["/usr/sbin/dmidecode", "/usr/bin/dmidecode", "/sbin/dmidecode", "/bin/dmidecode"];
     private static readonly string[] Btrfs = ["/usr/bin/btrfs", "/usr/sbin/btrfs", "/bin/btrfs", "/sbin/btrfs"];
 
     private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
-    private readonly HelperClient _client;
+    private readonly LinuxAdministratorAccess _access;
+    private readonly PkexecTools _tools;
     private readonly Func<string, bool> _exists;
-    private readonly Func<string, EntryInfo> _lstat;
     private readonly Func<string> _readMountInfo;
     private readonly Func<string, VfsCounters?> _statVfs;
 
     public LinuxPrivilegedOperations()
-        : this(ElevatedRunner.RunAsync, File.Exists, PathTrust.Lstat, PromptTimeout, MountTable.ReadSystem, SystemSpaceStatVfs.Read)
+        : this(
+            ElevatedRunner.RunAsync,
+            PkexecChannel.Launch,
+            File.Exists,
+            PathTrust.Lstat,
+            PromptTimeout,
+            MountTable.ReadSystem,
+            SystemSpaceStatVfs.Read,
+            TimeProvider.System,
+            AppContext.BaseDirectory,
+            HelperSetup.EmbeddedScript)
     {
     }
 
-    /// <param name="run">Runs pkexec; tests hand in a fake.</param>
-    /// <param name="exists">Whether a program is installed at an absolute path (<c>pkexec</c>, <c>cat</c>, <c>dmidecode</c>, <c>btrfs</c>).</param>
+    /// <param name="run">Runs pkexec for the fixed tools and the setup; tests hand in a fake.</param>
+    /// <param name="launch">Starts <c>pkexec &lt;helper&gt; serve</c>; tests hand in a fake.</param>
+    /// <param name="exists">Whether a program is installed at an absolute path (<c>pkexec</c>, <c>cat</c>, <c>dmidecode</c>, <c>btrfs</c>, <c>bash</c>).</param>
     /// <param name="lstat">Reads one path without following a link, for <see cref="HelperTrust"/>.</param>
     /// <param name="promptTimeout">How long a person gets to answer the password dialog.</param>
     /// <param name="readMountInfo">The text of <c>/proc/self/mountinfo</c>, to tell btrfs mounts from the others.</param>
     /// <param name="statVfs">The <c>statvfs</c> counters of a folder, for the space the file system reserves for root.</param>
+    /// <param name="time">The clock the session's idle lock runs on.</param>
+    /// <param name="appFolder">Where the app runs from; the setup looks for the helper and the policy next to it.</param>
+    /// <param name="script">The installer text the setup runs as root; null when this build has none.</param>
     internal LinuxPrivilegedOperations(
         ElevatedRunnerFunc run,
+        SessionLauncher launch,
         Func<string, bool> exists,
         Func<string, EntryInfo> lstat,
         TimeSpan promptTimeout,
         Func<string> readMountInfo,
-        Func<string, VfsCounters?> statVfs)
+        Func<string, VfsCounters?> statVfs,
+        TimeProvider time,
+        string appFolder,
+        Func<string?> script)
     {
-        _client = new HelperClient(run, promptTimeout);
+        var session = new ElevationSession(launch, time, promptTimeout);
+        var setup = new HelperSetup(run, exists, lstat, appFolder, script, promptTimeout + TimeSpan.FromSeconds(60));
+        _access = new LinuxAdministratorAccess(session, setup, exists, lstat);
+        _tools = new PkexecTools(run, promptTimeout);
         _exists = exists;
-        _lstat = lstat;
         _readMountInfo = readMountInfo;
         _statVfs = statVfs;
     }
+
+    public IAdministratorAccess Access => _access;
 
     public PrivilegedCapability Capability(PrivilegedOperation operation)
     {
@@ -85,9 +110,9 @@ internal sealed class LinuxPrivilegedOperations : IPrivilegedOperations
 
         return operation switch
         {
-            // Readable through the helper or, failing that, through fixed system tools.
+            // Readable through the session or, failing that, through fixed system tools.
             PrivilegedOperation.FirmwareTables or PrivilegedOperation.SystemSpace => PrivilegedCapability.Ready,
-            PrivilegedOperation.Folders or PrivilegedOperation.SystemCleanup => HelperTrust.Evaluate(_lstat),
+            PrivilegedOperation.Folders or PrivilegedOperation.SystemCleanup => _access.HelperCapability(),
             _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null),
         };
     }
@@ -96,23 +121,22 @@ internal sealed class LinuxPrivilegedOperations : IPrivilegedOperations
     /// Through the helper, any failure is a failure. Through <c>cat</c>, a table that cannot be read even as root (an ordinary
     /// non-zero exit) is an empty one: there is nothing to parse and <see cref="ReadMemoryDevicesTextAsync"/> may know better.
     /// </remarks>
-    public async Task<PrivilegedResult<byte[]>> ReadFirmwareTablesAsync(CancellationToken cancellationToken)
+    public async Task<PrivilegedResult<byte[]>> ReadFirmwareTablesAsync(CancellationToken cancellationToken, bool promptIfNeeded = true)
     {
         if (Find(Pkexec) is not { } pkexec)
         {
             return PrivilegedResult<byte[]>.NotAvailable(PrivilegedUnavailableReason.NoPkexec);
         }
 
-        if (HelperTrust.Evaluate(_lstat).Available)
+        if (_access.HelperCapability().Available)
         {
-            return await _client.CallAsync(
-                pkexec,
-                HelperProtocol.ReadFirmwareTables,
-                argument: null,
-                input: null,
-                longRunning: false,
-                ReadTable,
-                cancellationToken);
+            PrivilegedResult<ServeResponse> answer = await _access.CallAsync(Request(HelperProtocol.ReadFirmwareTables), promptIfNeeded, cancellationToken);
+            return Map(answer, ReadTable);
+        }
+
+        if (!promptIfNeeded)
+        {
+            return PrivilegedResult<byte[]>.NotAvailable(PrivilegedUnavailableReason.NotActive);
         }
 
         if (Find(Cat) is not { } cat)
@@ -120,8 +144,8 @@ internal sealed class LinuxPrivilegedOperations : IPrivilegedOperations
             return PrivilegedResult<byte[]>.Done([]);
         }
 
-        ElevatedRun run = await _client.RunToolAsync(pkexec, [cat, HelperProtocol.FirmwareTablePath], cancellationToken);
-        return HelperClient.Settle(run) ?? PrivilegedResult<byte[]>.Done([]);
+        ElevatedRun run = await _tools.RunToolAsync(pkexec, [cat, HelperProtocol.FirmwareTablePath], cancellationToken);
+        return PkexecTools.Settle(run) ?? PrivilegedResult<byte[]>.Done([]);
     }
 
     public async Task<PrivilegedResult<string>> ReadMemoryDevicesTextAsync(CancellationToken cancellationToken)
@@ -136,14 +160,15 @@ internal sealed class LinuxPrivilegedOperations : IPrivilegedOperations
             return PrivilegedResult<string>.Failed("dmidecode is not installed.");
         }
 
-        ElevatedRun run = await _client.RunToolAsync(pkexec, [dmidecode, "-t", "17"], cancellationToken);
-        PrivilegedResult<byte[]> settled = HelperClient.Settle(run) ?? PrivilegedResult<byte[]>.Failed(HelperClient.Detail(run));
+        // The helper has no operation for this on purpose (it would be a way to run a system tool as root); it is always a one-off prompt.
+        ElevatedRun run = await _tools.RunToolAsync(pkexec, [dmidecode, "-t", "17"], cancellationToken);
+        PrivilegedResult<byte[]> settled = PkexecTools.Settle(run) ?? PrivilegedResult<byte[]>.Failed(PkexecTools.Detail(run));
         return settled.Outcome == PrivilegedOutcome.Done
             ? PrivilegedResult<string>.Done(Encoding.UTF8.GetString(settled.Value!))
             : settled.As<string>();
     }
 
-    public async Task<PrivilegedResult<HiddenSpaceReport>> MeasureSystemSpaceAsync(string mountPoint, CancellationToken cancellationToken)
+    public async Task<PrivilegedResult<HiddenSpaceReport>> MeasureSystemSpaceAsync(string mountPoint, CancellationToken cancellationToken, bool promptIfNeeded = true)
     {
         if (Find(Pkexec) is not { } pkexec)
         {
@@ -155,57 +180,39 @@ internal sealed class LinuxPrivilegedOperations : IPrivilegedOperations
             return PrivilegedResult<HiddenSpaceReport>.Failed("The mount point is not an absolute path.");
         }
 
-        if (HelperTrust.Evaluate(_lstat).Available)
+        if (_access.HelperCapability().Available)
         {
-            return await _client.CallAsync(
-                pkexec,
-                HelperProtocol.MeasureSystemSpace,
-                mountPoint,
-                input: null,
-                longRunning: false,
-                ReadSystemSpace,
-                cancellationToken);
+            PrivilegedResult<ServeResponse> answer = await _access.CallAsync(Request(HelperProtocol.MeasureSystemSpace, mountPoint), promptIfNeeded, cancellationToken);
+            return Map(answer, ReadSystemSpace);
         }
 
-        return await MeasureWithToolsAsync(pkexec, mountPoint, cancellationToken);
+        return promptIfNeeded
+            ? await MeasureWithToolsAsync(pkexec, mountPoint, cancellationToken)
+            : PrivilegedResult<HiddenSpaceReport>.NotAvailable(PrivilegedUnavailableReason.NotActive);
     }
 
-    public async Task<PrivilegedResult<IReadOnlyList<MeasuredFolder>>> MeasureFoldersAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken)
+    public async Task<PrivilegedResult<IReadOnlyList<MeasuredFolder>>> MeasureFoldersAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken, bool promptIfNeeded = true)
     {
-        if (Find(Pkexec) is not { } pkexec)
-        {
-            return PrivilegedResult<IReadOnlyList<MeasuredFolder>>.NotAvailable(PrivilegedUnavailableReason.NoPkexec);
-        }
-
-        if (HelperTrust.Evaluate(_lstat) is { Available: false } untrusted)
-        {
-            return PrivilegedResult<IReadOnlyList<MeasuredFolder>>.NotAvailable(untrusted.Reason!.Value);
-        }
-
         string[] wanted = [.. paths.Where(IsAbsolute).Distinct(StringComparer.Ordinal)];
         var measured = new List<MeasuredFolder>(wanted.Length);
+        if (wanted.Length == 0)
+        {
+            return PrivilegedResult<IReadOnlyList<MeasuredFolder>>.Done(measured); // Nothing to ask a password for.
+        }
 
-        // One request holds at most MaxFolders; the polkit action keeps the authorisation for a while, so the next one is quiet.
+        // One request holds at most MaxFolders; the session is already running for every one after the first, so only the first can ask.
         for (int start = 0; start < wanted.Length; start += HelperProtocol.MaxFolders)
         {
             string[] chunk = wanted[start..Math.Min(wanted.Length, start + HelperProtocol.MaxFolders)];
-            byte[] request = JsonSerializer.SerializeToUtf8Bytes(new FoldersRequest(HelperProtocol.Version, chunk), HelperJson.Default.FoldersRequest);
-
-            PrivilegedResult<FoldersResponse> answer = await _client.CallAsync(
-                pkexec,
-                HelperProtocol.MeasureFolders,
-                argument: null,
-                request,
-                longRunning: true,
-                output => HelperClient.Decode(output, HelperJson.Default.FoldersResponse, static r => r.Version),
-                cancellationToken);
-
-            if (answer.Outcome != PrivilegedOutcome.Done)
+            PrivilegedResult<ServeResponse> answer = await _access.CallAsync(
+                new ServeRequest(HelperProtocol.Version, 0, HelperProtocol.MeasureFolders, Paths: chunk), promptIfNeeded, cancellationToken);
+            PrivilegedResult<FoldersResponse> folders = Map(answer, static response => Present(response.Folders));
+            if (folders.Outcome != PrivilegedOutcome.Done)
             {
-                return answer.As<IReadOnlyList<MeasuredFolder>>();
+                return folders.As<IReadOnlyList<MeasuredFolder>>();
             }
 
-            foreach (FolderSize folder in answer.Value!.Folders ?? [])
+            foreach (FolderSize folder in folders.Value!.Folders ?? [])
             {
                 measured.Add(new MeasuredFolder(folder.Path, folder.SizeOnDisk, folder.LogicalSize, folder.Files, folder.Complete));
             }
@@ -222,39 +229,54 @@ internal sealed class LinuxPrivilegedOperations : IPrivilegedOperations
             return PrivilegedResult<CleanupResult>.Failed($"'{ruleId}' is not a rule the helper cleans.");
         }
 
-        if (Find(Pkexec) is not { } pkexec)
-        {
-            return PrivilegedResult<CleanupResult>.NotAvailable(PrivilegedUnavailableReason.NoPkexec);
-        }
-
-        if (HelperTrust.Evaluate(_lstat) is { Available: false } untrusted)
-        {
-            return PrivilegedResult<CleanupResult>.NotAvailable(untrusted.Reason!.Value);
-        }
-
-        (List<CleanFile> files, byte[] request, long notSent) = Prepare(estimate.Files ?? [], roots);
+        (List<CleanFile> files, _, long notSent) = Prepare(estimate.Files ?? [], roots);
         if (files.Count == 0)
         {
             return PrivilegedResult<CleanupResult>.Done(new CleanupResult(estimate.Rule, 0, 0, notSent)); // Nothing to ask a password for.
         }
 
-        PrivilegedResult<CleanResponse> answer = await _client.CallAsync(
-            pkexec,
-            HelperProtocol.CleanSystem,
-            ruleId,
-            request,
-            longRunning: true,
-            output => HelperClient.Decode(output, HelperJson.Default.CleanResponse, static r => r.Version),
-            cancellationToken);
-
-        if (answer.Outcome != PrivilegedOutcome.Done)
+        PrivilegedResult<ServeResponse> answer = await _access.CallAsync(
+            new ServeRequest(HelperProtocol.Version, 0, HelperProtocol.CleanSystem, ruleId, Files: files), allowPrompt: true, cancellationToken);
+        PrivilegedResult<CleanResponse> cleaned = Map(answer, static response => Present(response.Clean));
+        if (cleaned.Outcome != PrivilegedOutcome.Done)
         {
-            return answer.As<CleanupResult>();
+            return cleaned.As<CleanupResult>();
         }
 
-        CleanResponse done = answer.Value!;
+        CleanResponse done = cleaned.Value!;
         return PrivilegedResult<CleanupResult>.Done(new CleanupResult(estimate.Rule, done.FreedBytes, done.Deleted, done.Skipped + notSent));
     }
+
+    private static ServeRequest Request(string op, string? argument = null) => new(HelperProtocol.Version, 0, op, argument);
+
+    /// <summary>
+    /// The answer's payload when the helper answered with success; otherwise the outcome that says why. An answer that is
+    /// <see cref="HelperExit.Usage"/> means the installed helper does not understand what this app asks: an older one.
+    /// </summary>
+    private static PrivilegedResult<T> Map<T>(PrivilegedResult<ServeResponse> answer, Func<ServeResponse, PrivilegedResult<T>> payload)
+    {
+        if (answer.Outcome != PrivilegedOutcome.Done)
+        {
+            return answer.As<T>();
+        }
+
+        ServeResponse response = answer.Value!;
+        if (response.Exit == HelperExit.Usage)
+        {
+            return PrivilegedResult<T>.NotAvailable(PrivilegedUnavailableReason.HelperOutdated);
+        }
+
+        if (response.Exit != HelperExit.Ok)
+        {
+            return PrivilegedResult<T>.Failed(response.Error ?? $"The helper stopped with code {response.Exit}.");
+        }
+
+        return payload(response);
+    }
+
+    private static PrivilegedResult<T> Present<T>(T? value)
+        where T : class =>
+        value is null ? PrivilegedResult<T>.Failed("The helper's answer was empty.") : PrivilegedResult<T>.Done(value);
 
     /// <summary>
     /// The files of the preview the helper may be asked about, as its request, and how many were left out. A file goes
@@ -366,8 +388,8 @@ internal sealed class LinuxPrivilegedOperations : IPrivilegedOperations
 
         for (int i = 0; i < commands.Length; i++)
         {
-            ElevatedRun run = await _client.RunToolAsync(pkexec, commands[i], cancellationToken);
-            if (HelperClient.Settle(run) is not { } settled)
+            ElevatedRun run = await _tools.RunToolAsync(pkexec, commands[i], cancellationToken);
+            if (PkexecTools.Settle(run) is not { } settled)
             {
                 continue; // An ordinary failure (quotas off, no snapshots): that part stays unknown.
             }
@@ -384,17 +406,16 @@ internal sealed class LinuxPrivilegedOperations : IPrivilegedOperations
         return PrivilegedResult<HiddenSpaceReport>.Done(new HiddenSpaceReport(space.SnapshotBytes, space.MetadataBytes));
     }
 
-    private static PrivilegedResult<byte[]> ReadTable(byte[] output)
+    private static PrivilegedResult<byte[]> ReadTable(ServeResponse response)
     {
-        PrivilegedResult<FirmwareTablesResponse> answer = HelperClient.Decode(output, HelperJson.Default.FirmwareTablesResponse, static r => r.Version);
-        if (answer.Outcome != PrivilegedOutcome.Done)
+        if (response.Firmware is not { } table)
         {
-            return answer.As<byte[]>();
+            return PrivilegedResult<byte[]>.Failed("The helper's answer was empty.");
         }
 
         try
         {
-            return PrivilegedResult<byte[]>.Done(Convert.FromBase64String(answer.Value!.Table ?? ""));
+            return PrivilegedResult<byte[]>.Done(Convert.FromBase64String(table.Table ?? ""));
         }
         catch (FormatException)
         {
@@ -402,13 +423,10 @@ internal sealed class LinuxPrivilegedOperations : IPrivilegedOperations
         }
     }
 
-    private static PrivilegedResult<HiddenSpaceReport> ReadSystemSpace(byte[] output)
-    {
-        PrivilegedResult<SystemSpaceResponse> answer = HelperClient.Decode(output, HelperJson.Default.SystemSpaceResponse, static r => r.Version);
-        return answer.Outcome == PrivilegedOutcome.Done
-            ? PrivilegedResult<HiddenSpaceReport>.Done(new HiddenSpaceReport(answer.Value!.SnapshotBytes, answer.Value.MetadataBytes))
-            : answer.As<HiddenSpaceReport>();
-    }
+    private static PrivilegedResult<HiddenSpaceReport> ReadSystemSpace(ServeResponse response) =>
+        response.Space is { } space
+            ? PrivilegedResult<HiddenSpaceReport>.Done(new HiddenSpaceReport(space.SnapshotBytes, space.MetadataBytes))
+            : PrivilegedResult<HiddenSpaceReport>.Failed("The helper's answer was empty.");
 
     private static bool IsAbsolute(string? path) => !string.IsNullOrEmpty(path) && path[0] == '/' && !path.Contains('\0');
 

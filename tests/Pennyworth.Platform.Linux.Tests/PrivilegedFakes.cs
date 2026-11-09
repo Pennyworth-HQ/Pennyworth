@@ -1,3 +1,4 @@
+using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -19,6 +20,8 @@ internal sealed class FakeRunner(params ElevatedRun[] answers)
     private readonly Queue<ElevatedRun> _answers = new(answers);
 
     public List<RunCall> Calls { get; } = [];
+
+    public void Enqueue(ElevatedRun answer) => _answers.Enqueue(answer);
 
     public IEnumerable<string> Lines => Calls.Select(call => call.Line);
 
@@ -61,14 +64,20 @@ internal static class Privileged
 
     private static bool IsAncestor(string path) => path is "/" or "/usr" or "/usr/libexec" or "/usr/libexec/pennyworth";
 
+    public const string AppFolder = "/opt/pennyworth/lib/pennyworth";
+
     public static LinuxPrivilegedOperations Ops(
         FakeRunner runner,
         Func<string, EntryInfo> lstat,
         string[]? installed = null,
         string mountInfo = "",
         VfsCounters? counters = null,
-        TimeSpan? timeout = null) =>
-        Ops(runner.Run, lstat, installed, mountInfo, counters, timeout);
+        TimeSpan? timeout = null,
+        FakeLauncher? launcher = null,
+        TimeProvider? time = null,
+        Func<string?>? script = null,
+        SessionLauncher? launch = null) =>
+        Ops(runner.Run, lstat, installed, mountInfo, counters, timeout, launcher, time, script, launch);
 
     public static LinuxPrivilegedOperations Ops(
         ElevatedRunnerFunc run,
@@ -76,9 +85,168 @@ internal static class Privileged
         string[]? installed = null,
         string mountInfo = "",
         VfsCounters? counters = null,
-        TimeSpan? timeout = null)
+        TimeSpan? timeout = null,
+        FakeLauncher? launcher = null,
+        TimeProvider? time = null,
+        Func<string?>? script = null,
+        SessionLauncher? launch = null)
     {
-        string[] present = installed ?? [Pkexec, "/usr/bin/cat", "/usr/sbin/dmidecode", "/usr/bin/btrfs"];
-        return new LinuxPrivilegedOperations(run, present.Contains, lstat, timeout ?? TimeSpan.FromSeconds(1), () => mountInfo, _ => counters);
+        string[] present = installed ?? [Pkexec, "/usr/bin/cat", "/usr/sbin/dmidecode", "/usr/bin/btrfs", "/usr/bin/bash"];
+        return new LinuxPrivilegedOperations(
+            run,
+            launch ?? (launcher ?? new FakeLauncher()).Launch,
+            present.Contains,
+            lstat,
+            timeout ?? TimeSpan.FromSeconds(1),
+            () => mountInfo,
+            _ => counters,
+            time ?? new ManualTime(),
+            AppFolder,
+            script ?? (() => "#!/bin/bash\necho installer\n"));
     }
+}
+
+/// <summary>
+/// A <c>pkexec &lt;helper&gt; serve</c> that is not there: it plays one of the ways a start can go. <see cref="Serving"/> runs the real
+/// helper loop in-process over pipes, so a broker test talks to the real protocol; the others end or stay silent.
+/// </summary>
+internal sealed class FakeChannel : ISessionChannel
+{
+    private readonly TaskCompletionSource<int> _exited = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly Action _close;
+    private readonly bool _endsWhenAborted;
+
+    private FakeChannel(Stream input, Stream output, string error, Action close, bool endsWhenAborted = false)
+    {
+        Input = input;
+        Output = output;
+        Error = error;
+        _close = close;
+        _endsWhenAborted = endsWhenAborted;
+    }
+
+    public Stream Input { get; }
+
+    public Stream Output { get; }
+
+    public Task<int> Exited => _exited.Task;
+
+    public string Error { get; }
+
+    public bool Aborted { get; private set; }
+
+    public void Release() => Abort();
+
+    public void Abort()
+    {
+        Aborted = true;
+        _close();
+        if (_endsWhenAborted)
+        {
+            _exited.TrySetResult(143); // pkexec killed while the prompt was open; a running helper ends by itself on end of input
+        }
+    }
+
+    /// <summary>The process dies by itself (kill -9, a crash): output ends and it exits.</summary>
+    public void Crash()
+    {
+        _close();
+        _exited.TrySetResult(137);
+    }
+
+    public void Dispose() => Abort();
+
+    /// <summary>The real <see cref="HelperServe"/> behind in-memory pipes.</summary>
+    public static FakeChannel Serving(HelperSeams seams)
+    {
+        var toHelper = new AnonymousPipeServerStream(PipeDirection.Out);
+        var fromHelper = new AnonymousPipeServerStream(PipeDirection.In);
+        var helperIn = new AnonymousPipeClientStream(PipeDirection.In, toHelper.ClientSafePipeHandle);
+        var helperOut = new AnonymousPipeClientStream(PipeDirection.Out, fromHelper.ClientSafePipeHandle);
+        FakeChannel? channel = null;
+        channel = new FakeChannel(toHelper, fromHelper, "", () =>
+        {
+            toHelper.Dispose();
+            helperOut.Dispose();
+        });
+        _ = Task.Run(() =>
+        {
+            int code = HelperServe.Run(helperIn, helperOut, new MemoryStream(), seams, CancellationToken.None);
+            helperOut.Dispose();
+            channel._exited.TrySetResult(code);
+        });
+        return channel;
+    }
+
+    /// <summary>pkexec ends at once without the helper ever running (dismissed: 126, not authorised: 127, an old helper: 2 ...).</summary>
+    public static FakeChannel Exits(int code, string error = "")
+    {
+        var channel = new FakeChannel(Stream.Null, new MemoryStream(), error, () => { });
+        channel._exited.TrySetResult(code);
+        return channel;
+    }
+
+    /// <summary>The prompt stays open: nothing is answered and nothing exits until it is aborted.</summary>
+    public static FakeChannel Mute()
+    {
+        var silent = new AnonymousPipeServerStream(PipeDirection.In);
+        return new FakeChannel(Stream.Null, silent, "", silent.Dispose, endsWhenAborted: true);
+    }
+
+    /// <summary>The helper starts and says hello, then answers each later request with the given bytes (a frame is added).</summary>
+    public static FakeChannel Scripted(Func<ServeRequest, byte[]?> answer)
+    {
+        var toHelper = new AnonymousPipeServerStream(PipeDirection.Out);
+        var fromHelper = new AnonymousPipeServerStream(PipeDirection.In);
+        var helperIn = new AnonymousPipeClientStream(PipeDirection.In, toHelper.ClientSafePipeHandle);
+        var helperOut = new AnonymousPipeClientStream(PipeDirection.Out, fromHelper.ClientSafePipeHandle);
+        var channel = new FakeChannel(toHelper, fromHelper, "", () =>
+        {
+            toHelper.Dispose();
+            helperOut.Dispose();
+        });
+        _ = Task.Run(() =>
+        {
+            while (ServeFrames.Read(helperIn, HelperProtocol.MaxRequestBytes, out byte[] body) == FrameStatus.Frame)
+            {
+                ServeRequest request = JsonSerializer.Deserialize(body, HelperJson.Default.ServeRequest)!;
+                if (answer(request) is not { } reply)
+                {
+                    return; // The scripted helper goes silent (a hang).
+                }
+
+                ServeFrames.Write(helperOut, reply);
+            }
+
+            helperOut.Dispose();
+            channel._exited.TrySetResult(0);
+        });
+        return channel;
+    }
+}
+
+/// <summary>Plays <c>Process.Start</c> of pkexec for the session: each start takes the next prepared channel; a start nobody prepared throws.</summary>
+internal sealed class FakeLauncher(params Func<FakeChannel>[] starts)
+{
+    private readonly Queue<Func<FakeChannel>> _starts = new(starts);
+
+    public List<FakeChannel> Channels { get; } = [];
+
+    public List<string> Lines { get; } = [];
+
+    public int Starts => Lines.Count;
+
+    public ISessionChannel? Launch(string pkexec, IReadOnlyList<string> program)
+    {
+        Lines.Add(string.Join(' ', [pkexec, .. program]));
+        FakeChannel channel = _starts.Count > 0
+            ? _starts.Dequeue()()
+            : throw new InvalidOperationException("Unexpected session start: " + Lines[^1]);
+        Channels.Add(channel);
+        return channel;
+    }
+
+    /// <summary>A launcher whose every start serves with <paramref name="seams"/>.</summary>
+    public static FakeLauncher Serving(HelperSeams seams, int times = 8) =>
+        new([.. Enumerable.Repeat<Func<FakeChannel>>(() => FakeChannel.Serving(seams), times)]);
 }

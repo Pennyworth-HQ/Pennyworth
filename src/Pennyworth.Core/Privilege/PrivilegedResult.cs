@@ -33,6 +33,12 @@ public enum PrivilegedUnavailableReason
 
     /// <summary>The installed helper does not speak this version of the app's protocol; installing it again fixes that.</summary>
     HelperOutdated,
+
+    /// <summary>The request was made without permission to ask for the password (a background refresh) and administrator access is not turned on.</summary>
+    NotActive,
+
+    /// <summary>This copy of the app carries no helper to install (an AppImage or a build from source).</summary>
+    SetupNotBundled,
 }
 
 /// <summary>What can be done right now, known without showing any prompt.</summary>
