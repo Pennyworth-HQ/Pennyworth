@@ -1,18 +1,25 @@
 #!/usr/bin/env bash
 # Installs (or removes) Pennyworth's optional administrator helper and its polkit policy.
 #
-# Usage: sudo ./install-helper.sh [--helper PATH] [--policy PATH]
+# Usage: sudo ./install-helper.sh [--helper PATH] [--policy PATH] [--helper-sha256 HEX] [--policy-sha256 HEX]
 #        sudo ./install-helper.sh --uninstall
 #
-#   --helper PATH   the helper binary to install (default: libexec/pennyworth/pennyworth-helper or pennyworth-helper next to this script)
-#   --policy PATH   the polkit policy to install (default: share/polkit-1/actions/app.pennyworth.policy or app.pennyworth.policy next to this script)
-#   --uninstall     remove exactly the two installed files, and /usr/libexec/pennyworth if that leaves it empty
-#   -h, --help      this text
+#   --helper PATH         the helper binary to install (default: libexec/pennyworth/pennyworth-helper or pennyworth-helper next to this script)
+#   --policy PATH         the polkit policy to install (default: share/polkit-1/actions/app.pennyworth.policy or app.pennyworth.policy next to this script)
+#   --helper-sha256 HEX   refuse to install unless the root-owned copy of the helper has this SHA-256
+#   --policy-sha256 HEX   the same for the policy
+#   --uninstall           remove exactly the two installed files, and /usr/libexec/pennyworth if that leaves it empty
+#   -h, --help            this text
+#
+# The app's "Set up administrator access" runs this very text (compiled into the app) through pkexec, passing the files it
+# shipped with and the SHA-256 of each that the person was shown. Nothing here starts anything: it only places the two files.
 #
 # What it installs, both owned by root:
 #   /usr/libexec/pennyworth/pennyworth-helper              0755   the only program of Pennyworth that runs as root
 #   /usr/share/polkit-1/actions/app.pennyworth.policy      0644   one polkit action per helper subcommand
 #
+# Pennyworth's helper answers one request session at a time (pennyworth-helper serve): one password prompt turns administrator
+# access on for the session, it ends when you lock it, after 15 idle minutes, or when Pennyworth closes.
 # Pennyworth runs the helper only from that path, only through pkexec (your administrator password is asked by the
 # system, never by Pennyworth), and only if the file and every folder above it are owned by root, not writable by
 # group or others and not symbolic links. This script refuses to install into a path that does not meet that rule.
@@ -31,9 +38,11 @@ helper_dest="$helper_dir/pennyworth-helper"
 policy_dir=/usr/share/polkit-1/actions
 policy_dest="$policy_dir/app.pennyworth.policy"
 
-here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+here="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 helper_src=""
 policy_src=""
+helper_sha=""
+policy_sha=""
 uninstall=false
 destdir="${DESTDIR:-}"
 destdir="${destdir%/}"
@@ -45,6 +54,8 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --helper) helper_src="${2:?--helper needs a path}"; shift 2 ;;
         --policy) policy_src="${2:?--policy needs a path}"; shift 2 ;;
+        --helper-sha256) helper_sha="${2:?--helper-sha256 needs a value}"; shift 2 ;;
+        --policy-sha256) policy_sha="${2:?--policy-sha256 needs a value}"; shift 2 ;;
         --uninstall) uninstall=true; shift ;;
         -h|--help) sed -n '2,/^set -euo/p' "$0" | sed '$d' | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "install-helper.sh: unknown option: $1 (see --help)" >&2; exit 2 ;;
@@ -142,7 +153,7 @@ if [ -z "$policy_src" ]; then
 fi
 
 check_helper_file "$helper_src"
-[ -f "$policy_src" ] || die "the policy $policy_src is not a file"
+[ -f "$policy_src" ] && [ ! -L "$policy_src" ] || die "the policy $policy_src is not a regular file"
 if command -v xmllint >/dev/null 2>&1; then
     xmllint --noout "$policy_src" || die "the policy $policy_src is not well-formed XML"
 else
@@ -161,35 +172,55 @@ install -d "${owner_args[@]}" -m 0755 "$destdir$helper_dir" "$destdir$policy_dir
 check_chain "$helper_dir"
 check_chain "$policy_dir"
 
-tmp=""
-trap '[ -z "$tmp" ] || rm -f -- "$tmp"' EXIT
+# Both files are copied and checked first and only then moved into place, so a refusal leaves neither of them installed.
+staged=()
+trap 'for t in "${staged[@]:+${staged[@]}}"; do rm -f -- "${t%%|*}"; done' EXIT
 
-place() { # source destination mode
-    local src="$1" dest="$2" mode="$3" before=""
+# The copy is checked, not the file it came from: the source can still change after it was read.
+check_sha() { # file expected-hex-or-empty
+    [ -z "$2" ] && return 0
+    local actual
+    actual="$(sha256sum -- "$1")"
+    actual="${actual%% *}"
+    [ "$actual" = "$2" ] || die "refusing: the copy of ${1##*/} is not the file that was approved (SHA-256 $actual, expected $2)"
+}
+
+stage() { # source destination mode expected-sha256
+    local src="$1" dest="$2" mode="$3" want="${4:-}" what tmp
     if [ -f "$dest" ] && cmp -s -- "$src" "$dest" \
         && [ "$(stat -c '%a' "$dest")" = "${mode#0}" ] \
         && { $test_mode || [ "$(stat -c '%u:%g' "$dest")" = 0:0 ]; }; then
+        check_sha "$dest" "$want"
         echo "unchanged ${dest#"$destdir"}"
         return
     fi
-    [ -e "$dest" ] && before=replaced || before=installed
+    [ -e "$dest" ] && what=replaced || what=installed
     tmp="$dest.new.$$"
     rm -f -- "$tmp"
+    staged+=("$tmp|$dest|$what")
     install "${owner_args[@]}" -m "$mode" -- "$src" "$tmp"
+    check_sha "$tmp" "$want"
     if [ "$dest" = "$destdir$helper_dest" ]; then check_helper_file "$tmp"; fi   # the copy, not the file the caller could still change
-    mv -f -- "$tmp" "$dest"
-    tmp=""
-    echo "$before ${dest#"$destdir"}"
 }
 
-place "$helper_src" "$destdir$helper_dest" 0755
-place "$policy_src" "$destdir$policy_dest" 0644
+stage "$helper_src" "$destdir$helper_dest" 0755 "$helper_sha"
+stage "$policy_src" "$destdir$policy_dest" 0644 "$policy_sha"
+
+# The helper goes first and the policy last: the policy is what makes the app offer the helper's own prompt.
+entries=()
+if [ "${#staged[@]}" -gt 0 ]; then entries=("${staged[@]}"); fi
+for entry in "${entries[@]:+${entries[@]}}"; do
+    IFS='|' read -r tmp dest what <<<"$entry"
+    mv -f -- "$tmp" "$dest"
+    echo "$what ${dest#"$destdir"}"
+done
+staged=()
 
 cat <<EOF
 
 Pennyworth's administrator helper is set up.
-  It is asked for only when you press one of four buttons (memory modules, full system space,
-  cleanup of system package caches and crash reports, size of folders your account cannot open).
-  Your password is asked by the system; nothing is changed except a cleanup you confirm.
-To remove it:  sudo $0 --uninstall
+  Pennyworth asks for administrator access only when you press a button that needs it (memory modules, full system space,
+  cleanup of system package caches and crash reports, size of folders your account cannot open): one password prompt
+  turns it on for the session. Your password is asked by the system; nothing is changed except a cleanup you confirm.
+To remove it:  sudo rm /usr/libexec/pennyworth/pennyworth-helper /usr/share/polkit-1/actions/app.pennyworth.policy
 EOF

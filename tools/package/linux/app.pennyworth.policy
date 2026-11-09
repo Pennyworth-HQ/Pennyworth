@@ -7,16 +7,37 @@
   authorises exactly one subcommand of one program, and each one carries its own wording: what the person is shown
   at the prompt is what that button does, not a generic "run a program as root".
 
-  allow_any and allow_inactive are "no": nothing runs for a remote or a background session. allow_active asks the
-  person for their administrator password. The three read-only actions use auth_admin_keep (the same prompt is not
-  repeated for a few minutes); the one that deletes files uses auth_admin, so every cleanup asks again.
+  The app uses only "serve": ONE prompt starts a long-lived helper that answers every privileged request of the app until
+  the person locks it, 15 minutes pass without a request (HelperProtocol.IdleTimeout) or Pennyworth closes. That session is
+  what avoids asking again, not the polkit authorisation cache; auth_admin_keep is only a convenience for starting a session
+  again soon after. Its prompt therefore names every use. The four one-shot actions remain for running a single operation
+  by hand with pkexec (see tools/package/linux/README.txt); the app does not use them.
 
-  Installed by install-helper.sh to /usr/share/polkit-1/actions/. The path below is the only place the app runs
-  the helper from (HelperProtocol.InstalledPath); a test keeps this file and that constant in step.
+  allow_any and allow_inactive are "no": nothing runs for a remote or a background session. allow_active asks the
+  person for their administrator password. The read-only actions and "serve" use auth_admin_keep (the same prompt is not
+  repeated for a few minutes); the one-shot action that deletes files uses auth_admin, so every manual cleanup asks again.
+
+  Installed by install-helper.sh (or by the app's "Set up administrator access") to /usr/share/polkit-1/actions/. The path
+  below is the only place the app runs the helper from (HelperProtocol.InstalledPath); a test keeps this file and that
+  constant in step.
 -->
 <policyconfig>
   <vendor>Pennyworth</vendor>
   <vendor_url>https://github.com/snootic/Pennyworth</vendor_url>
+
+  <action id="app.pennyworth.serve">
+    <description>Turn on administrator access for Pennyworth</description>
+    <description xml:lang="pt_BR">Ativar o acesso de administrador do Pennyworth</description>
+    <message>Authentication is required to turn on administrator access for Pennyworth. While it is on, Pennyworth can read the memory module information, measure snapshots and file system metadata, measure the size of folders your account cannot open, and delete only the system package caches and crash reports you confirm in a preview. It turns off when you lock it, after 15 minutes without use, or when Pennyworth closes.</message>
+    <message xml:lang="pt_BR">É preciso autenticar para ativar o acesso de administrador do Pennyworth. Enquanto estiver ativo, o Pennyworth pode ler as informações dos módulos de memória, medir snapshots e metadados do sistema de arquivos, medir o tamanho de pastas que sua conta não consegue abrir e apagar apenas os caches de pacotes e relatórios de falhas do sistema que você confirmar na prévia. Ele se desativa quando você o bloqueia, após 15 minutos sem uso ou quando o Pennyworth fecha.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/pennyworth/pennyworth-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">serve</annotate>
+  </action>
 
   <action id="app.pennyworth.read-firmware-tables">
     <description>Read the computer's memory module information</description>
