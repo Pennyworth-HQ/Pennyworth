@@ -532,10 +532,10 @@
   <data name="LockedMeasuredToastOne" xml:space="preserve"><value>Added {0} folder ({1}).</value></data>
   <data name="LockedMeasuredToastMany" xml:space="preserve"><value>Added {0} folders ({1}).</value></data>
   <data name="LockedMeasuredIncomplete" xml:space="preserve"><value>Some sizes are at least that much: part of those folders couldn't be read.</value></data>
-  <data name="MeasuredBadge" xml:space="preserve"><value>Measured with your password</value></data>
-  <data name="MeasuredBadgeHint" xml:space="preserve"><value>The size was measured with your password. What is inside still can't be listed.</value></data>
+  <data name="MeasuredBadge" xml:space="preserve"><value>Measured with administrator access</value></data>
+  <data name="MeasuredBadgeHint" xml:space="preserve"><value>The size was measured with administrator access. What is inside still can't be listed.</value></data>
   <data name="LockedMeasuredTitle" xml:space="preserve"><value>I can't list what's inside, but I know its size.</value></data>
-  <data name="LockedMeasuredBody" xml:space="preserve"><value>The system keeps this folder closed to you. Its size ({0}) was measured with your password; nothing was changed.</value></data>
+  <data name="LockedMeasuredBody" xml:space="preserve"><value>The system keeps this folder closed to you. Its size ({0}) was measured with administrator access; nothing was changed.</value></data>
   <data name="CleanNeedsPassword" xml:space="preserve"><value>Turns on administrator access (asks for your password once)</value></data>
   <data name="ConfirmPasswordNote" xml:space="preserve"><value>To clean these ({0}) Pennyworth turns on administrator access: your system asks for your password once. Only the files you saw in the preview are deleted.</value></data>
   <data name="CleanSkippedCancelled" xml:space="preserve"><value>Skipped: the password prompt was cancelled.</value></data>
@@ -590,4 +590,15 @@
   <data name="AdminSetupFingerprints" xml:space="preserve"><value>Fingerprints (SHA-256, first 16 digits): helper {0}, policy {1}</value></data>
   <data name="LockedRetryOne" xml:space="preserve"><value>{0} folder couldn't be measured with administrator access this time, so it is still not in these totals.</value></data>
   <data name="LockedRetryMany" xml:space="preserve"><value>{0} folders couldn't be measured with administrator access this time, so they are still not in these totals.</value></data>
+  <data name="LockedRowAction" xml:space="preserve"><value>Measure with administrator access</value></data>
+  <data name="LockedRowTip" xml:space="preserve"><value>Locked. Press to measure its size with administrator access.</value></data>
+  <data name="LockedFolderMeasuredToast" xml:space="preserve"><value>{0}: {1}, measured with administrator access.</value></data>
+  <data name="LockedFolderNoSize" xml:space="preserve"><value>Administrator access couldn't read the size of {0} either.</value></data>
+  <data name="LockedFolderFailed" xml:space="preserve"><value>Couldn't measure {0} this time. Nothing was changed.</value></data>
+  <data name="UnassignedExplain" xml:space="preserve"><value>Used space the scan could not attribute to a folder: folders your account can't open (such as /root), plus snapshots and file system metadata. Measuring with administrator access attributes it.</value></data>
+  <data name="UnassignedAction" xml:space="preserve"><value>Measure with my password →</value></data>
+  <data name="UnassignedAttributed" xml:space="preserve"><value>Attributed with administrator access: {0}.</value></data>
+  <data name="UnassignedNothingLeft" xml:space="preserve"><value>Everything administrator access can read is already counted.</value></data>
+  <data name="UnassignedMeasured" xml:space="preserve"><value>Attributed {0} with administrator access.</value></data>
+  <data name="CategoryHint_UnaccountedAdmin" xml:space="preserve"><value>Used space not attributed to a folder yet</value></data>
 </root>

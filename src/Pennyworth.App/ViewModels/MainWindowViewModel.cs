@@ -501,11 +501,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public Task AccessWork { get; private set; } = Task.CompletedTask;
 
     /// <summary>The header's "Off": explains what administrator access is used for, then turns it on with the system's one password prompt.</summary>
-    public void RequestTurnOn()
+    public void RequestTurnOn(Func<Task>? afterActivate = null)
     {
         if (_services.Privileged is not null && Access.IsOff)
         {
-            Dialog = new AccessDialogViewModel(this);
+            Dialog = new AccessDialogViewModel(this, afterActivate);
         }
     }
 
@@ -535,6 +535,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             case PrivilegedOutcome.Done:
                 CloseDialog();
                 ShowToast(string.Format(Strings.AccessOnToast, Access.IdleMinutes));
+                if (dialog.AfterActivate is { } after)
+                {
+                    Task activation = AccessWork;
+                    AccessWork = FollowActivateAsync(activation, after);
+                }
+
                 break;
             case PrivilegedOutcome.Cancelled:
                 dialog.Cancelled();
@@ -546,6 +552,12 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
                 dialog.Failed();
                 break;
         }
+    }
+
+    private static async Task FollowActivateAsync(Task activation, Func<Task> after)
+    {
+        await activation;
+        await after();
     }
 
     /// <summary>Ends the session now: the next action that needs an administrator asks for the password again.</summary>
@@ -563,7 +575,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     /// finished: the request the person came from, or the turning on. Returns the work, for tests.
     /// </summary>
     public Task RequestSetup(Action? then = null) =>
-        _services.Privileged is { } privileged ? ShowSetupAsync(privileged.Access, then ?? RequestTurnOn) : Task.CompletedTask;
+        _services.Privileged is { } privileged ? ShowSetupAsync(privileged.Access, then ?? (() => RequestTurnOn())) : Task.CompletedTask;
 
     private async Task ShowSetupAsync(IAdministratorAccess access, Action then)
     {
@@ -975,13 +987,254 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         if (ReferenceEquals(summary.Tree, tree))
         {
             // A rescan that finished while the prompt was open has a newer tree; its folders are not these.
-            summary.ApplyResult(tree.WithMeasuredFolders(sizes), summary.CompletedAt);
+            StorageTree updated = tree.WithMeasuredFolders(sizes);
+            Folders.Retarget(tree, updated);
+            summary.ApplyResult(updated, summary.CompletedAt);
             summary.MarkAdminMeasured();
             RefreshPages();
         }
 
         return new LockedMeasure(PrivilegedOutcome.Done, null, sizes.Count, incomplete, sizes.Values.Sum(size => size.SizeOnDisk));
     }
+
+    /// <summary>
+    /// A single restricted folder was activated (in the folder browser or the unassigned panel): runs the unified administrator-access
+    /// flow (turn on when Off, set up when NeedsSetup, measure just that folder immediately with no prompt when Active).
+    /// </summary>
+    public void RequestMeasureLocked(StorageNode node)
+    {
+        if (_services.Privileged is null)
+        {
+            RequestUnlock();
+            return;
+        }
+
+        if (SummaryFor(node) is not { IsComplete: true } summary)
+        {
+            return;
+        }
+
+        switch (Access.State)
+        {
+            case AdministratorAccessState.Active:
+                AccessWork = MeasureSingleLockedWithToastAsync(summary, node);
+                break;
+            case AdministratorAccessState.Off:
+                RequestTurnOn(() => AnnounceSingleLockedAfterActivateAsync(summary, node.FullPath));
+                break;
+            case AdministratorAccessState.NeedsSetup:
+                AccessWork = RequestSetup(() => RequestMeasureLocked(node));
+                break;
+            default:
+                ShowToast(PrivilegedText.Reason(Access.Reason));
+                break;
+        }
+    }
+
+    /// <summary>
+    /// The "not assigned" row (or its button) on Storage was activated: runs the unified administrator-access flow so locked folders
+    /// and administrator-only system space are attributed.
+    /// </summary>
+    public void RequestMeasureUnassigned(StorageSummaryViewModel summary)
+    {
+        if (_services.Privileged is null)
+        {
+            if (summary.ShowUnlockBanner)
+            {
+                RequestUnlock();
+            }
+
+            return;
+        }
+
+        if (!summary.IsComplete)
+        {
+            return;
+        }
+
+        switch (Access.State)
+        {
+            case AdministratorAccessState.Active:
+                AccessWork = MeasureUnassignedWithToastAsync(summary);
+                break;
+            case AdministratorAccessState.Off:
+                RequestTurnOn(() => FinishUnassignedAfterActivateAsync(summary));
+                break;
+            case AdministratorAccessState.NeedsSetup:
+                AccessWork = RequestSetup(() => RequestMeasureUnassigned(summary));
+                break;
+            default:
+                ShowToast(PrivilegedText.Reason(Access.Reason));
+                break;
+        }
+    }
+
+    private StorageSummaryViewModel? SummaryFor(StorageNode node) =>
+        _summaries.Values.FirstOrDefault(s => s.Tree is { } t && string.Equals(t.RootPath, node.Tree.RootPath, StringComparison.Ordinal))
+        ?? CurrentSummary;
+
+    private static StorageNode? FindMeasuredLockedFolder(StorageTree tree, string path)
+    {
+        foreach (StorageNode node in tree.GetMeasuredLockedFolders())
+        {
+            if (string.Equals(node.FullPath, path, StringComparison.Ordinal))
+            {
+                return node;
+            }
+        }
+
+        return null;
+    }
+
+    private Task AnnounceSingleLockedAfterActivateAsync(StorageSummaryViewModel summary, string path)
+    {
+        if (summary.Tree is { } tree)
+        {
+            if (FindMeasuredLockedFolder(tree, path) is { } measured)
+            {
+                ShowToast(string.Format(Strings.LockedFolderMeasuredToast, measured.FullPath, ByteSize.Format(measured.SizeOnDisk)));
+            }
+            else if (tree.GetLockedFolders().Any(n => string.Equals(n.FullPath, path, StringComparison.Ordinal)))
+            {
+                ShowToast(string.Format(Strings.LockedFolderNoSize, path));
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task MeasureSingleLockedWithToastAsync(StorageSummaryViewModel summary, StorageNode node)
+    {
+        if (_lockedMeasures.TryGetValue(summary, out Task<LockedMeasure>? running))
+        {
+            await running;
+        }
+
+        if (_services.Privileged is not { } privileged || summary.Tree is not { } tree)
+        {
+            ShowToast(string.Format(Strings.LockedFolderFailed, node.FullPath));
+            return;
+        }
+
+        string path = node.FullPath;
+        if (FindMeasuredLockedFolder(tree, path) is { } already)
+        {
+            ShowToast(string.Format(Strings.LockedFolderMeasuredToast, already.FullPath, ByteSize.Format(already.SizeOnDisk)));
+            return;
+        }
+
+        PrivilegedResult<IReadOnlyList<MeasuredFolder>> result;
+        try
+        {
+            result = await privileged.MeasureFoldersAsync([path], CancellationToken.None, promptIfNeeded: false);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            Debug.WriteLine(ex);
+            ShowToast(string.Format(Strings.LockedFolderFailed, path));
+            return;
+        }
+
+        switch (result.Outcome)
+        {
+            case PrivilegedOutcome.Done when result.Value is { } folders
+                && folders.FirstOrDefault(f => string.Equals(f.Path, path, StringComparison.Ordinal)) is { } folder:
+                if (ReferenceEquals(summary.Tree, tree))
+                {
+                    var sizes = new Dictionary<string, FolderMeasurement>(StringComparer.Ordinal)
+                    {
+                        [path] = new(folder.SizeOnDisk, folder.LogicalSize, folder.Files),
+                    };
+                    StorageTree updated = tree.WithMeasuredFolders(sizes);
+                    Folders.Retarget(tree, updated);
+                    summary.ApplyResult(updated, summary.CompletedAt);
+                    if (updated.GetLockedFolders().Count == 0)
+                    {
+                        summary.MarkAdminMeasured();
+                    }
+
+                    RefreshPages();
+                }
+
+                ShowToast(string.Format(Strings.LockedFolderMeasuredToast, path, ByteSize.Format(folder.SizeOnDisk)));
+                break;
+            case PrivilegedOutcome.Done:
+                ShowToast(string.Format(Strings.LockedFolderNoSize, path));
+                break;
+            case PrivilegedOutcome.NotAvailable:
+                ShowToast(PrivilegedText.Reason(result.Reason));
+                break;
+            case PrivilegedOutcome.Cancelled:
+                ShowToast(Strings.PrivCancelled);
+                break;
+            default:
+                ShowToast(string.Format(Strings.LockedFolderFailed, path));
+                break;
+        }
+    }
+
+    private async Task FinishUnassignedAfterActivateAsync(StorageSummaryViewModel summary)
+    {
+        if (summary.IsSystemDrive && !summary.IncludesAdminSpace)
+        {
+            if (!IsUnlocked && SystemDrive is { } system)
+            {
+                UnlockResult unlocked = await _services.HiddenSpace.MeasureAsync(system.Summary.RootPath, CancellationToken.None);
+                if (unlocked is { Outcome: UnlockOutcome.Measured, Report: { } report })
+                {
+                    _hidden[system.Summary.RootPath] = report;
+                    summary.ApplyHiddenSpace(report);
+                    IsUnlocked = true;
+                }
+            }
+
+            await IncludeAdminSpaceCoreAsync(promptIfNeeded: false);
+            RefreshPages();
+        }
+    }
+
+    private async Task MeasureUnassignedWithToastAsync(StorageSummaryViewModel summary)
+    {
+        long before = summary.Unaccounted.Bytes;
+        if (summary.LockedCount > 0)
+        {
+            LockedMeasure locked = await MeasureLockedCoreAsync(summary, promptIfNeeded: false);
+            if (locked.Outcome == PrivilegedOutcome.NotAvailable)
+            {
+                ShowToast(PrivilegedText.Reason(locked.Reason));
+                return;
+            }
+        }
+
+        if (summary.IsSystemDrive && !summary.IncludesAdminSpace)
+        {
+            if (!IsUnlocked && SystemDrive is { } system)
+            {
+                UnlockResult unlocked = await _services.HiddenSpace.MeasureAsync(system.Summary.RootPath, CancellationToken.None);
+                if (unlocked is { Outcome: UnlockOutcome.Measured, Report: { } report })
+                {
+                    _hidden[system.Summary.RootPath] = report;
+                    summary.ApplyHiddenSpace(report);
+                    IsUnlocked = true;
+                }
+            }
+
+            PrivilegedResult<HiddenSpaceReport> space = await IncludeAdminSpaceCoreAsync(promptIfNeeded: false);
+            if (space.Outcome == PrivilegedOutcome.NotAvailable)
+            {
+                ShowToast(PrivilegedText.Reason(space.Reason));
+                return;
+            }
+        }
+
+        RefreshPages();
+        long attributed = Math.Max(0, before - summary.Unaccounted.Bytes);
+        ShowToast(attributed > 0 ? string.Format(Strings.UnassignedMeasured, ByteSize.Format(attributed)) : Strings.UnassignedNothingLeft);
+    }
+
+    bool IFolderHost.OffersAdminMeasure => _services.Privileged is not null;
+
+    void IFolderHost.RequestMeasureLocked(StorageNode node) => RequestMeasureLocked(node);
 
     StorageTree? IFolderHost.TreeFor(DriveViewModel drive) =>
         _summaries.GetValueOrDefault(drive.Summary.RootPath) is { IsComplete: true } summary ? summary.Tree : null;
@@ -1237,8 +1490,17 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         var cancellation = new CancellationTokenSource();
         _scanCancellation = cancellation;
         var summary = new StorageSummaryViewModel(
-            drive.Summary, _services.Locations, OpenFolder, RequestUnlock, isSystemDrive: drive == SystemDrive,
-            privileged: _services.Privileged, requestAdminSpace: RequestAdminSpace, requestLockedMeasure: RequestLockedMeasure, access: Access);
+            drive.Summary,
+            _services.Locations,
+            OpenFolder,
+            RequestUnlock,
+            isSystemDrive: drive == SystemDrive,
+            privileged: _services.Privileged,
+            requestAdminSpace: RequestAdminSpace,
+            requestLockedMeasure: RequestLockedMeasure,
+            access: Access,
+            requestMeasureUnassigned: RequestMeasureUnassigned,
+            requestMeasureSingleLocked: RequestMeasureLocked);
         if (_hidden.TryGetValue(root, out var hidden))
         {
             summary.ApplyHiddenSpace(hidden, _adminSpace.Contains(root));

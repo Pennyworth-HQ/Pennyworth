@@ -10,8 +10,10 @@
   The app uses only "serve": ONE prompt starts a long-lived helper that answers every privileged request of the app until
   the person locks it, 15 minutes pass without a request (HelperProtocol.IdleTimeout) or Pennyworth closes. That session is
   what avoids asking again, not the polkit authorisation cache; auth_admin_keep is only a convenience for starting a session
-  again soon after. Its prompt therefore names every use. The four one-shot actions remain for running a single operation
-  by hand with pkexec (see tools/package/linux/README.txt); the app does not use them.
+  again soon after. The app's own "Turn on administrator access?" dialog, shown before the prompt, says everything it can
+  do, the idle time and Lock; the prompt itself is therefore one short sentence, like every message below. The four
+  one-shot actions remain for running a single operation by hand with pkexec (see tools/package/linux/README.txt); the app
+  does not use them.
 
   allow_any and allow_inactive are "no": nothing runs for a remote or a background session. allow_active asks the
   person for their administrator password. The read-only actions and "serve" use auth_admin_keep (the same prompt is not
@@ -28,8 +30,8 @@
   <action id="app.pennyworth.serve">
     <description>Turn on administrator access for Pennyworth</description>
     <description xml:lang="pt_BR">Ativar o acesso de administrador do Pennyworth</description>
-    <message>Authentication is required to turn on administrator access for Pennyworth. While it is on, Pennyworth can read the memory module information, measure snapshots and file system metadata, measure the size of folders your account cannot open, and delete only the system package caches and crash reports you confirm in a preview. It turns off when you lock it, after 15 minutes without use, or when Pennyworth closes.</message>
-    <message xml:lang="pt_BR">É preciso autenticar para ativar o acesso de administrador do Pennyworth. Enquanto estiver ativo, o Pennyworth pode ler as informações dos módulos de memória, medir snapshots e metadados do sistema de arquivos, medir o tamanho de pastas que sua conta não consegue abrir e apagar apenas os caches de pacotes e relatórios de falhas do sistema que você confirmar na prévia. Ele se desativa quando você o bloqueia, após 15 minutos sem uso ou quando o Pennyworth fecha.</message>
+    <message>Pennyworth needs administrator access to read protected hardware and folder information.</message>
+    <message xml:lang="pt_BR">O Pennyworth precisa de acesso de administrador para ler dados protegidos do sistema.</message>
     <defaults>
       <allow_any>no</allow_any>
       <allow_inactive>no</allow_inactive>
@@ -42,8 +44,8 @@
   <action id="app.pennyworth.read-firmware-tables">
     <description>Read the computer's memory module information</description>
     <description xml:lang="pt_BR">Ler as informações dos módulos de memória do computador</description>
-    <message>Authentication is required to read the memory module information (type, speed, slots) from the computer's firmware. Nothing is changed.</message>
-    <message xml:lang="pt_BR">É preciso autenticar para ler as informações dos módulos de memória (tipo, velocidade, encaixes) do firmware do computador. Nada é alterado.</message>
+    <message>Pennyworth needs administrator access to read the memory module information.</message>
+    <message xml:lang="pt_BR">O Pennyworth precisa de acesso de administrador para ler os módulos de memória.</message>
     <defaults>
       <allow_any>no</allow_any>
       <allow_inactive>no</allow_inactive>
@@ -56,8 +58,8 @@
   <action id="app.pennyworth.measure-system-space">
     <description>Measure snapshots and file system metadata</description>
     <description xml:lang="pt_BR">Medir snapshots e metadados do sistema de arquivos</description>
-    <message>Authentication is required to measure the space used by snapshots and file system metadata. Nothing is changed.</message>
-    <message xml:lang="pt_BR">É preciso autenticar para medir o espaço usado por snapshots e metadados do sistema de arquivos. Nada é alterado.</message>
+    <message>Pennyworth needs administrator access to measure snapshots and file system metadata.</message>
+    <message xml:lang="pt_BR">O Pennyworth precisa de acesso de administrador para medir snapshots e metadados.</message>
     <defaults>
       <allow_any>no</allow_any>
       <allow_inactive>no</allow_inactive>
@@ -70,8 +72,8 @@
   <action id="app.pennyworth.measure-folders">
     <description>Measure folders you cannot open</description>
     <description xml:lang="pt_BR">Medir pastas que você não consegue abrir</description>
-    <message>Authentication is required to measure the size of folders your account cannot open. Only sizes are read; nothing is changed.</message>
-    <message xml:lang="pt_BR">É preciso autenticar para medir o tamanho de pastas que sua conta não consegue abrir. Só os tamanhos são lidos; nada é alterado.</message>
+    <message>Pennyworth needs administrator access to measure the size of protected folders.</message>
+    <message xml:lang="pt_BR">O Pennyworth precisa de acesso de administrador para medir pastas protegidas.</message>
     <defaults>
       <allow_any>no</allow_any>
       <allow_inactive>no</allow_inactive>
@@ -84,8 +86,8 @@
   <action id="app.pennyworth.clean-system">
     <description>Delete system package caches and crash reports</description>
     <description xml:lang="pt_BR">Apagar caches de pacotes e relatórios de falhas do sistema</description>
-    <message>Authentication is required to delete the files you confirmed in the preview from the system package caches and crash reports. Nothing else is deleted.</message>
-    <message xml:lang="pt_BR">É preciso autenticar para apagar, dos caches de pacotes e relatórios de falhas do sistema, os arquivos que você confirmou na prévia. Nada além disso é apagado.</message>
+    <message>Pennyworth needs administrator access to delete the system files you confirmed.</message>
+    <message xml:lang="pt_BR">O Pennyworth precisa de acesso de administrador para apagar os arquivos confirmados.</message>
     <defaults>
       <allow_any>no</allow_any>
       <allow_inactive>no</allow_inactive>

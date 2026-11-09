@@ -2,6 +2,7 @@ using System.Globalization;
 using Pennyworth.App.Resources;
 using Pennyworth.App.ViewModels;
 using Pennyworth.Cleanup;
+using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Privilege;
 using Pennyworth.Core.Storage;
 using Pennyworth.Monitoring.Hardware;
@@ -773,6 +774,158 @@ public class AdministratorAccessUiTests
         {
             Assert.NotEqual(Strings.PrivReasonUnknown, PrivilegedText.Reason(reason));
         }
+    }
+
+    // ---- restricted folder rows and the unassigned bucket ----
+
+    [Fact]
+    public async Task Activating_a_locked_folder_in_the_browser_when_off_turns_access_on_and_updates_it_in_place()
+    {
+        FakePrivileged ops = Ops();
+        MainWindowViewModel viewModel = await Scanned(ops);
+        viewModel.ShowFoldersCommand.Execute(null);
+
+        FolderItemViewModel secret = viewModel.Folders.Items.Single(i => i.Name == "Secret");
+        Assert.True(secret.ShowMeasureAffordance);
+        Assert.Equal(Strings.LockedRowTip, secret.RowTip);
+        Assert.Equal("—", secret.SizeText);
+
+        viewModel.Folders.OpenCommand.Execute(secret);
+        var dialog = Assert.IsType<AccessDialogViewModel>(viewModel.Dialog);
+        Assert.Equal(@"C:\", viewModel.Folders.Current?.FullPath); // stays on the list instead of entering a dead screen
+
+        dialog.StartCommand.Execute(null);
+        await dialog.Run;
+        await viewModel.AccessWork;
+
+        FolderItemViewModel updated = viewModel.Folders.Items.Single(i => i.Name == "Secret");
+        Assert.True(updated.IsMeasured);
+        Assert.False(updated.ShowMeasureAffordance);
+        Assert.Equal(ByteSize.Format(10 * Gb), updated.SizeText);
+        Assert.Equal(string.Format(Strings.LockedFolderMeasuredToast, Secret, ByteSize.Format(10 * Gb)), viewModel.Toast);
+    }
+
+    [Fact]
+    public async Task Activating_a_locked_folder_when_needs_setup_offers_setup_then_turns_on_and_cancelling_says_so()
+    {
+        FakePrivileged ops = NeedsSetup();
+        ops.FoldersResult = paths => PrivilegedResult<IReadOnlyList<MeasuredFolder>>.Done([new MeasuredFolder(paths[0], 4 * Gb, 4 * Gb, 9, true)]);
+        MainWindowViewModel viewModel = await Scanned(ops);
+        viewModel.ShowFoldersCommand.Execute(null);
+
+        viewModel.Folders.OpenCommand.Execute(viewModel.Folders.Items.Single(i => i.Name == "Secret"));
+        await viewModel.AccessWork;
+        var setup = Assert.IsType<SetupDialogViewModel>(viewModel.Dialog);
+
+        setup.StartCommand.Execute(null);
+        await setup.Run;
+        var turnOn = Assert.IsType<AccessDialogViewModel>(viewModel.Dialog);
+
+        ops.Access.TurnOnResult = PrivilegedResult<bool>.Cancelled;
+        turnOn.StartCommand.Execute(null);
+        await turnOn.Run;
+        Assert.Equal(PrivilegedDialogState.Cancelled, turnOn.State);
+        Assert.Equal(Strings.PrivCancelled, turnOn.Message);
+
+        ops.Access.TurnOnResult = PrivilegedResult<bool>.Done(true);
+        turnOn.TryAgainCommand.Execute(null);
+        turnOn.StartCommand.Execute(null);
+        await turnOn.Run;
+        await viewModel.AccessWork;
+
+        Assert.True(viewModel.Folders.Items.Single(i => i.Name == "Secret").IsMeasured);
+    }
+
+    [Fact]
+    public async Task Activating_a_locked_folder_while_active_measures_just_that_folder_with_no_prompt()
+    {
+        var b = new StorageTreeBuilder(@"C:\", StorageCategory.Other);
+        int first = b.AddDirectory(StorageTreeBuilder.RootIndex, "RootA", StorageCategory.Other);
+        b.MarkLocked(first);
+        int second = b.AddDirectory(StorageTreeBuilder.RootIndex, "RootB", StorageCategory.Other);
+        b.MarkLocked(second);
+
+        FakePrivileged ops = Ops(AdministratorAccessState.Off);
+        MainWindowViewModel viewModel = await Scanned(ops, tree: _ => b.Build());
+        ops.FoldersResult = _ => PrivilegedResult<IReadOnlyList<MeasuredFolder>>.Done([]); // initial activation finds nothing yet
+        ops.Access.Set(AdministratorAccessState.Active);
+        await viewModel.AccessWork;
+        ops.FolderCalls.Clear();
+        ops.PromptFlags.Clear();
+
+        string pathA = Path.Combine(@"C:\", "RootA");
+        ops.FoldersResult = _ => PrivilegedResult<IReadOnlyList<MeasuredFolder>>.Done([new MeasuredFolder(pathA, 2 * Gb, 2 * Gb, 3, true)]);
+        viewModel.ShowFoldersCommand.Execute(null);
+        viewModel.Folders.OpenCommand.Execute(viewModel.Folders.Items.Single(i => i.Name == "RootA"));
+        await viewModel.AccessWork;
+
+        Assert.Null(viewModel.Dialog);
+        Assert.Equal([false], ops.PromptFlags);
+        Assert.Equal([pathA], Assert.Single(ops.FolderCalls));
+        Assert.True(viewModel.Folders.Items.Single(i => i.Name == "RootA").IsMeasured);
+        Assert.False(viewModel.Folders.Items.Single(i => i.Name == "RootB").IsMeasured);
+        Assert.Equal(string.Format(Strings.LockedFolderMeasuredToast, pathA, ByteSize.Format(2 * Gb)), viewModel.Toast);
+    }
+
+    [Fact]
+    public async Task Activating_the_unassigned_row_attributes_both_locked_folders_and_system_space()
+    {
+        FakePrivileged ops = Ops();
+        ops.SpaceResult = PrivilegedResult<HiddenSpaceReport>.Done(new HiddenSpaceReport(6 * Gb, 2 * Gb));
+        MainWindowViewModel viewModel = await Scanned(ops);
+        await Unlock(viewModel); // now the row is "Unaccounted" / "Não atribuído"
+        StorageSummaryViewModel summary = viewModel.SystemSummary!;
+
+        Assert.True(summary.OffersAdminAttribution);
+        Assert.Equal(Strings.UnassignedAction, summary.Unaccounted.ActionText);
+        Assert.Equal(Strings.CategoryHint_UnaccountedAdmin, summary.Unaccounted.Hint);
+        Assert.Equal(Strings.UnassignedExplain, summary.UnaccountedExplanation);
+        Assert.Contains(summary.LockedFolderRows, r => r.Path == Secret && !r.IsMeasured);
+
+        summary.ActivateCategory(summary.Unaccounted);
+        var dialog = Assert.IsType<AccessDialogViewModel>(viewModel.Dialog);
+        dialog.StartCommand.Execute(null);
+        await dialog.Run;
+        await viewModel.AccessWork;
+
+        Assert.False(summary.OffersAdminAttribution);
+        Assert.Null(summary.Unaccounted.ActionText);
+        Assert.Equal(Strings.CategoryHint_UnaccountedMeasured, summary.Unaccounted.Hint);
+        Assert.Equal(Strings.UnassignedNothingLeft, summary.UnaccountedExplanation);
+        Assert.True(summary.ShowAttributedByAdmin);
+        Assert.Contains(ByteSize.Format(18 * Gb), summary.AttributedByAdminText); // 10 GB folder + 8 GB system space
+
+        LockedFolderRowViewModel measuredRow = Assert.Single(summary.LockedFolderRows);
+        Assert.True(measuredRow.IsMeasured);
+        summary.ActivateLockedFolderCommand.Execute(measuredRow);
+        Assert.Equal(Page.Folders, viewModel.Page);
+        Assert.True(viewModel.Folders.IsMeasuredLockedFolder);
+    }
+
+    [Fact]
+    public async Task Activating_the_unassigned_row_when_needs_setup_or_active_uses_the_unified_flow()
+    {
+        FakePrivileged needs = NeedsSetup();
+        MainWindowViewModel first = await Scanned(needs);
+        first.SystemSummary!.ActivateCategory(first.SystemSummary.Unaccounted);
+        await first.AccessWork;
+        Assert.IsType<SetupDialogViewModel>(first.Dialog);
+
+        FakePrivileged ops = Ops();
+        ops.FoldersResult = _ => PrivilegedResult<IReadOnlyList<MeasuredFolder>>.Done([]);
+        MainWindowViewModel active = await Scanned(ops);
+        ops.Access.Set(AdministratorAccessState.Active);
+        await active.AccessWork;
+        ops.FoldersResult = paths => PrivilegedResult<IReadOnlyList<MeasuredFolder>>.Done([new MeasuredFolder(paths[0], 7 * Gb, 7 * Gb, 2, true)]);
+        ops.SpaceResult = PrivilegedResult<HiddenSpaceReport>.Done(new HiddenSpaceReport(3 * Gb, 1 * Gb));
+        ops.PromptFlags.Clear();
+
+        active.SystemSummary!.MeasureUnassignedCommand.Execute(null);
+        await active.AccessWork;
+
+        Assert.Null(active.Dialog);
+        Assert.All(ops.PromptFlags, flag => Assert.False(flag));
+        Assert.Equal(string.Format(Strings.UnassignedMeasured, ByteSize.Format(11 * Gb)), active.Toast);
     }
 
     private static async Task WaitFor(Func<bool> condition)

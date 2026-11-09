@@ -532,10 +532,10 @@
   <data name="LockedMeasuredToastOne" xml:space="preserve"><value>{0} pasta adicionada ({1}).</value></data>
   <data name="LockedMeasuredToastMany" xml:space="preserve"><value>{0} pastas adicionadas ({1}).</value></data>
   <data name="LockedMeasuredIncomplete" xml:space="preserve"><value>Alguns tamanhos são no mínimo isso: parte dessas pastas não pôde ser lida.</value></data>
-  <data name="MeasuredBadge" xml:space="preserve"><value>Medida com sua senha</value></data>
-  <data name="MeasuredBadgeHint" xml:space="preserve"><value>O tamanho foi medido com a sua senha. O que há dentro continua sem poder ser listado.</value></data>
+  <data name="MeasuredBadge" xml:space="preserve"><value>Medida com acesso de administrador</value></data>
+  <data name="MeasuredBadgeHint" xml:space="preserve"><value>O tamanho foi medido com acesso de administrador. O que há dentro continua sem poder ser listado.</value></data>
   <data name="LockedMeasuredTitle" xml:space="preserve"><value>Não consigo listar o que há dentro, mas sei o tamanho.</value></data>
-  <data name="LockedMeasuredBody" xml:space="preserve"><value>O sistema mantém esta pasta fechada para você. O tamanho ({0}) foi medido com a sua senha; nada foi alterado.</value></data>
+  <data name="LockedMeasuredBody" xml:space="preserve"><value>O sistema mantém esta pasta fechada para você. O tamanho ({0}) foi medido com acesso de administrador; nada foi alterado.</value></data>
   <data name="CleanNeedsPassword" xml:space="preserve"><value>Liga o acesso de administrador (pede sua senha uma vez)</value></data>
   <data name="ConfirmPasswordNote" xml:space="preserve"><value>Para limpar estes ({0}) o Pennyworth liga o acesso de administrador: o sistema pede sua senha uma vez. Só os arquivos que você viu na prévia serão apagados.</value></data>
   <data name="CleanSkippedCancelled" xml:space="preserve"><value>Ignorado: o pedido de senha foi cancelado.</value></data>
@@ -590,4 +590,15 @@
   <data name="AdminSetupFingerprints" xml:space="preserve"><value>Impressões digitais (SHA-256, 16 primeiros dígitos): auxiliar {0}, política {1}</value></data>
   <data name="LockedRetryOne" xml:space="preserve"><value>{0} pasta não pôde ser medida com o acesso de administrador desta vez, então ainda não está nestes totais.</value></data>
   <data name="LockedRetryMany" xml:space="preserve"><value>{0} pastas não puderam ser medidas com o acesso de administrador desta vez, então ainda não estão nestes totais.</value></data>
+  <data name="LockedRowAction" xml:space="preserve"><value>Medir com acesso de administrador</value></data>
+  <data name="LockedRowTip" xml:space="preserve"><value>Bloqueada. Pressione para medir o tamanho com acesso de administrador.</value></data>
+  <data name="LockedFolderMeasuredToast" xml:space="preserve"><value>{0}: {1}, medida com acesso de administrador.</value></data>
+  <data name="LockedFolderNoSize" xml:space="preserve"><value>Nem o acesso de administrador conseguiu ler o tamanho de {0}.</value></data>
+  <data name="LockedFolderFailed" xml:space="preserve"><value>Não foi possível medir {0} desta vez. Nada foi alterado.</value></data>
+  <data name="UnassignedExplain" xml:space="preserve"><value>Espaço usado que a verificação não conseguiu atribuir a uma pasta: pastas que sua conta não consegue abrir (como /root), além de snapshots e metadados do sistema de arquivos. Medir com acesso de administrador atribui esse espaço.</value></data>
+  <data name="UnassignedAction" xml:space="preserve"><value>Medir com minha senha →</value></data>
+  <data name="UnassignedAttributed" xml:space="preserve"><value>Atribuído com acesso de administrador: {0}.</value></data>
+  <data name="UnassignedNothingLeft" xml:space="preserve"><value>Tudo o que o acesso de administrador consegue ler já está contado.</value></data>
+  <data name="UnassignedMeasured" xml:space="preserve"><value>Atribuí {0} com acesso de administrador.</value></data>
+  <data name="CategoryHint_UnaccountedAdmin" xml:space="preserve"><value>Espaço usado ainda não atribuído a uma pasta</value></data>
 </root>

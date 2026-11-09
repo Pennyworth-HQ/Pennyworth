@@ -280,6 +280,7 @@ public sealed unsafe partial class PosixDirectoryScanner : IStorageScanner
             int seen = 0;
             while (true)
             {
+                Marshal.SetLastPInvokeError(0);
                 byte* entry = ReadDir(directory);
                 if (entry == null)
                 {

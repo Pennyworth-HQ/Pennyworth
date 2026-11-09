@@ -26,6 +26,7 @@
     <Style Selector="ListBox.legend ListBoxItem">
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}" />
       <Setter Property="BorderThickness" Value="0,1,0,0" />
+      <Setter Property="Cursor" Value="Hand" />
     </Style>
     <Style Selector="ListBox.legend ListBoxItem:selected controls|SegmentedBar">
       <Setter Property="IsHighlighted" Value="True" />
@@ -183,7 +184,7 @@
         <!-- Category legend -->
         <StackPanel>
           <TextBlock Classes="label" Margin="0,0,0,10" Text="{l:Tr Categories, Upper=True}" />
-          <ListBox Classes="legend" ItemsSource="{Binding Legend}" SelectedItem="{Binding SelectedCategory}"
+          <ListBox Name="LegendList" Classes="legend" ItemsSource="{Binding Legend}" SelectedItem="{Binding SelectedCategory}"
                    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="vm:CategoryRowViewModel">
@@ -194,6 +195,9 @@
                   <StackPanel Grid.Column="1" Spacing="2">
                     <TextBlock Text="{Binding Name}" />
                     <TextBlock Classes="caption" Text="{Binding Hint}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Classes="caption" Foreground="{DynamicResource Brush.Accent}" Text="{Binding ActionText}"
+                               TextTrimming="CharacterEllipsis"
+                               IsVisible="{Binding ActionText, Converter={x:Static ObjectConverters.IsNotNull}}" />
                   </StackPanel>
                   <TextBlock Grid.Column="2" Classes="label" LetterSpacing="0" FontSize="11.5" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding PercentText}" />
                   <TextBlock Grid.Column="3" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding SizeText}" />
@@ -224,14 +228,60 @@
           </Border>
           <Border Classes="rule" Padding="0,18" IsVisible="{Binding ShowUnaccountedExplanation}">
             <StackPanel Spacing="14">
-              <TextBlock LineHeight="21" TextWrapping="Wrap" Text="{l:Tr UnaccountedHint}" IsVisible="{Binding !IsUnlocked}" />
-              <TextBlock LineHeight="21" TextWrapping="Wrap" Text="{Binding Unaccounted.Hint}" IsVisible="{Binding IsUnlocked}" />
-              <Button HorizontalAlignment="Left" MinHeight="32" Padding="12,0" FontSize="10.5" Command="{Binding UnlockCommand}" IsVisible="{Binding ShowUnlockBanner}">
-                <TextBlock>
-                  <Run Text="{l:Tr UnlockCta, Upper=True}" />
-                  <Run Text=" →" />
-                </TextBlock>
-              </Button>
+              <TextBlock LineHeight="21" TextWrapping="Wrap" Text="{Binding UnaccountedExplanation}" />
+              <TextBlock Classes="secondary" FontSize="13" TextWrapping="Wrap" Text="{Binding AttributedByAdminText}"
+                         IsVisible="{Binding ShowAttributedByAdmin}" />
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button HorizontalAlignment="Left" MinHeight="32" Padding="12,0" FontSize="10.5"
+                        Command="{Binding MeasureUnassignedCommand}" IsVisible="{Binding OffersAdminAttribution}">
+                  <TextBlock>
+                    <Run Text="{Binding UnassignedCta, Converter={x:Static controls:TextCase.Upper}}" />
+                    <Run Text=" →" />
+                  </TextBlock>
+                </Button>
+                <Button HorizontalAlignment="Left" MinHeight="32" Padding="12,0" FontSize="10.5"
+                        Command="{Binding UnlockCommand}" IsVisible="{Binding ShowUnlockBanner}">
+                  <TextBlock>
+                    <Run Text="{l:Tr UnlockCta, Upper=True}" />
+                    <Run Text=" →" />
+                  </TextBlock>
+                </Button>
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding LockedFolderRows}" IsVisible="{Binding HasLockedFolderRows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LockedFolderRowViewModel">
+                    <Button Classes="row" Padding="8,10" ToolTip.Tip="{Binding RowTip}"
+                            Command="{Binding $parent[UserControl].((vm:StorageSummaryViewModel)DataContext).ActivateLockedFolderCommand}"
+                            CommandParameter="{Binding}">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <StackPanel Spacing="3">
+                          <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding Path}" Classes="mono" FontSize="12.5" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                            <Border Classes="badge" VerticalAlignment="Center" IsVisible="{Binding !IsMeasured}">
+                              <TextBlock>
+                                <Run Text="■ " />
+                                <Run Text="{l:Tr Locked, Upper=True}" />
+                              </TextBlock>
+                            </Border>
+                            <Border Classes="badge" VerticalAlignment="Center" IsVisible="{Binding IsMeasured}">
+                              <TextBlock>
+                                <Run Text="■ " />
+                                <Run Text="{l:Tr MeasuredBadge}" />
+                              </TextBlock>
+                            </Border>
+                          </StackPanel>
+                          <TextBlock Classes="caption" Foreground="{DynamicResource Brush.Accent}"
+                                     Text="{l:Tr LockedRowAction}" IsVisible="{Binding ShowMeasureAffordance}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding SizeText}" />
+                          <TextBlock Classes="mono secondary" Width="8" Text="›" />
+                        </StackPanel>
+                      </Grid>
+                    </Button>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
             </StackPanel>
           </Border>
           <ItemsControl ItemsSource="{Binding SelectedCategory.Areas}" IsVisible="{Binding ShowPlaces}">

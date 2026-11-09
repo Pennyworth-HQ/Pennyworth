@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Xml.Linq;
-
+using Pennyworth.Tests;
 namespace Pennyworth.Platform.Linux.Tests;
 
 /// <summary>
@@ -39,7 +39,7 @@ public class PolkitPolicyTests
     private static string Annotation(XElement action, string key) =>
         action.Elements("annotate").Single(a => (string?)a.Attribute("key") == key).Value;
 
-    [Fact]
+    [LinuxFact]
     public void Has_exactly_one_action_per_helper_subcommand_with_the_protocols_ids()
     {
         string[] ids = [.. Actions().Select(a => (string)a.Attribute("id")!)];
@@ -48,7 +48,7 @@ public class PolkitPolicyTests
         Assert.Equal(ids.Length, ids.Distinct(StringComparer.Ordinal).Count());
     }
 
-    [Fact]
+    [LinuxFact]
     public void Every_action_matches_the_installed_helper_and_exactly_its_own_subcommand()
     {
         foreach (string subcommand in HelperProtocol.Subcommands)
@@ -61,7 +61,7 @@ public class PolkitPolicyTests
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public void Only_an_active_session_may_authenticate_and_cleanup_asks_every_time()
     {
         foreach (string subcommand in HelperProtocol.Subcommands)
@@ -75,7 +75,7 @@ public class PolkitPolicyTests
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public void Every_action_is_described_in_english_and_brazilian_portuguese()
     {
         foreach (XElement action in Actions())
@@ -91,30 +91,43 @@ public class PolkitPolicyTests
         }
     }
 
-    [Fact]
-    public void The_serve_action_is_what_the_app_prompts_with_and_it_names_every_use_and_the_idle_time()
+    [LinuxFact]
+    public void The_serve_action_is_what_the_app_prompts_with()
     {
         XElement action = Actions().Single(a => (string?)a.Attribute("id") == HelperProtocol.ActionId(HelperProtocol.Serve));
-        string idle = ((int)HelperProtocol.IdleTimeout.TotalMinutes).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
         Assert.Equal("app.pennyworth.serve", HelperProtocol.ActionId(HelperProtocol.Serve));
         Assert.Equal("auth_admin_keep", action.Element("defaults")!.Element("allow_active")!.Value);
-        foreach (XElement message in action.Elements("message"))
-        {
-            string text = message.Value;
-            bool portuguese = (string?)message.Attribute(XmlNs + "lang") == "pt_BR";
+        Assert.Equal(HelperProtocol.Serve, Annotation(action, ExecArgv1));
+    }
 
-            Assert.Contains(idle, text, StringComparison.Ordinal);
-            Assert.Contains(portuguese ? "memória" : "memory", text, StringComparison.Ordinal);
-            Assert.Contains(portuguese ? "snapshots" : "snapshots", text, StringComparison.Ordinal);
-            Assert.Contains(portuguese ? "pastas" : "folders", text, StringComparison.Ordinal);
-            Assert.Contains(portuguese ? "apagar" : "delete", text, StringComparison.Ordinal);
-            Assert.Contains(portuguese ? "bloqueia" : "lock", text, StringComparison.Ordinal);
-            Assert.Contains(portuguese ? "fecha" : "closes", text, StringComparison.Ordinal);
+    /// <summary>
+    /// The password dialog is not the place to explain: what the access can do, the idle time and Lock are said by the app's own
+    /// "Turn on administrator access?" dialog (checked in the app's tests), which comes first. So every message here is one short
+    /// sentence that says what the prompt is for, and none repeats the idle time.
+    /// </summary>
+    [LinuxFact]
+    public void Every_prompt_message_is_one_short_sentence_that_says_what_it_is_for()
+    {
+        string idle = ((int)HelperProtocol.IdleTimeout.TotalMinutes).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        foreach (XElement action in Actions())
+        {
+            foreach (XElement message in action.Elements("message"))
+            {
+                string text = message.Value.Trim();
+                bool portuguese = (string?)message.Attribute(XmlNs + "lang") == "pt_BR";
+
+                Assert.True(text.Length <= 90, $"{(string)action.Attribute("id")!} ({(portuguese ? "pt_BR" : "en")}) is {text.Length} characters: {text}");
+                Assert.EndsWith(".", text, StringComparison.Ordinal);
+                Assert.Equal(text.Length - 1, text.IndexOf('.', StringComparison.Ordinal)); // the only full stop is the last character
+                Assert.DoesNotContain(idle, text, StringComparison.Ordinal);
+                Assert.StartsWith(portuguese ? "O Pennyworth precisa de acesso de administrador" : "Pennyworth needs administrator access", text, StringComparison.Ordinal);
+            }
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_policy_file_parses_as_xml_and_names_the_dtd_polkit_expects()
     {
         string text = File.ReadAllText(Path.Combine(RepoRoot, "tools", "package", "linux", "app.pennyworth.policy"));
@@ -123,7 +136,7 @@ public class PolkitPolicyTests
         Assert.NotEmpty(Actions());
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_installed_path_is_named_once_per_action_and_nowhere_else()
     {
         string text = File.ReadAllText(Path.Combine(RepoRoot, "tools", "package", "linux", "app.pennyworth.policy"));
@@ -148,7 +161,7 @@ public class PolkitPolicyTests
         return rules;
     }
 
-    [Fact]
+    [LinuxFact]
     public void The_helpers_cleanup_allowlist_is_exactly_the_admin_rules_of_the_knowledge_base()
     {
         Dictionary<string, string[]> admin = AdminRules();
@@ -164,7 +177,7 @@ public class PolkitPolicyTests
         }
     }
 
-    [Fact]
+    [LinuxFact]
     public void No_admin_rule_is_missing_from_the_allowlist_and_the_allowlist_folders_are_absolute()
     {
         foreach (string id in AdminRules().Keys)

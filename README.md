@@ -142,8 +142,9 @@ Why it is built this way, and what remains risky:
   files come from the app's own folder, which you can write; something that already runs as you could have replaced
   them before the dialog read them, and the fingerprint would then be the replacement's. You are authorising an
   install of the app's own files: compare the fingerprints with the release page if that matters to you.
-- **One polkit action per subcommand.** `app.pennyworth.policy` has an action for `serve` (the app's one prompt, naming
-  every use and the idle time, English and Brazilian Portuguese, `auth_admin_keep`; the session, not polkit's
+- **One polkit action per subcommand.** `app.pennyworth.policy` has an action for `serve` (the app's one prompt: a single short
+  sentence, as for every action, English and Brazilian Portuguese; what it can do, the idle time and Lock are said by the
+  app's own "Turn on administrator access?" dialog that comes first; `auth_admin_keep`; the session, not polkit's
   authorisation cache, is what avoids re-prompting) and for each one-shot subcommand (for running a single operation by
   hand with `pkexec`; the cleanup one asks every time). Inactive and remote sessions are refused.
 - **Windows is unchanged.** Windows keeps its own elevation; none of this applies there.

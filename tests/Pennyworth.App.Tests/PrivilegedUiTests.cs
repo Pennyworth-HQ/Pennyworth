@@ -572,7 +572,7 @@ public class PrivilegedUiTests
 
         public PrivilegedCapability FoldersCapability { get; init; } = PrivilegedCapability.Ready;
 
-        public PrivilegedResult<HiddenSpaceReport> SpaceResult { get; init; } = PrivilegedResult<HiddenSpaceReport>.Done(new HiddenSpaceReport(1 * Gb, 1 * Gb));
+        public PrivilegedResult<HiddenSpaceReport> SpaceResult { get; set; } = PrivilegedResult<HiddenSpaceReport>.Done(new HiddenSpaceReport(1 * Gb, 1 * Gb));
 
         public Func<IReadOnlyList<string>, PrivilegedResult<IReadOnlyList<MeasuredFolder>>> FoldersResult { get; set; } = _ => PrivilegedResult<IReadOnlyList<MeasuredFolder>>.Done([]);
 

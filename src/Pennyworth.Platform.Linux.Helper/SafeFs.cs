@@ -168,7 +168,11 @@ internal static unsafe partial class SafeFs
     internal static nint OpenDir(int fd) => FdOpenDirCall(fd);
 
     /// <summary>The next entry of the listing: a pointer to its <c>dirent</c>, or null at the end (or on an error: see <see cref="LastReadFailed"/>).</summary>
-    internal static byte* ReadDir(nint directory) => ReadDirCall(directory);
+    internal static byte* ReadDir(nint directory)
+    {
+        Marshal.SetLastPInvokeError(0);
+        return ReadDirCall(directory);
+    }
 
     /// <summary>True when the <c>readdir</c> that just returned null failed instead of reaching the end.</summary>
     internal static bool LastReadFailed() => Marshal.GetLastPInvokeError() != 0;

@@ -148,8 +148,10 @@ public abstract partial class PrivilegedDialogViewModel(MainWindowViewModel shel
 }
 
 /// <summary>"Turn on administrator access?": the one prompt that covers every privileged action of the session.</summary>
-public sealed class AccessDialogViewModel(MainWindowViewModel shell) : PrivilegedDialogViewModel(shell)
+public sealed class AccessDialogViewModel(MainWindowViewModel shell, Func<Task>? afterActivate = null) : PrivilegedDialogViewModel(shell)
 {
+    internal Func<Task>? AfterActivate { get; } = afterActivate;
+
     public override string Title => Strings.AccessDialogTitle;
 
     public override string Why => string.Format(CultureInfo.CurrentCulture, Strings.AccessDialogWhy, Shell.Access.IdleMinutes);
@@ -164,7 +166,7 @@ public sealed class AccessDialogViewModel(MainWindowViewModel shell) : Privilege
 
     protected override Task StartAsync() => Shell.TurnOnAccessAsync(this);
 
-    protected override void Reopen() => Shell.RequestTurnOn();
+    protected override void Reopen() => Shell.RequestTurnOn(AfterActivate);
 }
 
 /// <summary>

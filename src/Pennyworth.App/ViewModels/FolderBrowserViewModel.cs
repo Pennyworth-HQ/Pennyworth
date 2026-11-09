@@ -20,6 +20,15 @@ public interface IFolderHost
     void ShowInExplorer(string path);
 
     void RequestUnlock();
+
+    /// <summary>The platform has administrator access that can measure a folder the person cannot open (Linux); false where it has not (Windows).</summary>
+    bool OffersAdminMeasure => false;
+
+    /// <summary>
+    /// A locked folder was activated: starts the administrator-access flow (turn it on, or set it up, or, while it is on, measure just this
+    /// folder), or where the platform has none, the full-scan unlock.
+    /// </summary>
+    void RequestMeasureLocked(StorageNode node) => RequestUnlock();
 }
 
 /// <summary>Drill-down like Explorer, from "This PC" through drives and folders, largest first.</summary>
@@ -52,9 +61,10 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
 
             var children = folder.GetChildren();
             long largest = Math.Max(children.Where(child => !IsUnmeasured(child)).Select(child => child.SizeOnDisk).DefaultIfEmpty(0).Max(), 1);
+            bool canMeasure = _host.OffersAdminMeasure;
             return children
                 .OrderBy(IsUnmeasured) // Locked folders nobody measured have no size; they go last, the measured ones sit by size.
-                .Select(child => FolderItemViewModel.ForNode(child, largest))
+                .Select(child => FolderItemViewModel.ForNode(child, largest, canMeasure))
                 .ToArray();
         }
     }
@@ -95,6 +105,9 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
     /// <summary>"The system keeps this folder closed to you. Its size (3 GB) was measured with your password."</summary>
     public string LockedMeasuredBody => string.Format(Strings.LockedMeasuredBody, Current is { } folder ? ByteSize.Format(folder.SizeOnDisk) : "");
 
+    /// <summary>The page of a locked folder offers "Measure with administrator access" (Linux) instead of the full-scan unlock (Windows).</summary>
+    public bool OffersAdminMeasure => _host.OffersAdminMeasure;
+
     private static bool IsUnmeasured(StorageNode node) => node.IsLocked && !node.IsMeasured;
 
     public bool CanGoBack => _history.Count > 0;
@@ -119,6 +132,24 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
     /// <summary>Re-reads every text after a language switch or a finished scan.</summary>
     public void Refresh() => OnPropertyChanged(string.Empty);
 
+    /// <summary>
+    /// A scan result was replaced by a copy in which some folders now carry a measured size (the nodes keep their index): the open folder
+    /// and the way back follow it, so the page shows the measurement instead of the folder as it was.
+    /// </summary>
+    internal void Retarget(StorageTree from, StorageTree to)
+    {
+        StorageNode? Follow(StorageNode? node) => node is { } n && ReferenceEquals(n.Tree, from) ? new StorageNode(to, n.Index) : node;
+
+        StorageNode?[] older = [.. _history.Reverse().Select(Follow)];
+        _history.Clear();
+        foreach (StorageNode? node in older)
+        {
+            _history.Push(node);
+        }
+
+        Current = Follow(Current);
+    }
+
     [RelayCommand]
     private void Open(FolderItemViewModel item)
     {
@@ -132,6 +163,11 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
             {
                 _host.ScanDrive(drive);
             }
+        }
+        else if (item.Node is { IsDirectory: true, IsLocked: true, IsMeasured: false } locked && _host.OffersAdminMeasure)
+        {
+            // There is nothing inside to show: the press itself is the question "may I measure it?", not a trip to a page that says no.
+            _host.RequestMeasureLocked(locked);
         }
         else if (item.Node is { IsDirectory: true } node)
         {
@@ -170,6 +206,16 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
     [RelayCommand]
     private void Unlock() => _host.RequestUnlock();
 
+    /// <summary>The open locked folder's button: the same flow as pressing its row.</summary>
+    [RelayCommand]
+    private void MeasureLocked()
+    {
+        if (Current is { } folder)
+        {
+            _host.RequestMeasureLocked(folder);
+        }
+    }
+
     private string DriveLabel(StorageNode root)
     {
         var drive = _host.Drives.FirstOrDefault(d => string.Equals(d.Summary.RootPath, root.Tree.RootPath, StringComparison.OrdinalIgnoreCase));
@@ -187,6 +233,7 @@ public enum FolderItemKind
 /// <summary>One row of the folder browser: a drive (on "This PC"), a folder or a file.</summary>
 /// <param name="IsLocked">The scan could not list the folder. It stays true after its size was measured with a password.</param>
 /// <param name="IsMeasured">A locked folder whose size is known because it was measured with an administrator's rights.</param>
+/// <param name="CanMeasure">The platform can measure a locked folder with administrator access: its row says it can be pressed to do so.</param>
 public sealed record FolderItemViewModel(
     string Name,
     string Path,
@@ -196,7 +243,8 @@ public sealed record FolderItemViewModel(
     double Fraction,
     StorageNode? Node,
     DriveViewModel? Drive,
-    bool IsMeasured = false)
+    bool IsMeasured = false,
+    bool CanMeasure = false)
 {
     public bool IsFolder => Kind == FolderItemKind.Folder;
 
@@ -209,8 +257,12 @@ public sealed record FolderItemViewModel(
     /// <summary>The "Locked" badge: locked and its size still unknown.</summary>
     public bool ShowLockedBadge => IsLocked && !IsMeasured;
 
+    /// <summary>"Measure with administrator access" beside a locked row whose size nobody measured yet.</summary>
+    public bool ShowMeasureAffordance => ShowLockedBadge && CanMeasure;
+
+    public string RowTip => ShowMeasureAffordance ? Strings.LockedRowTip : Name;
     /// <param name="largest">The largest sibling: the design scales share bars to it.</param>
-    public static FolderItemViewModel ForNode(StorageNode node, long largest)
+    public static FolderItemViewModel ForNode(StorageNode node, long largest, bool canMeasure = false)
     {
         bool unknown = node.IsLocked && !node.IsMeasured;
         return new(
@@ -222,7 +274,8 @@ public sealed record FolderItemViewModel(
             unknown ? 0 : (double)node.SizeOnDisk / largest,
             node,
             null,
-            node.IsLocked && node.IsMeasured);
+            node.IsLocked && node.IsMeasured,
+            canMeasure);
     }
 
     /// <summary>Drives show their used space as Windows reports it, scanned or not.</summary>
