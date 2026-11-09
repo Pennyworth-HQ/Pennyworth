@@ -16,10 +16,11 @@ namespace Pennyworth.App.Tests;
 /// The view-model states of the four opt-in features that ask for an administrator's password: the second step of the
 /// system space, locked folders, cleaning root-owned rules and the memory modules. Each runs against fakes; no prompt exists.
 /// </summary>
+[Collection(nameof(LanguageSwitching))]
 public class PrivilegedUiTests
 {
     /// <summary>A tree like <see cref="SampleTrees.Build"/> plus one folder nobody could list: 10 GB of it exists, the scan knows none.</summary>
-    private static StorageTree TreeWithLockedFolder()
+    internal static StorageTree TreeWithLockedFolder()
     {
         var b = new StorageTreeBuilder(@"C:\", StorageCategory.Other);
         int games = b.AddDirectory(StorageTreeBuilder.RootIndex, "Games", StorageCategory.Games);
@@ -30,7 +31,7 @@ public class PrivilegedUiTests
         return b.Build();
     }
 
-    private static async Task<MainWindowViewModel> Scanned(IPrivilegedOperations? privileged, IHiddenSpaceService? hidden = null, Func<string, StorageTree>? tree = null)
+    internal static async Task<MainWindowViewModel> Scanned(IPrivilegedOperations? privileged, IHiddenSpaceService? hidden = null, Func<string, StorageTree>? tree = null)
     {
         var viewModel = new MainWindowViewModel(TestApp.Services(
             scanner: new FakeScanner(tree ?? (_ => TreeWithLockedFolder())),
@@ -41,7 +42,7 @@ public class PrivilegedUiTests
         return viewModel;
     }
 
-    private static async Task Unlock(MainWindowViewModel viewModel)
+    internal static async Task Unlock(MainWindowViewModel viewModel)
     {
         viewModel.RequestUnlock();
         var dialog = Assert.IsType<UnlockDialogViewModel>(viewModel.Dialog);
@@ -49,7 +50,7 @@ public class PrivilegedUiTests
         await dialog.Run;
     }
 
-    private static double Total(StorageSummaryViewModel summary) => summary.Segments.Sum(segment => segment.Fraction);
+    internal static double Total(StorageSummaryViewModel summary) => summary.Segments.Sum(segment => segment.Fraction);
 
     // ----- the second step of the system space -----
 
@@ -192,7 +193,7 @@ public class PrivilegedUiTests
     // ----- locked folders -----
 
     [Fact]
-    public async Task The_locked_banner_counts_the_folders_and_needs_the_capability()
+    public async Task The_locked_banner_counts_the_folders_and_offers_the_measure_or_the_setup()
     {
         var ops = new FakePrivileged();
         MainWindowViewModel viewModel = await Scanned(ops);
@@ -201,12 +202,30 @@ public class PrivilegedUiTests
         Assert.Equal(1, summary.LockedCount);
         Assert.True(summary.ShowLockedBanner);
         Assert.Equal(string.Format(Strings.LockedBannerOne, 1), summary.LockedBannerText);
+        Assert.Equal(Strings.LockedMeasureCta, summary.LockedCta);
 
-        var missing = new FakePrivileged { FoldersCapability = PrivilegedCapability.Missing(PrivilegedUnavailableReason.HelperNotInstalled) };
-        StorageSummaryViewModel blocked = (await Scanned(missing)).SystemSummary!;
+        // The helper is not installed: the same banner offers the one-time setup first (it never silently does nothing).
+        var missing = new FakePrivileged
+        {
+            FoldersCapability = PrivilegedCapability.Missing(PrivilegedUnavailableReason.HelperNotInstalled),
+            Access = new FakeAdministratorAccess { State = AdministratorAccessState.NeedsSetup, Reason = PrivilegedUnavailableReason.HelperNotInstalled },
+        };
+        StorageSummaryViewModel needsSetup = (await Scanned(missing)).SystemSummary!;
+        Assert.True(needsSetup.ShowLockedBanner);
+        Assert.False(needsSetup.ShowLockedReason);
+        Assert.Equal(string.Format(Strings.LockedSetupOne, 1), needsSetup.LockedBannerText);
+        Assert.Equal(Strings.AdminSetupCta, needsSetup.LockedCta);
+
+        // No pkexec at all: nothing can be offered, and the reason replaces the button.
+        var none = new FakePrivileged
+        {
+            FoldersCapability = PrivilegedCapability.Missing(PrivilegedUnavailableReason.NoPkexec),
+            Access = new FakeAdministratorAccess { State = AdministratorAccessState.Unavailable, Reason = PrivilegedUnavailableReason.NoPkexec },
+        };
+        StorageSummaryViewModel blocked = (await Scanned(none)).SystemSummary!;
         Assert.False(blocked.ShowLockedBanner);
         Assert.True(blocked.ShowLockedReason);
-        Assert.Contains(Strings.PrivReasonHelperNotInstalled, blocked.LockedReasonText);
+        Assert.Contains(Strings.PrivReasonNoPkexec, blocked.LockedReasonText);
     }
 
     [Fact]
@@ -304,9 +323,9 @@ public class PrivilegedUiTests
 
     // ----- root-owned cleanup rules -----
 
-    private static readonly CleanupRule HomeRule = FakeCleanup.Rule("browser-cache", SafetyLevel.Safe);
-    private static readonly CleanupRule PackagesRule = FakeCleanup.Rule("system-package-cache", SafetyLevel.UsuallySafe, admin: true);
-    private static readonly CleanupRule CrashRule = FakeCleanup.Rule("system-crash-reports", SafetyLevel.UsuallySafe, admin: true);
+    internal static readonly CleanupRule HomeRule = FakeCleanup.Rule("browser-cache", SafetyLevel.Safe);
+    internal static readonly CleanupRule PackagesRule = FakeCleanup.Rule("system-package-cache", SafetyLevel.UsuallySafe, admin: true);
+    internal static readonly CleanupRule CrashRule = FakeCleanup.Rule("system-crash-reports", SafetyLevel.UsuallySafe, admin: true);
 
     private static async Task<(CleanupViewModel Cleanup, AdminFakeCleanup Service)> Measured(AdminFakeCleanup service)
     {
@@ -537,11 +556,18 @@ public class PrivilegedUiTests
 
     private sealed class ModulesReader(MemoryModulesResult result) : IMemoryModuleReader
     {
-        public Task<MemoryModulesResult> ReadAsync(CancellationToken cancellationToken) => Task.FromResult(result);
+        public Task<MemoryModulesResult> ReadAsync(CancellationToken cancellationToken, bool promptIfNeeded = true) => Task.FromResult(result);
     }
 
-    private sealed class FakePrivileged : IPrivilegedOperations
+    internal sealed class FakePrivileged : IPrivilegedOperations
     {
+        public FakeAdministratorAccess Access { get; init; } = new();
+
+        IAdministratorAccess IPrivilegedOperations.Access => Access;
+
+        /// <summary>Whether each call was allowed to start the session (a refresh nobody asked for is not).</summary>
+        public List<bool> PromptFlags { get; } = [];
+
         public PrivilegedCapability SystemSpace { get; init; } = PrivilegedCapability.Ready;
 
         public PrivilegedCapability FoldersCapability { get; init; } = PrivilegedCapability.Ready;
@@ -561,28 +587,63 @@ public class PrivilegedUiTests
             _ => PrivilegedCapability.Ready,
         };
 
-        public Task<PrivilegedResult<byte[]>> ReadFirmwareTablesAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<PrivilegedResult<byte[]>> ReadFirmwareTablesAsync(CancellationToken cancellationToken, bool promptIfNeeded = true) => throw new NotSupportedException();
+
+        /// <summary>The first call that may ask starts the session, as the real operations do; a call that may not ask finds none.</summary>
+        private PrivilegedResult<T>? Gate<T>(bool promptIfNeeded)
+        {
+            PromptFlags.Add(promptIfNeeded);
+            if (Access.State == AdministratorAccessState.Active)
+            {
+                return null;
+            }
+
+            return promptIfNeeded ? null : PrivilegedResult<T>.NotAvailable(PrivilegedUnavailableReason.NotActive);
+        }
+
+        private PrivilegedResult<T> Started<T>(PrivilegedResult<T> result, bool promptIfNeeded)
+        {
+            if (result.Outcome == PrivilegedOutcome.Done && promptIfNeeded && Access.State == AdministratorAccessState.Off)
+            {
+                Access.Set(AdministratorAccessState.Active);
+            }
+
+            return result;
+        }
 
         public Task<PrivilegedResult<string>> ReadMemoryDevicesTextAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task<PrivilegedResult<HiddenSpaceReport>> MeasureSystemSpaceAsync(string mountPoint, CancellationToken cancellationToken)
+        public Task<PrivilegedResult<HiddenSpaceReport>> MeasureSystemSpaceAsync(string mountPoint, CancellationToken cancellationToken, bool promptIfNeeded = true)
         {
+            if (Gate<HiddenSpaceReport>(promptIfNeeded) is { } refused)
+            {
+                return Task.FromResult(refused);
+            }
+
             SpaceCalls.Add(mountPoint);
-            return Task.FromResult(SpaceResult);
+            return Task.FromResult(Started(SpaceResult, promptIfNeeded));
         }
 
-        public Task<PrivilegedResult<IReadOnlyList<MeasuredFolder>>> MeasureFoldersAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken)
+        public Task<PrivilegedResult<IReadOnlyList<MeasuredFolder>>> MeasureFoldersAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken, bool promptIfNeeded = true)
         {
+            if (Gate<IReadOnlyList<MeasuredFolder>>(promptIfNeeded) is { } refused)
+            {
+                return Task.FromResult(refused);
+            }
+
             FolderCalls.Add(paths);
-            return Task.FromResult(FoldersResult(paths));
+            return Task.FromResult(Started(FoldersResult(paths), promptIfNeeded));
         }
 
         public Task<PrivilegedResult<CleanupResult>> CleanSystemAsync(CleanupEstimate estimate, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     /// <summary>A cleanup service whose admin rules report a capability and end the way the test says; plain rules always finish.</summary>
-    private sealed class AdminFakeCleanup((CleanupRule Rule, long Bytes, PrivilegedCapability? Admin)[] items) : ICleanupService
+    internal sealed class AdminFakeCleanup((CleanupRule Rule, long Bytes, PrivilegedCapability? Admin)[] items) : ICleanupService
     {
+        /// <summary>When set, what every admin rule reports from now on (the helper was installed in the meantime).</summary>
+        public PrivilegedCapability? Capability { get; set; }
+
         public List<string> Cleaned { get; } = [];
 
         public Dictionary<string, CleanupResult> Results { get; } = [];
@@ -592,6 +653,7 @@ public class PrivilegedUiTests
         public Task<CleanupEstimate> MeasureAsync(CleanupRule rule, CancellationToken cancellationToken)
         {
             (CleanupRule _, long bytes, PrivilegedCapability? admin) = items.Single(i => i.Rule == rule);
+            admin = rule.RequiresAdmin && Capability is { } now ? now : admin;
             CleanupFile[] files = [new($"/fake/{rule.Id}/a.bin", bytes, DateTime.UnixEpoch)];
             return Task.FromResult(new CleanupEstimate(rule, bytes, 1, IsAvailable: !rule.RequiresAdmin || admin is { Available: true }, [new($"/fake/{rule.Id}", bytes, 1)], files, admin));
         }

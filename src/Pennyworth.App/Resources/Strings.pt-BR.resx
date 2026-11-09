@@ -504,9 +504,9 @@
   <data name="SpecsModulesAsks" xml:space="preserve"><value>Pede sua senha. Nada é alterado.</value></data>
   <data name="PrivReasonNoPkexec" xml:space="preserve"><value>Este sistema não tem como pedir direitos de administrador, então isso não é possível aqui.</value></data>
   <data name="PrivReasonNoAuthenticationAgent" xml:space="preserve"><value>Nenhuma janela de senha está rodando nesta área de trabalho, então o sistema não tem onde pedir sua senha.</value></data>
-  <data name="PrivReasonHelperNotInstalled" xml:space="preserve"><value>Isso precisa do auxiliar do Pennyworth instalado (veja o README: sudo install-helper.sh).</value></data>
-  <data name="PrivReasonHelperNotTrusted" xml:space="preserve"><value>O auxiliar do Pennyworth instalado não pertence ao root ou pode ser alterado por outras pessoas, então o Pennyworth não vai executá-lo.</value></data>
-  <data name="PrivReasonHelperOutdated" xml:space="preserve"><value>O auxiliar do Pennyworth instalado é mais antigo que este app. Instale-o de novo.</value></data>
+  <data name="PrivReasonHelperNotInstalled" xml:space="preserve"><value>Isso precisa do auxiliar do Pennyworth, que ainda não está instalado. Configure o acesso de administrador para instalá-lo uma vez.</value></data>
+  <data name="PrivReasonHelperNotTrusted" xml:space="preserve"><value>O auxiliar do Pennyworth instalado não pertence ao root ou pode ser alterado por outras pessoas, então o Pennyworth não vai executá-lo. Configure o acesso de administrador para instalar uma cópia nova.</value></data>
+  <data name="PrivReasonHelperOutdated" xml:space="preserve"><value>O auxiliar do Pennyworth instalado é mais antigo que este app. Configure o acesso de administrador para atualizá-lo.</value></data>
   <data name="PrivReasonUnknown" xml:space="preserve"><value>O Pennyworth não consegue pedir direitos de administrador neste sistema.</value></data>
   <data name="PrivWaiting" xml:space="preserve"><value>Aguardando sua senha…</value></data>
   <data name="PrivCancelled" xml:space="preserve"><value>Nenhuma senha foi informada, então nada foi medido e nada foi alterado. Você pode pedir de novo quando quiser.</value></data>
@@ -521,8 +521,8 @@
   <data name="AdminSpaceReads" xml:space="preserve"><value>Quanto espaço os snapshots e os registros internos do sistema de arquivos ocupam. Somente leitura.</value></data>
   <data name="AdminSpaceWont" xml:space="preserve"><value>Nada é alterado, apagado ou guardado. Estes números substituem as estimativas; não são somados a elas.</value></data>
   <data name="AdminSpaceToast" xml:space="preserve"><value>Incluí o que exige acesso de administrador ({0}).</value></data>
-  <data name="LockedBannerOne" xml:space="preserve"><value>Medir {0} pasta que não consegui ler (pede sua senha; nada é alterado)</value></data>
-  <data name="LockedBannerMany" xml:space="preserve"><value>Medir {0} pastas que não consegui ler (pede sua senha; nada é alterado)</value></data>
+  <data name="LockedBannerOne" xml:space="preserve"><value>Medir {0} pasta que não consegui ler (liga o acesso de administrador: sua senha, uma vez)</value></data>
+  <data name="LockedBannerMany" xml:space="preserve"><value>Medir {0} pastas que não consegui ler (liga o acesso de administrador: sua senha, uma vez)</value></data>
   <data name="LockedMeasureCta" xml:space="preserve"><value>Medir com minha senha</value></data>
   <data name="LockedUnavailable" xml:space="preserve"><value>Algumas pastas não puderam ser lidas, então o tamanho delas falta nestes totais. {0}</value></data>
   <data name="LockedMeasureTitle" xml:space="preserve"><value>Medir as pastas que não consegui ler?</value></data>
@@ -536,9 +536,56 @@
   <data name="MeasuredBadgeHint" xml:space="preserve"><value>O tamanho foi medido com a sua senha. O que há dentro continua sem poder ser listado.</value></data>
   <data name="LockedMeasuredTitle" xml:space="preserve"><value>Não consigo listar o que há dentro, mas sei o tamanho.</value></data>
   <data name="LockedMeasuredBody" xml:space="preserve"><value>O sistema mantém esta pasta fechada para você. O tamanho ({0}) foi medido com a sua senha; nada foi alterado.</value></data>
-  <data name="CleanNeedsPassword" xml:space="preserve"><value>Pede sua senha</value></data>
-  <data name="ConfirmPasswordNote" xml:space="preserve"><value>O sistema vai pedir sua senha para cada um destes: {0}. Só os arquivos que você viu na prévia serão apagados.</value></data>
+  <data name="CleanNeedsPassword" xml:space="preserve"><value>Liga o acesso de administrador (pede sua senha uma vez)</value></data>
+  <data name="ConfirmPasswordNote" xml:space="preserve"><value>Para limpar estes ({0}) o Pennyworth liga o acesso de administrador: o sistema pede sua senha uma vez. Só os arquivos que você viu na prévia serão apagados.</value></data>
   <data name="CleanSkippedCancelled" xml:space="preserve"><value>Ignorado: o pedido de senha foi cancelado.</value></data>
   <data name="CleanCancelled" xml:space="preserve"><value>Cancelado: nenhuma senha foi informada, então nada foi apagado.</value></data>
   <data name="CleanAdminFailed" xml:space="preserve"><value>Não consegui terminar de limpar este item. Olhe a lista de novo antes de tentar outra vez.</value></data>
+  <data name="AccessTitle" xml:space="preserve"><value>Acesso de administrador</value></data>
+  <data name="AccessStatus" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="AccessStateOff" xml:space="preserve"><value>Desligado</value></data>
+  <data name="AccessStateActive" xml:space="preserve"><value>Ativo</value></data>
+  <data name="AccessStateNeedsSetup" xml:space="preserve"><value>Precisa de configuração</value></data>
+  <data name="AccessStateUnavailable" xml:space="preserve"><value>Indisponível</value></data>
+  <data name="AccessLock" xml:space="preserve"><value>Bloquear</value></data>
+  <data name="AccessTipOff" xml:space="preserve"><value>Desligado. O Pennyworth pede sua senha uma vez, só quando algo precisar. Clique para ligar.</value></data>
+  <data name="AccessTipActive" xml:space="preserve"><value>Ligado: sem mais pedidos de senha até você bloquear, após {0} minutos sem uso ou quando o Pennyworth fechar.</value></data>
+  <data name="AccessTipNeedsSetup" xml:space="preserve"><value>Precisa de uma configuração única. Clique para ver exatamente o que ela instala.</value></data>
+  <data name="AccessOnToast" xml:space="preserve"><value>O acesso de administrador está ligado. Ele se bloqueia sozinho após {0} minutos sem uso.</value></data>
+  <data name="AccessLockedToast" xml:space="preserve"><value>Acesso de administrador bloqueado.</value></data>
+  <data name="AccessEndedToast" xml:space="preserve"><value>O acesso de administrador terminou. A próxima ação vai pedir sua senha de novo.</value></data>
+  <data name="AccessSetupToast" xml:space="preserve"><value>Acesso de administrador configurado.</value></data>
+  <data name="AccessDialogTitle" xml:space="preserve"><value>Ligar o acesso de administrador?</value></data>
+  <data name="AccessDialogWhy" xml:space="preserve"><value>Algumas coisas neste PC só podem ser vistas ou feitas por um administrador. O sistema vai pedir sua senha uma vez; depois disso o Pennyworth para de pedir até você bloquear, passarem {0} minutos sem uso ou o app fechar. O Pennyworth nunca vê a senha.</value></data>
+  <data name="AccessDialogReads" xml:space="preserve"><value>Os detalhes dos módulos de memória, o espaço que snapshots e o controle interno do sistema de arquivos ocupam, e o tamanho das pastas que sua conta não consegue abrir. Somente leitura.</value></data>
+  <data name="AccessDialogWont" xml:space="preserve"><value>Ele não apaga nada sozinho: só os caches de pacotes do sistema e relatórios de falhas que você confirmar numa prévia de limpeza, e só os arquivos que você viu. Nada mais é lido, executado ou alterado.</value></data>
+  <data name="AdminSetupTitle" xml:space="preserve"><value>Configurar o acesso de administrador?</value></data>
+  <data name="AdminSetupWhy" xml:space="preserve"><value>O acesso de administrador é servido por um pequeno auxiliar que precisa ser instalado uma vez, nas pastas do próprio sistema, como outros programas instalam os deles. O sistema vai pedir sua senha uma vez para copiar dois arquivos que vieram com este app. As cópias são conferidas com as impressões digitais abaixo antes de serem colocadas (compare com a página da versão, se quiser).</value></data>
+  <data name="AdminSetupReads" xml:space="preserve"><value>Instala dois arquivos, ambos pertencentes ao root depois:</value></data>
+  <data name="AdminSetupWont" xml:space="preserve"><value>Não toca em mais nada e não inicia nada. Para remover depois: sudo rm /usr/libexec/pennyworth/pennyworth-helper /usr/share/polkit-1/actions/app.pennyworth.policy</value></data>
+  <data name="AdminSetupFailed" xml:space="preserve"><value>A configuração não terminou, então nada foi instalado ou alterado. Você pode tentar de novo.</value></data>
+  <data name="AdminSetupCta" xml:space="preserve"><value>Configurar o acesso de administrador</value></data>
+  <data name="PrivAskOnce" xml:space="preserve"><value>Pedir só desta vez</value></data>
+  <data name="PrivNeedsSetup" xml:space="preserve"><value>Isso precisa de uma configuração única antes: o auxiliar que serve o acesso de administrador precisa ser instalado.</value></data>
+  <data name="PrivNeedsSetupOneOff" xml:space="preserve"><value>Configure o acesso de administrador uma vez para ser perguntado só uma vez, ou peça só para isto: funciona sem configurar nada, mas pergunta toda vez.</value></data>
+  <data name="PrivReasonNotActive" xml:space="preserve"><value>O acesso de administrador não está ligado, então nada foi pedido.</value></data>
+  <data name="PrivReasonSetupNotBundled" xml:space="preserve"><value>Esta cópia do Pennyworth não inclui o auxiliar (o AppImage e as versões compiladas do código-fonte não incluem). Use o download .tar.gz ou instale o auxiliar você mesmo com o install-helper.sh (veja o README).</value></data>
+  <data name="LockedSetupOne" xml:space="preserve"><value>{0} pasta não pôde ser lida, então o tamanho dela falta nestes totais. Medi-la precisa do acesso de administrador, que precisa de uma configuração única antes.</value></data>
+  <data name="LockedSetupMany" xml:space="preserve"><value>{0} pastas não puderam ser lidas, então o tamanho delas falta nestes totais. Medi-las precisa do acesso de administrador, que precisa de uma configuração única antes.</value></data>
+  <data name="LockedLeftOne" xml:space="preserve"><value>{0} pasta continua fechada até para o acesso de administrador, então ainda não está nestes totais.</value></data>
+  <data name="LockedLeftMany" xml:space="preserve"><value>{0} pastas continuam fechadas até para o acesso de administrador, então ainda não estão nestes totais.</value></data>
+  <data name="LockedMeasuredNone" xml:space="preserve"><value>Nenhum tamanho voltou para essas pastas.</value></data>
+  <data name="MeasuredByAdmin" xml:space="preserve"><value>Medidas com o acesso de administrador: {0}</value></data>
+  <data name="MeasuredByAdminMore" xml:space="preserve"><value> e mais {0}</value></data>
+  <data name="SpecsModulesAsksActive" xml:space="preserve"><value>O acesso de administrador está ligado: não precisa de senha.</value></data>
+  <data name="SpecsModulesAsksOff" xml:space="preserve"><value>Liga o acesso de administrador: pede sua senha uma vez. Nada é alterado.</value></data>
+  <data name="SpecsModulesAsksNeedsSetup" xml:space="preserve"><value>Pede sua senha só para esta leitura, toda vez. Configure o acesso de administrador para ser perguntado uma vez.</value></data>
+  <data name="SpecsModulesOneOff" xml:space="preserve"><value>Foi uma leitura avulsa: o acesso de administrador continua desligado, então a próxima pergunta de novo.</value></data>
+  <data name="CleanAccessActive" xml:space="preserve"><value>O acesso de administrador está ligado: não precisa de senha.</value></data>
+  <data name="ConfirmAccessOnNote" xml:space="preserve"><value>O acesso de administrador está ligado, então nada pede senha para estes: {0}. Só os arquivos que você viu na prévia serão apagados.</value></data>
+  <data name="AccessTurnOn" xml:space="preserve"><value>Ligar (pede minha senha)</value></data>
+  <data name="AdminSetupGo" xml:space="preserve"><value>Instalar (pede minha senha)</value></data>
+  <data name="AdminSetupHelperLine" xml:space="preserve"><value>• o auxiliar → {0} ({1})</value></data>
+  <data name="AdminSetupPolicyLine" xml:space="preserve"><value>• a política do polkit → {0}</value></data>
+  <data name="AdminSetupFingerprints" xml:space="preserve"><value>Impressões digitais (SHA-256, 16 primeiros dígitos): auxiliar {0}, política {1}</value></data>
 </root>

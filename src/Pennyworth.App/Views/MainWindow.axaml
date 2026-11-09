@@ -121,19 +121,27 @@
               </StackPanel>
             </Grid>
           </Border>
+          <Border BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1" Padding="14,12" IsVisible="{Binding ShowSetupOffer}">
+            <TextBlock FontSize="13" TextWrapping="Wrap" Text="{Binding SetupNote}" />
+          </Border>
           <StackPanel Spacing="10" IsVisible="{Binding IsWaiting}">
             <ProgressBar Classes="sweep" Foreground="{DynamicResource Brush.Accent}" />
             <TextBlock Classes="label" LetterSpacing="0" FontSize="11" Text="{l:Tr PrivWaiting}" />
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" IsVisible="{Binding IsIdle}">
             <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="40" Content="{l:Tr NotNow, Upper=True}" Command="{Binding NotNowCommand}" />
-            <Button Classes="primary" MinHeight="40" Padding="18,0" Content="{l:Tr PrivAsk, Upper=True}" Command="{Binding StartCommand}" />
+            <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="40" Padding="18,0" Content="{l:Tr AdminSetupCta, Upper=True}"
+                    Command="{Binding SetUpCommand}" IsVisible="{Binding ShowSetupOffer}" />
+            <Button Classes="primary" MinHeight="40" Padding="18,0" Content="{Binding AskText, Converter={x:Static controls:TextCase.Upper}}"
+                    Command="{Binding StartCommand}" IsVisible="{Binding ShowAsk}" />
           </StackPanel>
         </StackPanel>
         <StackPanel Spacing="18" IsVisible="{Binding IsMessage}">
           <TextBlock FontSize="24" FontWeight="Medium" TextWrapping="Wrap" Text="{Binding Title}" />
           <TextBlock Classes="secondary" LineHeight="21" TextWrapping="Wrap" Text="{Binding Message}" />
           <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+            <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="40" Padding="18,0" Content="{l:Tr AdminSetupCta, Upper=True}"
+                    Command="{Binding SetUpCommand}" IsVisible="{Binding OffersSetupAfterMessage}" />
             <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="40" Content="{l:Tr PrivTryAgain, Upper=True}" Command="{Binding TryAgainCommand}" />
             <Button MinHeight="40" Padding="20,0" Background="{DynamicResource Brush.TextPrimary}"
                     Foreground="{DynamicResource Brush.Background}" Content="{l:Tr Ok}" Command="{Binding CloseCommand}" />
@@ -237,6 +245,18 @@
           </StackPanel>
         </Border>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center" Margin="16,0,0,0">
+          <!-- Linux: the one administrator session. Off, Active (with Lock) or Needs setup. -->
+          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding Access.IsSupported}" ToolTip.Tip="{Binding Access.Tip}">
+            <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="28" Padding="12,0" Command="{Binding Access.PrimaryCommand}"
+                    Foreground="{DynamicResource Brush.TextSecondary}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Classes="dot" Classes.active="{Binding Access.IsActive}" Text="●" FontSize="10" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Access.StatusText, Converter={x:Static controls:TextCase.Upper}}" />
+              </StackPanel>
+            </Button>
+            <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="28" Padding="12,0" Command="{Binding Access.LockCommand}"
+                    Foreground="{DynamicResource Brush.TextSecondary}" Content="{l:Tr AccessLock, Upper=True}" IsVisible="{Binding Access.IsActive}" />
+          </StackPanel>
           <Border Classes="group" ToolTip.Tip="{l:Tr ModeTip}">
             <StackPanel Orientation="Horizontal">
               <Button Classes="segment" Classes.selected="{Binding !Is3d}" Content="{l:Tr ModeSimple, Upper=True}" Command="{Binding SetSimpleModeCommand}" />

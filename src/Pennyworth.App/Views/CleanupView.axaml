@@ -142,6 +142,8 @@
                             <TextBlock FontSize="12" Foreground="{DynamicResource Brush.Accent}" TextWrapping="Wrap"
                                        Text="{l:Tr CleanNeedsPassword}" IsVisible="{Binding NeedsPassword}" />
                             <TextBlock FontSize="12" Foreground="{DynamicResource Brush.Accent}" TextWrapping="Wrap"
+                                       Text="{l:Tr CleanAccessActive}" IsVisible="{Binding AccessIsOn}" />
+                            <TextBlock FontSize="12" Foreground="{DynamicResource Brush.Accent}" TextWrapping="Wrap"
                                        Text="{Binding AdminReasonText}" IsVisible="{Binding HasAdminReason}" />
                           </StackPanel>
                           <TextBlock Grid.Column="2" FontSize="15" TextAlignment="Right" Text="{Binding SizeText}" />
@@ -157,6 +159,8 @@
                             <TextBlock Text="→" />
                           </StackPanel>
                         </Button>
+                        <Button Classes="small" Content="{l:Tr AdminSetupCta, Upper=True}" VerticalAlignment="Center" IsVisible="{Binding OffersSetup}"
+                                Command="{Binding Access.SetUpCommand}" />
                         <Button Classes="small" Content="{l:Tr AskAboutThis, Upper=True}" VerticalAlignment="Center" IsVisible="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).CanAsk}"
                                 Command="{Binding $parent[UserControl].((vm:CleanupViewModel)DataContext).AskAboutItemCommand}" CommandParameter="{Binding}" />
                       </StackPanel>

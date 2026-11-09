@@ -1,5 +1,8 @@
+using System.Globalization;
 using Pennyworth.App.Resources;
+using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Privilege;
+using Pennyworth.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -24,14 +27,16 @@ public enum PrivilegedDialogState
 }
 
 /// <summary>
-/// A read-only request that needs an administrator's password: first what will be read and what will not be touched,
-/// then the wait for the system's own prompt, then a calm message when it did not happen. One shape for every such
-/// request, so the window has a single template; each subclass says its own words and what pressing the button runs.
+/// A request that needs administrator access: first what will be read and what will not be touched, then the wait for the
+/// system's own prompt, then a calm message when it did not happen. One shape for every such request, so the window has a
+/// single template; each subclass says its own words and what pressing the button runs. When the helper that serves
+/// administrator access is not installed yet, the same dialog explains that and offers the one-time setup; a request that
+/// can also run once without it (<see cref="RequiresHelper"/> false) still offers to.
 /// </summary>
 public abstract partial class PrivilegedDialogViewModel(MainWindowViewModel shell) : ObservableObject
 {
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsAsking), nameof(IsIdle), nameof(IsWaiting), nameof(IsMessage), nameof(Message))]
+    [NotifyPropertyChangedFor(nameof(IsAsking), nameof(IsIdle), nameof(IsWaiting), nameof(IsMessage), nameof(Message), nameof(ShowSetupOffer), nameof(ShowAsk), nameof(OffersSetupAfterMessage))]
     [NotifyCanExecuteChangedFor(nameof(StartCommand))]
     public partial PrivilegedDialogState State { get; private set; }
 
@@ -52,6 +57,27 @@ public abstract partial class PrivilegedDialogViewModel(MainWindowViewModel shel
     /// <summary>What will not be touched.</summary>
     public abstract string Wont { get; }
 
+    /// <summary>The request cannot run at all without the helper (it has no one-off way); with no helper installed only the setup moves forward.</summary>
+    public virtual bool RequiresHelper => false;
+
+    /// <summary>The helper is not installed, trusted or current: administrator access needs its one-time setup.</summary>
+    public virtual bool NeedsSetup => Shell.Access.NeedsSetup;
+
+    /// <summary>Asking, and the one-time setup is what is missing: its button and its sentence are on screen.</summary>
+    public bool ShowSetupOffer => IsIdle && NeedsSetup;
+
+    /// <summary>The button that goes ahead is on screen: not when the only way forward is the setup.</summary>
+    public bool ShowAsk => IsIdle && !(NeedsSetup && RequiresHelper);
+
+    /// <summary>"Ask for my password" normally; "Ask just this once" while the setup is still missing.</summary>
+    public virtual string AskText => NeedsSetup ? Strings.PrivAskOnce : Strings.PrivAsk;
+
+    /// <summary>Why the setup is offered, and what the one-off way would mean.</summary>
+    public string? SetupNote => NeedsSetup ? (RequiresHelper ? Strings.PrivNeedsSetup : Strings.PrivNeedsSetupOneOff) : null;
+
+    /// <summary>A message about a helper that turned out to be missing or old also offers the setup.</summary>
+    public bool OffersSetupAfterMessage => IsMessage && NeedsSetup;
+
     /// <summary>Asking or waiting: the explanation is on screen.</summary>
     public bool IsAsking => State is PrivilegedDialogState.Asking or PrivilegedDialogState.Waiting;
 
@@ -68,9 +94,12 @@ public abstract partial class PrivilegedDialogViewModel(MainWindowViewModel shel
     {
         PrivilegedDialogState.Cancelled => Strings.PrivCancelled,
         PrivilegedDialogState.Unavailable => PrivilegedText.Reason(Reason),
-        PrivilegedDialogState.Failed => Strings.PrivFailed,
+        PrivilegedDialogState.Failed => FailureText,
         _ => null,
     };
+
+    /// <summary>The sentence for <see cref="PrivilegedDialogState.Failed"/>.</summary>
+    protected virtual string FailureText => Strings.PrivFailed;
 
     /// <summary>The shell that does the work and closes the dialog.</summary>
     protected MainWindowViewModel Shell => shell;
@@ -78,7 +107,12 @@ public abstract partial class PrivilegedDialogViewModel(MainWindowViewModel shel
     /// <summary>Starts the request and returns the work to await; called with the state already <see cref="PrivilegedDialogState.Waiting"/>.</summary>
     protected abstract Task StartAsync();
 
-    /// <summary>Re-reads the texts after a language switch.</summary>
+    /// <summary>Opens the request again once the setup has finished (the person came here to do something; the setup was a detour).</summary>
+    protected virtual void Reopen()
+    {
+    }
+
+    /// <summary>Re-reads the texts after a language switch or a change of the access state.</summary>
     internal void RefreshTexts() => OnPropertyChanged(string.Empty);
 
     internal void Cancelled() => State = PrivilegedDialogState.Cancelled;
@@ -102,11 +136,77 @@ public abstract partial class PrivilegedDialogViewModel(MainWindowViewModel shel
     [RelayCommand]
     private void TryAgain() => State = PrivilegedDialogState.Asking;
 
+    /// <summary>The one-time setup of the helper, then this request again.</summary>
+    [RelayCommand]
+    private void SetUp() => Run = Shell.RequestSetup(Reopen);
+
     [RelayCommand]
     private void NotNow() => shell.CloseDialog();
 
     [RelayCommand]
     private void Close() => shell.CloseDialog();
+}
+
+/// <summary>"Turn on administrator access?": the one prompt that covers every privileged action of the session.</summary>
+public sealed class AccessDialogViewModel(MainWindowViewModel shell) : PrivilegedDialogViewModel(shell)
+{
+    public override string Title => Strings.AccessDialogTitle;
+
+    public override string Why => string.Format(CultureInfo.CurrentCulture, Strings.AccessDialogWhy, Shell.Access.IdleMinutes);
+
+    public override string Reads => Strings.AccessDialogReads;
+
+    public override string Wont => Strings.AccessDialogWont;
+
+    public override bool RequiresHelper => true;
+
+    public override string AskText => Strings.AccessTurnOn;
+
+    protected override Task StartAsync() => Shell.TurnOnAccessAsync(this);
+
+    protected override void Reopen() => Shell.RequestTurnOn();
+}
+
+/// <summary>
+/// "Set up administrator access?": exactly which two files will be installed and where, what is checked, what is not
+/// touched. Built after the app has read and fingerprinted the files; with no plan it only says why there is nothing to install.
+/// </summary>
+/// <param name="plan">What will be installed; null when this copy of the app has nothing to install (the reason is then set).</param>
+/// <param name="then">Run when the setup finished: the request the person came from, opened again.</param>
+public sealed class SetupDialogViewModel(MainWindowViewModel shell, AdministratorSetupPlan? plan, Action? then) : PrivilegedDialogViewModel(shell)
+{
+    public AdministratorSetupPlan? Plan { get; } = plan;
+
+    /// <summary>Run after a finished setup.</summary>
+    internal Action? Then { get; } = then;
+
+    public override string Title => Strings.AdminSetupTitle;
+
+    public override string Why => Strings.AdminSetupWhy;
+
+    public override string Reads => Plan is { } plan
+        ? string.Join(
+            '\n',
+            Strings.AdminSetupReads,
+            string.Format(CultureInfo.CurrentCulture, Strings.AdminSetupHelperLine, plan.HelperDestination, ByteSize.Format(plan.HelperBytes)),
+            string.Format(CultureInfo.CurrentCulture, Strings.AdminSetupPolicyLine, plan.PolicyDestination),
+            string.Format(CultureInfo.CurrentCulture, Strings.AdminSetupFingerprints, Fingerprint(plan.HelperSha256), Fingerprint(plan.PolicySha256)))
+        : "";
+
+    public override string Wont => Strings.AdminSetupWont;
+
+    public override string AskText => Strings.AdminSetupGo;
+
+    protected override string FailureText => Strings.AdminSetupFailed;
+
+    /// <summary>This dialog is the setup: it never offers itself.</summary>
+    public override bool NeedsSetup => false;
+
+    /// <summary>The first 16 hex digits, grouped: enough to compare by eye with the release's published value.</summary>
+    internal static string Fingerprint(string sha256) =>
+        string.Join(' ', Enumerable.Range(0, 4).Select(i => sha256.Substring(i * 4, 4)));
+
+    protected override Task StartAsync() => Shell.SetupAccessAsync(this);
 }
 
 /// <summary>"Include what needs administrator access?": snapshots and file system bookkeeping of the system drive.</summary>
@@ -121,6 +221,8 @@ public sealed class AdminSpaceDialogViewModel(MainWindowViewModel shell) : Privi
     public override string Wont => Strings.AdminSpaceWont;
 
     protected override Task StartAsync() => Shell.IncludeAdminSpaceAsync(this);
+
+    protected override void Reopen() => Shell.RequestAdminSpace();
 }
 
 /// <summary>"Measure the folders I couldn't read?": the size, and only the size, of what a person cannot list.</summary>
@@ -137,5 +239,10 @@ public sealed class LockedMeasureDialogViewModel(MainWindowViewModel shell, Stor
 
     public override string Wont => Strings.LockedMeasureWont;
 
+    /// <summary>There is no one-off way to measure folders: nothing arbitrary runs as root.</summary>
+    public override bool RequiresHelper => true;
+
     protected override Task StartAsync() => Shell.MeasureLockedAsync(this);
+
+    protected override void Reopen() => Shell.RequestLockedMeasure(Summary);
 }

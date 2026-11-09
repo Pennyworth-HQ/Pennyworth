@@ -17,6 +17,8 @@ internal static class PrivilegedText
         PrivilegedUnavailableReason.HelperNotInstalled => Strings.PrivReasonHelperNotInstalled,
         PrivilegedUnavailableReason.HelperNotTrusted => Strings.PrivReasonHelperNotTrusted,
         PrivilegedUnavailableReason.HelperOutdated => Strings.PrivReasonHelperOutdated,
+        PrivilegedUnavailableReason.NotActive => Strings.PrivReasonNotActive,
+        PrivilegedUnavailableReason.SetupNotBundled => Strings.PrivReasonSetupNotBundled,
         _ => Strings.PrivReasonUnknown,
     };
 }

@@ -56,6 +56,21 @@ public sealed class StorageTree
         return locked;
     }
 
+    /// <summary>The locked folders whose size was filled in by <see cref="WithMeasuredFolders"/> (with an administrator's rights): the ones "measured, not listed".</summary>
+    public IReadOnlyList<StorageNode> GetMeasuredLockedFolders()
+    {
+        var measured = new List<StorageNode>();
+        for (int i = 0; i < _nodes.Length; i++)
+        {
+            if ((_nodes[i].Flags & (NodeFlags.Directory | NodeFlags.Locked | NodeFlags.Measured)) == (NodeFlags.Directory | NodeFlags.Locked | NodeFlags.Measured))
+            {
+                measured.Add(new StorageNode(this, i));
+            }
+        }
+
+        return measured;
+    }
+
     /// <summary>
     /// A new tree in which the locked folders found in <paramref name="sizesByPath"/> (key: <see cref="StorageNode.FullPath"/>,
     /// compared by the dictionary's own comparer) carry the measured size, rolled up to every ancestor and added to the totals

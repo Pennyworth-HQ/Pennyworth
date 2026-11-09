@@ -504,9 +504,9 @@
   <data name="SpecsModulesAsks" xml:space="preserve"><value>Asks for your password. Nothing is changed.</value></data>
   <data name="PrivReasonNoPkexec" xml:space="preserve"><value>This system has no way to ask for administrator rights, so this isn't possible here.</value></data>
   <data name="PrivReasonNoAuthenticationAgent" xml:space="preserve"><value>No password dialog is running on this desktop, so the system has nowhere to ask for your password.</value></data>
-  <data name="PrivReasonHelperNotInstalled" xml:space="preserve"><value>This needs the Pennyworth helper to be installed (see the README: sudo install-helper.sh).</value></data>
-  <data name="PrivReasonHelperNotTrusted" xml:space="preserve"><value>The installed Pennyworth helper is not owned by root or can be changed by others, so Pennyworth will not run it.</value></data>
-  <data name="PrivReasonHelperOutdated" xml:space="preserve"><value>The installed Pennyworth helper is older than this app. Install it again.</value></data>
+  <data name="PrivReasonHelperNotInstalled" xml:space="preserve"><value>This needs the Pennyworth helper, which isn't installed yet. Set up administrator access to install it once.</value></data>
+  <data name="PrivReasonHelperNotTrusted" xml:space="preserve"><value>The installed Pennyworth helper is not owned by root or can be changed by others, so Pennyworth will not run it. Set up administrator access to install a fresh copy.</value></data>
+  <data name="PrivReasonHelperOutdated" xml:space="preserve"><value>The installed Pennyworth helper is older than this app. Set up administrator access to update it.</value></data>
   <data name="PrivReasonUnknown" xml:space="preserve"><value>Pennyworth can't ask for administrator rights on this system.</value></data>
   <data name="PrivWaiting" xml:space="preserve"><value>Waiting for your password…</value></data>
   <data name="PrivCancelled" xml:space="preserve"><value>No password was given, so nothing was measured and nothing was changed. You can ask again whenever you like.</value></data>
@@ -521,8 +521,8 @@
   <data name="AdminSpaceReads" xml:space="preserve"><value>How much space the snapshots and the file system's own bookkeeping take. Read only.</value></data>
   <data name="AdminSpaceWont" xml:space="preserve"><value>Nothing is changed, deleted or kept. These numbers replace the estimates; they are not added on top.</value></data>
   <data name="AdminSpaceToast" xml:space="preserve"><value>Included what needs administrator access ({0}).</value></data>
-  <data name="LockedBannerOne" xml:space="preserve"><value>Measure {0} folder I couldn't read (asks for your password; nothing is changed)</value></data>
-  <data name="LockedBannerMany" xml:space="preserve"><value>Measure {0} folders I couldn't read (asks for your password; nothing is changed)</value></data>
+  <data name="LockedBannerOne" xml:space="preserve"><value>Measure {0} folder I couldn't read (turns on administrator access: your password, once)</value></data>
+  <data name="LockedBannerMany" xml:space="preserve"><value>Measure {0} folders I couldn't read (turns on administrator access: your password, once)</value></data>
   <data name="LockedMeasureCta" xml:space="preserve"><value>Measure with my password</value></data>
   <data name="LockedUnavailable" xml:space="preserve"><value>Some folders couldn't be read, so their size is missing from these totals. {0}</value></data>
   <data name="LockedMeasureTitle" xml:space="preserve"><value>Measure the folders I couldn't read?</value></data>
@@ -536,9 +536,56 @@
   <data name="MeasuredBadgeHint" xml:space="preserve"><value>The size was measured with your password. What is inside still can't be listed.</value></data>
   <data name="LockedMeasuredTitle" xml:space="preserve"><value>I can't list what's inside, but I know its size.</value></data>
   <data name="LockedMeasuredBody" xml:space="preserve"><value>The system keeps this folder closed to you. Its size ({0}) was measured with your password; nothing was changed.</value></data>
-  <data name="CleanNeedsPassword" xml:space="preserve"><value>Needs your password</value></data>
-  <data name="ConfirmPasswordNote" xml:space="preserve"><value>Your system will ask for your password for each of these: {0}. Only the files you saw in the preview are deleted.</value></data>
+  <data name="CleanNeedsPassword" xml:space="preserve"><value>Turns on administrator access (asks for your password once)</value></data>
+  <data name="ConfirmPasswordNote" xml:space="preserve"><value>To clean these ({0}) Pennyworth turns on administrator access: your system asks for your password once. Only the files you saw in the preview are deleted.</value></data>
   <data name="CleanSkippedCancelled" xml:space="preserve"><value>Skipped: the password prompt was cancelled.</value></data>
   <data name="CleanCancelled" xml:space="preserve"><value>Cancelled: no password was given, so nothing was deleted.</value></data>
   <data name="CleanAdminFailed" xml:space="preserve"><value>Couldn't finish cleaning this one. Look at the list again before trying a second time.</value></data>
+  <data name="AccessTitle" xml:space="preserve"><value>Administrator access</value></data>
+  <data name="AccessStatus" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="AccessStateOff" xml:space="preserve"><value>Off</value></data>
+  <data name="AccessStateActive" xml:space="preserve"><value>Active</value></data>
+  <data name="AccessStateNeedsSetup" xml:space="preserve"><value>Needs setup</value></data>
+  <data name="AccessStateUnavailable" xml:space="preserve"><value>Not available</value></data>
+  <data name="AccessLock" xml:space="preserve"><value>Lock</value></data>
+  <data name="AccessTipOff" xml:space="preserve"><value>Off. Pennyworth asks for your password once, only when something needs it. Click to turn it on.</value></data>
+  <data name="AccessTipActive" xml:space="preserve"><value>On: no more password prompts until you lock it, after {0} minutes without use, or when Pennyworth closes.</value></data>
+  <data name="AccessTipNeedsSetup" xml:space="preserve"><value>Needs a one-time setup. Click to see exactly what it installs.</value></data>
+  <data name="AccessOnToast" xml:space="preserve"><value>Administrator access is on. It locks itself after {0} minutes without use.</value></data>
+  <data name="AccessLockedToast" xml:space="preserve"><value>Administrator access is locked.</value></data>
+  <data name="AccessEndedToast" xml:space="preserve"><value>Administrator access ended. The next action will ask for your password again.</value></data>
+  <data name="AccessSetupToast" xml:space="preserve"><value>Administrator access is set up.</value></data>
+  <data name="AccessDialogTitle" xml:space="preserve"><value>Turn on administrator access?</value></data>
+  <data name="AccessDialogWhy" xml:space="preserve"><value>Some things on this PC can only be seen or done by an administrator. Your system will ask for your password once; after that Pennyworth stops asking until you lock it, {0} minutes pass without use, or the app closes. Pennyworth never sees the password.</value></data>
+  <data name="AccessDialogReads" xml:space="preserve"><value>The memory modules' details, the space that snapshots and the file system's own bookkeeping take, and the size of folders your account can't open. Read only.</value></data>
+  <data name="AccessDialogWont" xml:space="preserve"><value>It deletes nothing by itself: only the system package caches and crash reports you confirm in a cleanup preview, and only the files you saw. Nothing else is read, run or changed.</value></data>
+  <data name="AdminSetupTitle" xml:space="preserve"><value>Set up administrator access?</value></data>
+  <data name="AdminSetupWhy" xml:space="preserve"><value>Administrator access is served by a small helper that has to be installed once, in the system's own folders, the way other programs install theirs. Your system will ask for your password once to copy two files that came with this app. The copies are checked against the fingerprints below before they are placed (compare them with the release page if you like).</value></data>
+  <data name="AdminSetupReads" xml:space="preserve"><value>Installs two files, both owned by root afterwards:</value></data>
+  <data name="AdminSetupWont" xml:space="preserve"><value>Touches nothing else and starts nothing. To remove it later: sudo rm /usr/libexec/pennyworth/pennyworth-helper /usr/share/polkit-1/actions/app.pennyworth.policy</value></data>
+  <data name="AdminSetupFailed" xml:space="preserve"><value>The setup didn't finish, so nothing was installed or changed. You can try again.</value></data>
+  <data name="AdminSetupCta" xml:space="preserve"><value>Set up administrator access</value></data>
+  <data name="PrivAskOnce" xml:space="preserve"><value>Ask just this once</value></data>
+  <data name="PrivNeedsSetup" xml:space="preserve"><value>This needs a one-time setup first: the helper that serves administrator access has to be installed.</value></data>
+  <data name="PrivNeedsSetupOneOff" xml:space="preserve"><value>Set up administrator access once to be asked for your password only once, or ask just for this: that works without any setup but asks every time.</value></data>
+  <data name="PrivReasonNotActive" xml:space="preserve"><value>Administrator access isn't on, so nothing was asked.</value></data>
+  <data name="PrivReasonSetupNotBundled" xml:space="preserve"><value>This copy of Pennyworth doesn't include the helper (the AppImage and builds from source don't). Use the .tar.gz download, or install the helper yourself with install-helper.sh (see the README).</value></data>
+  <data name="LockedSetupOne" xml:space="preserve"><value>{0} folder couldn't be read, so its size is missing from these totals. Measuring it needs administrator access, which needs a one-time setup first.</value></data>
+  <data name="LockedSetupMany" xml:space="preserve"><value>{0} folders couldn't be read, so their size is missing from these totals. Measuring them needs administrator access, which needs a one-time setup first.</value></data>
+  <data name="LockedLeftOne" xml:space="preserve"><value>{0} folder stays closed even to administrator access, so it is still not in these totals.</value></data>
+  <data name="LockedLeftMany" xml:space="preserve"><value>{0} folders stay closed even to administrator access, so they are still not in these totals.</value></data>
+  <data name="LockedMeasuredNone" xml:space="preserve"><value>No sizes came back for those folders.</value></data>
+  <data name="MeasuredByAdmin" xml:space="preserve"><value>Measured with administrator access: {0}</value></data>
+  <data name="MeasuredByAdminMore" xml:space="preserve"><value> and {0} more</value></data>
+  <data name="SpecsModulesAsksActive" xml:space="preserve"><value>Administrator access is on: no password needed.</value></data>
+  <data name="SpecsModulesAsksOff" xml:space="preserve"><value>Turns on administrator access: asks for your password once. Nothing is changed.</value></data>
+  <data name="SpecsModulesAsksNeedsSetup" xml:space="preserve"><value>Asks for your password for this read only, every time. Set up administrator access to be asked once.</value></data>
+  <data name="SpecsModulesOneOff" xml:space="preserve"><value>That was a one-off read: administrator access is still off, so the next one asks again.</value></data>
+  <data name="CleanAccessActive" xml:space="preserve"><value>Administrator access is on: no password needed.</value></data>
+  <data name="ConfirmAccessOnNote" xml:space="preserve"><value>Administrator access is on, so nothing asks for a password for these: {0}. Only the files you saw in the preview are deleted.</value></data>
+  <data name="AccessTurnOn" xml:space="preserve"><value>Turn on (asks for my password)</value></data>
+  <data name="AdminSetupGo" xml:space="preserve"><value>Install (asks for my password)</value></data>
+  <data name="AdminSetupHelperLine" xml:space="preserve"><value>• the helper → {0} ({1})</value></data>
+  <data name="AdminSetupPolicyLine" xml:space="preserve"><value>• its polkit policy → {0}</value></data>
+  <data name="AdminSetupFingerprints" xml:space="preserve"><value>Fingerprints (SHA-256, first 16 digits): helper {0}, policy {1}</value></data>
 </root>
