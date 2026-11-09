@@ -83,49 +83,69 @@ are not guaranteed. The smoke script starts a package with an empty
 environment and no SDK in a private Xvfb (`--display wayland`: a private headless sway, no X server) and
 checks that the window opened, that its class matches the desktop file, and that something was drawn.
 
-#### Administrator features (optional, opt-in)
+#### Administrator access (optional, opt-in)
 
-Pennyworth runs as you. On Linux four things need more than that, and each happens only when you press its button
-and the system (polkit, the usual `pkexec` prompt) asks for your administrator password. Pennyworth never asks for
-the password itself, never sees it, and never types one. Nothing is changed except the cleanup you confirm.
+Pennyworth runs as you. On Linux four things need more than that: memory module details, the full system space
+(snapshots and file system bookkeeping), the size of folders your account cannot open (`/root`...), and cleaning the
+root-owned package caches and crash reports. They share **one** concept in the window, *Administrator access*
+(header: Off, Active with a Lock button, or Needs setup): one explained password prompt (polkit, the usual `pkexec`
+dialog) turns it on, and after that every one of the four works without asking again. Pennyworth never asks for the
+password itself, never sees it, and never types one.
 
-| Feature | What it does as root | Without the helper | With the helper |
-|---|---|---|---|
-| Memory modules | Reads the firmware's SMBIOS table (read-only) | works: fixed system tool through `pkexec` | works |
-| Full system space | Measures btrfs snapshots and metadata (read-only) | works: fixed system tools (`btrfs`) through `pkexec` | works |
-| Cleaning `system-package-cache`, `system-crash-reports` | Deletes only files listed in the preview you confirmed, from compiled-in folders | not available (explained in the app) | works |
-| Measuring folders your account cannot open | Reads sizes only, so Storage totals add up | not available | works |
-
-The helper is `/usr/libexec/pennyworth/pennyworth-helper`, a small Native AOT program that references only a
-dependency-free library (no UI, no ONNX, nothing from the app). It is part of the tarball and is installed by you,
-never by the app or the build:
+- **Turning it on** starts one long-lived helper (`pennyworth-helper serve`) through a single `pkexec`. It ends when you
+  press Lock, after 15 minutes without a request (`HelperProtocol.IdleTimeout`; then the next action prompts again),
+  and when Pennyworth closes (its input pipe closes). A dismissed prompt is never retried by itself; a session that
+  died is restarted only by your next action.
+- **When it becomes active:** the folders the scan could not read are measured and shown in the Storage tree (named
+  "Measured with administrator access: /root, ...") so the totals add up, the system space includes the
+  administrator-only parts, the memory modules fill in and the root-owned cleanup rules can be selected. A scan that
+  finishes while it is on does the same. Cleanup still shows its preview and still needs your confirmation.
+- **Needs setup** means the helper is not installed (or not trustworthy, or older than the app). The app then offers
+  **Set up administrator access**: a dialog says exactly which two files it will install and where (the helper to
+  `/usr/libexec/pennyworth/`, its polkit policy to `/usr/share/polkit-1/actions/`, both from this copy of the app, with
+  their SHA-256), then one `pkexec` copies them. Locked folders and root cleanup say they need it and offer it; memory
+  modules and system space still work without it as one-off prompts (fixed system tools through `pkexec`) and say so.
 
 ```bash
+# What the app's setup does, by hand (needs the tarball; the AppImage does not ship the helper):
 tar -xzf pennyworth-0.1.0-linux-x64.tar.gz && cd pennyworth-0.1.0-linux-x64
-sudo ./install-helper.sh            # copies the helper and the polkit policy, both owned by root
-sudo ./install-helper.sh --uninstall
+sudo ./install-helper.sh
+# Remove it again:
+sudo ./install-helper.sh --uninstall     # or: sudo rm /usr/libexec/pennyworth/pennyworth-helper /usr/share/polkit-1/actions/app.pennyworth.policy
 ```
 
 From a checkout, publish `src/Pennyworth.Helper` with Native AOT and pass it: `sudo tools/package/linux/install-helper.sh --helper <published pennyworth-helper>`.
 The AppImage does not ship the helper (an AppImage runs from a FUSE mount, which is not a trusted root-owned path);
 a helper installed from the tarball is used by any build of the app.
 
-Why it is built this way:
+Why it is built this way, and what remains risky:
 
 - **Trusted path only.** The app runs the helper only from `/usr/libexec/pennyworth`, and only if the file and every
   folder above it are owned by root, not writable by group or others, and not symbolic links (checked without
-  following links). Otherwise it does not use it; the two read-only features fall back to `pkexec` of fixed system
-  tools, and the other two say the helper is missing or not trusted. Nothing else is ever run as root.
-- **One polkit action per subcommand.** `app.pennyworth.policy` has an action for each of `read-firmware-tables`,
-  `measure-system-space`, `measure-folders` and `clean-system`, matched by program path and first argument
-  (`org.freedesktop.policykit.exec.argv1`, see `pkexec(1)`). Each prompt then says what that button does, and the
-  cleanup action uses `auth_admin` (asks every time) while the read-only ones use `auth_admin_keep`. Inactive and
-  remote sessions are refused.
-- **The helper trusts nothing from the caller.** No environment, no shell, a fixed subcommand with at most one
-  validated argument, bounded input and run time. For cleanup it uses only its compiled-in folders for the rule and
-  deletes a listed file only if it is still the same regular file (or link) from the preview, without following
-  symbolic links or crossing file systems; it refuses a root that is not root-owned or is reached through a link.
-  The request must come from a normal desktop user (`PKEXEC_UID`), never root itself.
+  following links). Otherwise it does not use it. Nothing else is ever run as root, except the one-time setup below.
+- **A fixed list of operations, nothing generic.** A session answers exactly `read-firmware-tables`,
+  `measure-system-space`, `measure-folders` and `clean-system <rule>` (the same code the one-shot subcommands run),
+  as length-prefixed JSON frames (version-checked, size-capped) on stdin/stdout, one request at a time, each limited
+  to 10 minutes. No shell, no command, no "read this file", no path to delete: cleanup uses only the compiled-in
+  folders of the rule and deletes a listed file only if it is still the same regular file (or link) from the preview,
+  without following symbolic links or crossing file systems.
+- **It serves one peer.** It opens no socket, file or FIFO. As root it checks that `PKEXEC_UID` is an ordinary user,
+  that standard input and output are pipes, and that its parent process (pkexec replaces itself with the helper, so
+  that is the app) belongs to that user; it stops if the parent changes. It reads no environment but `PKEXEC_UID`.
+  *Residual risk:* while a session is active, a process running as the same user that can control the app (for example
+  through `ptrace`) could ask the session for those four operations, including deleting the package caches and crash
+  reports listed by a preview it supplies, without another prompt. That is what "ask once" means; Lock ends it.
+- **The one-time setup runs a fixed script as root.** The text of `tools/package/linux/install-helper.sh` is compiled
+  into the app and run as `pkexec bash -c <script>`, never a script file from a folder you can write. It copies the
+  two files to root-owned temporary names, refuses links and a helper that is not an ELF program, checks the copies
+  against the SHA-256 the dialog showed, and only then moves both into place (both or neither). *Residual risk:* the
+  files come from the app's own folder, which you can write; something that already runs as you could have replaced
+  them before the dialog read them, and the fingerprint would then be the replacement's. You are authorising an
+  install of the app's own files: compare the fingerprints with the release page if that matters to you.
+- **One polkit action per subcommand.** `app.pennyworth.policy` has an action for `serve` (the app's one prompt, naming
+  every use and the idle time, English and Brazilian Portuguese, `auth_admin_keep`; the session, not polkit's
+  authorisation cache, is what avoids re-prompting) and for each one-shot subcommand (for running a single operation by
+  hand with `pkexec`; the cleanup one asks every time). Inactive and remote sessions are refused.
 - **Windows is unchanged.** Windows keeps its own elevation; none of this applies there.
 
 This is a deliberate, explicit exception to "Pennyworth never elevates", approved for these four features only.
