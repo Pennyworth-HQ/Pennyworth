@@ -185,6 +185,22 @@ public class StorageTreeTests
     }
 
     [Fact]
+    public void Lists_the_folders_an_administrator_measured_apart_from_those_still_closed()
+    {
+        StorageTree tree = BuildWithLockedFolders();
+        Assert.Empty(tree.GetMeasuredLockedFolders());
+
+        StorageTree measured = tree.WithMeasuredFolders(new Dictionary<string, FolderMeasurement>
+        {
+            [Find(tree, "secret").FullPath] = new(100, 90, 4),
+        });
+
+        Assert.Equal(["secret"], measured.GetMeasuredLockedFolders().Select(node => node.Name));
+        Assert.Equal(["vault"], measured.GetLockedFolders().Select(node => node.Name));
+        Assert.Empty(tree.GetMeasuredLockedFolders()); // the tree it came from is unchanged
+    }
+
+    [Fact]
     public void Measured_folders_add_up_in_ancestors_totals_and_categories()
     {
         StorageTree tree = BuildWithLockedFolders();
