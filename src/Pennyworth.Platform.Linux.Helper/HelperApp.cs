@@ -14,13 +14,19 @@ namespace Pennyworth.Platform.Linux;
 /// <param name="MeasureSystemSpace"><c>measure-system-space</c>, given a mount point the dispatcher has validated.</param>
 /// <param name="MeasureFolders"><c>measure-folders</c>, given a request whose shape the dispatcher has validated.</param>
 /// <param name="CleanSystem"><c>clean-system</c>, given a known rule id and a request whose shape the dispatcher has validated; only ever called with root rights.</param>
+/// <param name="Peer">What <c>serve</c> learns about the process that started it; see <see cref="PeerSources"/>.</param>
+/// <param name="Time">The clock <c>serve</c> measures idle time, request time and its parent check by; a test hands in its own.</param>
+/// <param name="Terminate">What <c>serve</c> calls, with an exit code, when a request does not stop at its time limit although it was asked to.</param>
 internal sealed record HelperSeams(
     CallerSources Caller,
     Func<string> ReadMountInfo,
     Func<CancellationToken, FirmwareTablesResponse> ReadFirmwareTables,
     Func<string, CancellationToken, SystemSpaceResponse> MeasureSystemSpace,
     Func<FoldersRequest, CancellationToken, FoldersResponse> MeasureFolders,
-    Func<string, CleanRequest, CancellationToken, CleanResponse> CleanSystem)
+    Func<string, CleanRequest, CancellationToken, CleanResponse> CleanSystem,
+    PeerSources Peer,
+    TimeProvider Time,
+    Action<int> Terminate)
 {
     internal static HelperSeams Real { get; } = new(
         CallerSources.Real,
@@ -28,18 +34,21 @@ internal sealed record HelperSeams(
         FirmwareTables.Read,
         SystemSpace.Run,
         FolderMeasure.Run,
-        SystemCleanup.Run);
+        SystemCleanup.Run,
+        PeerSources.Real,
+        TimeProvider.System,
+        static code => Environment.Exit(code));
 }
 
 /// <summary>
 /// The root helper's whole command line: one fixed subcommand, at most one validated argument, a JSON request on stdin where the
-/// subcommand takes one, a JSON answer on stdout. Nothing but <c>PKEXEC_UID</c> is read from the environment, nothing is passed to a
+/// subcommand takes one, a JSON answer on stdout (or, for <c>serve</c>, many of both: see <see cref="HelperServe"/>). Nothing but <c>PKEXEC_UID</c> is read from the environment, nothing is passed to a
 /// shell, and every failure ends as one line on stderr plus an exit code of <see cref="HelperExit"/>, never a stack trace and never
 /// the content of a file.
 /// </summary>
 internal static class HelperApp
 {
-    private const string ErrorPrefix = "pennyworth-helper: ";
+    internal const string ErrorPrefix = "pennyworth-helper: ";
     private const int MaxMountPointChars = 4096;
 
     /// <summary>Runs the helper with the real machine; the exit code is the process's.</summary>
@@ -48,6 +57,11 @@ internal static class HelperApp
 
     internal static int Run(string[] args, Stream stdin, Stream stdout, Stream stderr, HelperSeams seams, CancellationToken cancellationToken)
     {
+        if (args is [HelperProtocol.Serve])
+        {
+            return HelperServe.Run(stdin, stdout, stderr, seams, cancellationToken);
+        }
+
         int exitCode;
         string message;
         try
@@ -97,9 +111,9 @@ internal static class HelperApp
         }
 
         string subcommand = args[0];
-        if (!HelperProtocol.Subcommands.Contains(subcommand))
+        if (!HelperProtocol.Subcommands.Contains(subcommand) || subcommand == HelperProtocol.Serve)
         {
-            throw Usage("unknown subcommand");
+            throw Usage("unknown subcommand"); // "serve" has its own entry above and takes no arguments.
         }
 
         int argumentCount = subcommand is HelperProtocol.MeasureSystemSpace or HelperProtocol.CleanSystem ? 1 : 0;
@@ -112,32 +126,20 @@ internal static class HelperApp
         switch (subcommand)
         {
             case HelperProtocol.ReadFirmwareTables:
-                return Serialize(seams.ReadFirmwareTables(cancellationToken), HelperJson.Default.FirmwareTablesResponse);
+                return Serialize(HelperOperations.ReadFirmwareTables(seams, cancellationToken), HelperJson.Default.FirmwareTablesResponse);
 
             case HelperProtocol.MeasureSystemSpace:
-                string mountPoint = ValidateMountPoint(args[1], seams.ReadMountInfo());
-                return Serialize(seams.MeasureSystemSpace(mountPoint, cancellationToken), HelperJson.Default.SystemSpaceResponse);
+                return Serialize(HelperOperations.MeasureSystemSpace(seams, args[1], cancellationToken), HelperJson.Default.SystemSpaceResponse);
 
             case HelperProtocol.MeasureFolders:
                 FoldersRequest folders = ReadRequest(stdin, HelperJson.Default.FoldersRequest, cancellationToken);
-                ValidateFolders(folders);
-                return Serialize(seams.MeasureFolders(folders, cancellationToken), HelperJson.Default.FoldersResponse);
+                return Serialize(HelperOperations.MeasureFolders(seams, folders, cancellationToken), HelperJson.Default.FoldersResponse);
 
             default:
-                if (!caller.IsRoot)
-                {
-                    throw new HelperException(HelperExit.Refused, "cleaning system folders needs administrator rights");
-                }
-
-                string ruleId = args[1];
-                if (SystemCleanupRules.FoldersOf(ruleId) is null)
-                {
-                    throw new HelperException(HelperExit.Refused, "unknown cleanup rule");
-                }
-
+                // The rule is judged before the request is read: a caller that may not clean is not even listened to.
+                HelperOperations.RequireCleaning(caller, args[1]);
                 CleanRequest clean = ReadRequest(stdin, HelperJson.Default.CleanRequest, cancellationToken);
-                ValidateClean(clean);
-                return Serialize(seams.CleanSystem(ruleId, clean, cancellationToken), HelperJson.Default.CleanResponse);
+                return Serialize(HelperOperations.CleanSystem(seams, caller, args[1], clean, cancellationToken), HelperJson.Default.CleanResponse);
         }
     }
 
@@ -198,47 +200,11 @@ internal static class HelperApp
             ?? throw Usage("the request is empty");
     }
 
-    private static void ValidateFolders(FoldersRequest request)
-    {
-        RequireVersion(request.Version);
-        if (request.Paths is null || request.Paths.Any(path => path is null))
-        {
-            throw Usage("the request is incomplete");
-        }
-
-        if (request.Paths.Count > HelperProtocol.MaxFolders)
-        {
-            throw new HelperException(HelperExit.TooLarge, "the request names too many folders");
-        }
-    }
-
-    private static void ValidateClean(CleanRequest request)
-    {
-        RequireVersion(request.Version);
-        if (request.Files is null || request.Files.Any(file => file?.Root is null || file.Path is null))
-        {
-            throw Usage("the request is incomplete");
-        }
-
-        if (request.Files.Count > HelperProtocol.MaxCleanFiles)
-        {
-            throw new HelperException(HelperExit.TooLarge, "the request lists too many files");
-        }
-    }
-
-    private static void RequireVersion(int version)
-    {
-        if (version != HelperProtocol.Version)
-        {
-            throw Usage("unsupported protocol version");
-        }
-    }
-
     private static byte[] Serialize<T>(T answer, JsonTypeInfo<T> typeInfo) => JsonSerializer.SerializeToUtf8Bytes(answer, typeInfo);
 
-    private static HelperException Usage(string message) => new(HelperExit.Usage, message);
+    internal static HelperException Usage(string message) => new(HelperExit.Usage, message);
 
-    private static void WriteError(Stream stderr, string message)
+    internal static void WriteError(Stream stderr, string message)
     {
         string line = ErrorPrefix + message.ReplaceLineEndings(" ") + "\n";
         try

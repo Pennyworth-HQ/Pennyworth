@@ -1,6 +1,12 @@
 using Pennyworth.Platform.Linux;
 
 // Everything of substance is in HelperApp; this only binds it to the process's streams and its time limit.
+if (args is [HelperProtocol.Serve])
+{
+    // A session outlives MaxRuntime by design: it limits each request itself, and ends on EOF, idleness or the loss of its parent.
+    return HelperApp.Run(args, Console.OpenStandardInput(), Console.OpenStandardOutput(), Console.OpenStandardError(), CancellationToken.None);
+}
+
 using var timeLimit = new CancellationTokenSource(HelperProtocol.MaxRuntime);
 
 // Reading stdin blocks and cannot be cancelled, so a caller that never closes it would outlive the limit: this stops the process.

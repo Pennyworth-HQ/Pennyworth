@@ -29,7 +29,10 @@ public class HelperAppTests
             firmware ?? (_ => new FirmwareTablesResponse(HelperProtocol.Version, "AAAA")),
             space ?? ((_, _) => new SystemSpaceResponse(HelperProtocol.Version, "btrfs", 11, 22)),
             folders ?? ((request, _) => new FoldersResponse(HelperProtocol.Version, [.. request.Paths.Select(p => new FolderSize(p, 1, 2, 3, true))])),
-            clean ?? ((_, _, _) => new CleanResponse(HelperProtocol.Version, 5, 1, 0)));
+            clean ?? ((_, _, _) => new CleanResponse(HelperProtocol.Version, 5, 1, 0)),
+            ServeFakes.NoPeer,
+            TimeProvider.System,
+            _ => { });
 
     private sealed record Outcome(int Exit, string Out, string Err);
 
@@ -118,6 +121,16 @@ public class HelperAppTests
     }
 
     private static string ErrorLine(string message) => "pennyworth-helper: " + message + "\n";
+
+    [Fact]
+    public void ServeIsNotAOneShotSubcommandAndTakesNoArguments()
+    {
+        // "serve" alone is the session (HelperServeTests); with anything after it, it is just a wrong command line.
+        Outcome outcome = Run(["serve", "extra"], new ForbiddenStream());
+
+        Assert.Equal(HelperExit.Usage, outcome.Exit);
+        Assert.Equal(ErrorLine("unknown subcommand"), outcome.Err);
+    }
 
     [Fact]
     public void NoSubcommandIsUsage()
@@ -626,8 +639,7 @@ public class HelperAppTests
     public void TheRealSeamsAreWiredToTheSubcommands()
     {
         // Real machine, no privileges: the answer is whatever this machine allows, but it is always one of the documented outcomes.
-        Outcome outcome = Run(["read-firmware-tables"], "", new HelperSeams(
-            Caller(1000, null), MountTable.ReadSystem, HelperSeams.Real.ReadFirmwareTables, HelperSeams.Real.MeasureSystemSpace, HelperSeams.Real.MeasureFolders, HelperSeams.Real.CleanSystem));
+        Outcome outcome = Run(["read-firmware-tables"], "", HelperSeams.Real with { Caller = Caller(1000, null) });
 
         Assert.Contains(outcome.Exit, new[] { HelperExit.Ok, HelperExit.Refused, HelperExit.Missing });
     }
