@@ -17,6 +17,9 @@ internal static class SampleTrees
 {
     public const long Gb = 1024L * 1024 * 1024;
 
+    /// <summary>Joins like the production code does, so expectations hold with either separator.</summary>
+    public static string P(params string[] parts) => Path.Combine(parts);
+
     // C:\  Windows\ (20 GB)  Games\ (50 GB)  Users\Bob\ (10 GB)  stray.bin (5 GB, Other)
     public static StorageTree Build()
     {
@@ -110,13 +113,13 @@ internal sealed class FakeCleanup(params (CleanupRule Rule, long Bytes)[] items)
     public Task<CleanupEstimate> MeasureAsync(CleanupRule rule, CancellationToken cancellationToken)
     {
         long bytes = Cleaned.Contains(rule.Id) ? 0 : items.Single(i => i.Rule == rule).Bytes;
-        string folder = $@"C:\fake\{rule.Id}";
+        string folder = SampleTrees.P(@"C:\", "fake", rule.Id);
         bool bin = rule.Kind == CleanupKind.RecycleBin;
         CleanupFile[] files = bytes == 0 ? [] :
         [
-            new($@"{folder}\big.tmp", bytes / 2, DateTime.UnixEpoch, bin ? @"C:\Users\Bob\big.doc" : null),
-            new($@"{folder}\sub\notes.log", bytes / 4, DateTime.UnixEpoch, bin ? @"C:\Users\Bob\notes.log" : null),
-            new($@"{folder}\small.tmp", bytes - (bytes / 2) - (bytes / 4), DateTime.UnixEpoch, bin ? @"D:\small.txt" : null),
+            new(SampleTrees.P(folder, "big.tmp"), bytes / 2, DateTime.UnixEpoch, bin ? SampleTrees.P(@"C:\", "Users", "Bob", "big.doc") : null),
+            new(SampleTrees.P(folder, "sub", "notes.log"), bytes / 4, DateTime.UnixEpoch, bin ? SampleTrees.P(@"C:\", "Users", "Bob", "notes.log") : null),
+            new(SampleTrees.P(folder, "small.tmp"), bytes - (bytes / 2) - (bytes / 4), DateTime.UnixEpoch, bin ? SampleTrees.P(@"D:\", "small.txt") : null),
         ];
         CleanupFolder[] folders = bin ? [] : [new(folder, bytes, files.Length)];
         return Task.FromResult(new CleanupEstimate(rule, bytes, files.Length, !rule.RequiresAdmin, folders, files));

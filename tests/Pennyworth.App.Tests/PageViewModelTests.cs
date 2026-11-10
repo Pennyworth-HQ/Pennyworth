@@ -91,11 +91,11 @@ public sealed class CleanupViewModelTests : IDisposable
 
         preview.Search = "LOG";
         Assert.Equal(["notes.log"], preview.Entries.Select(f => f.Name));
-        Assert.Equal(@"temp\sub", preview.Entries[0].Detail);
+        Assert.Equal(P("temp", "sub"), preview.Entries[0].Detail);
         Assert.Equal("1 matching", preview.MatchText);
 
         preview.ShowInExplorerCommand.Execute(preview.Entries[0].Path);
-        Assert.Equal([@"C:\fake\temp\sub\notes.log"], explorer.Shown);
+        Assert.Equal([P(@"C:\", "fake", "temp", "sub", "notes.log")], explorer.Shown);
 
         preview.ToggleIncludeCommand.Execute(null);
         Assert.False(temp.IsSelected);
@@ -118,16 +118,16 @@ public sealed class CleanupViewModelTests : IDisposable
         Assert.Equal(["temp", "sub"], preview.Breadcrumbs.Select(c => c.Name));
         Assert.Equal(["notes.log"], preview.Entries.Select(e => e.Name));
         Assert.Equal(1, preview.Entries[0].Fraction);
-        Assert.Equal(@"C:\fake\temp\sub", preview.Current.Path);
+        Assert.Equal(P(@"C:\", "fake", "temp", "sub"), preview.Current.Path);
 
         preview.UpCommand.Execute(null);
-        Assert.Equal(@"C:\fake\temp", preview.Current.Path);
+        Assert.Equal(P(@"C:\", "fake", "temp"), preview.Current.Path);
 
         preview.BackCommand.Execute(null);
-        Assert.Equal(@"C:\fake\temp\sub", preview.Current.Path);
+        Assert.Equal(P(@"C:\", "fake", "temp", "sub"), preview.Current.Path);
 
         preview.NavigateToCommand.Execute(preview.Breadcrumbs[0]);
-        Assert.Equal(@"C:\fake\temp", preview.Current.Path);
+        Assert.Equal(P(@"C:\", "fake", "temp"), preview.Current.Path);
         Assert.True(cleanup.IsPreviewing);
     }
 
@@ -135,15 +135,16 @@ public sealed class CleanupViewModelTests : IDisposable
     public void Several_cleaned_folders_sit_side_by_side()
     {
         var estimate = new CleanupEstimate(Temp, 30, 3, true,
-            [new(@"C:\a\Cache", 20, 2), new(@"C:\b\Cache", 10, 1)],
-            [new(@"C:\a\Cache\x\1.bin", 15, default), new(@"C:\a\Cache\2.bin", 5, default), new(@"C:\b\Cache\3.bin", 10, default)]);
+            [new(P(@"C:\", "a", "Cache"), 20, 2), new(P(@"C:\", "b", "Cache"), 10, 1)],
+            [new(P(@"C:\", "a", "Cache", "x", "1.bin"), 15, default), new(P(@"C:\", "a", "Cache", "2.bin"), 5, default), new(P(@"C:\", "b", "Cache", "3.bin"), 10, default)]);
 
         var top = PreviewFolder.Build(estimate);
 
         Assert.True(top.IsAll);
         Assert.Equal((30L, 3L), (top.Bytes, top.Count));
-        Assert.Equal([@"C:\a\Cache", @"C:\b\Cache"], top.Folders.Keys);
-        Assert.Equal((15L, 1L), (top.Folders[@"C:\a\Cache"].Folders["x"].Bytes, top.Folders[@"C:\a\Cache"].Folders["x"].Count));
+        string a = P(@"C:\", "a", "Cache");
+        Assert.Equal([a, P(@"C:\", "b", "Cache")], top.Folders.Keys);
+        Assert.Equal((15L, 1L), (top.Folders[a].Folders["x"].Bytes, top.Folders[a].Folders["x"].Count));
     }
 
     [Fact]
@@ -157,7 +158,7 @@ public sealed class CleanupViewModelTests : IDisposable
 
         Assert.False(cleanup.Preview.CanNavigate);
         Assert.Equal("big.doc", big.Name);
-        Assert.StartsWith(@"C:\Users\Bob · deleted ", big.Detail);
+        Assert.StartsWith(P(@"C:\", "Users", "Bob") + " · deleted ", big.Detail);
         Assert.False(big.CanShow);
     }
 

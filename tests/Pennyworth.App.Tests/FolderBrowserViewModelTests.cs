@@ -55,7 +55,7 @@ public class FolderBrowserViewModelTests
         Assert.Equal(@"C:\", browser.Current?.FullPath);
 
         browser.OpenCommand.Execute(browser.Items.Single(i => i.Name == "Users"));
-        Assert.Equal(@"C:\Users", browser.Current?.FullPath);
+        Assert.Equal(P(@"C:\", "Users"), browser.Current?.FullPath);
         Assert.Equal(["This PC", "Local Disk (C:)", "Users"], browser.Breadcrumbs.Select(b => b.Name));
         Assert.True(browser.Breadcrumbs[^1].IsLast);
     }
@@ -71,7 +71,7 @@ public class FolderBrowserViewModelTests
         browser.OpenCommand.Execute(browser.Items.Single(i => i.Name == "Users"));
         browser.OpenCommand.Execute(browser.Items.Single(i => i.Name == "Bob"));
         browser.BackCommand.Execute(null);
-        Assert.Equal(@"C:\Users", browser.Current?.FullPath);
+        Assert.Equal(P(@"C:\", "Users"), browser.Current?.FullPath);
 
         browser.UpCommand.Execute(null);
         browser.UpCommand.Execute(null);
@@ -129,7 +129,7 @@ public class FolderBrowserViewModelTests
 
         browser.ShowInExplorerCommand.Execute(browser.Items[0]);
 
-        Assert.Equal([@"C:\Games"], host.Shown);
+        Assert.Equal([P(@"C:\", "Games")], host.Shown);
     }
 
     private sealed class Host : IFolderHost
