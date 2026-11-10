@@ -23,7 +23,10 @@ public sealed class LinuxPlatform : IPlatform
     {
         _paths = new XdgPaths();
         _scope = new EnvironmentScope(_paths);
+        AppNames = new FlatpakAppNames(_paths.DataHome);
     }
+
+    public string Name => KnowledgeBaseLoader.Linux;
 
     public IDriveService Drives { get; } = new MountDriveService();
 
@@ -34,6 +37,8 @@ public sealed class LinuxPlatform : IPlatform
     public IHiddenSpaceService HiddenSpace { get; } = new LinuxSystemSpaceService();
 
     public IProcessCloser Closer { get; } = new SignalProcessCloser();
+
+    public IAppNames AppNames { get; }
 
     public ISpecsReader Specs { get; } = new LinuxSpecsReader();
 

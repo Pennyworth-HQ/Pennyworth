@@ -17,7 +17,8 @@ public static class LinuxAssistantServices
             paths.ModelRoot,
             availableMemory,
             folder => FreeSpace(folder, Directory.Exists, DriveFreeSpace),
-            canRunLocally: false);
+            canRunLocally: false,
+            platformName: KnowledgeBase.KnowledgeBaseLoader.Linux);
 
     /// <summary>
     /// Free bytes for the user on the file system that holds <paramref name="folder"/>, which need not exist yet:
