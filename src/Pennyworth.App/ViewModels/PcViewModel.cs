@@ -1,8 +1,10 @@
 using System.Globalization;
+using Pennyworth.App.Localization;
 using Pennyworth.App.Resources;
 using Pennyworth.Assistant;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
+using Pennyworth.Core.Wording;
 using Pennyworth.Monitoring.Hardware;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -81,11 +83,11 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
 
     public string PartIndexText => $"0{(int)Part + 1} / 06 · {Label(Part)}";
 
-    public string PartName => Strings.ResourceManager.GetString($"PartName_{Part}", Strings.Culture) ?? "";
+    public string PartName => Localizer.Instance[$"PartName_{Part}"];
 
-    public string PartHint => Strings.ResourceManager.GetString($"PartHint_{Part}", Strings.Culture) ?? "";
+    public string PartHint => Localizer.Instance[$"PartHint_{Part}"];
 
-    public string MachineText => string.Format(Strings.Machine, shell.SystemDrive?.Letter ?? "C:", Live.HasSample ? Live.MemoryTotalText : "—");
+    public string MachineText => string.Format(Strings.Machine, shell.SystemDriveToken, Live.HasSample ? Live.MemoryTotalText : "—");
 
     /// <summary>
     /// The disks inside the PC that hold a partition, the system disk first, once the specs have been
@@ -95,7 +97,7 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
 
     private DiskSpecs[] DisksInPc => shell.Specs.Specs?.Disks
         .Where(disk => disk.Bus is not ("USB" or "SD") && disk.Letters.Count > 0)
-        .OrderByDescending(disk => disk.Letters.Contains(shell.SystemDrive?.Letter ?? "", StringComparer.OrdinalIgnoreCase))
+        .OrderByDescending(disk => disk.Letters.Contains(shell.SystemDrive?.Token ?? "", StringComparer.OrdinalIgnoreCase))
         .ThenBy(disk => disk.Number)
         .ToArray() ?? [];
 
@@ -109,7 +111,7 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
 
     /// <summary>The partitions on the selected disk.</summary>
     private DriveViewModel[] DiskDrives => CurrentDisk is { } disk
-        ? shell.Drives.Where(d => disk.Letters.Contains(d.Letter, StringComparer.OrdinalIgnoreCase)).ToArray()
+        ? shell.Drives.Where(d => disk.Letters.Contains(d.Token, StringComparer.OrdinalIgnoreCase)).ToArray()
         : shell.SystemDrive is { } system ? [system] : [];
 
     /// <summary>The partition whose scan the panel shows: Windows' when it's on this disk, else the first.</summary>
@@ -133,7 +135,7 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
 
     /// <summary>Each partition with its use, when the disk has more than one.</summary>
     public IReadOnlyList<LegendLine> DiskPartitions => DiskDrives.Length > 1
-        ? DiskDrives.Select(d => new LegendLine(d.Letter, d.Label, d.UsedText)).ToArray()
+        ? DiskDrives.Select(d => new LegendLine(d.Token, d.Label, d.UsedText)).ToArray()
         : [];
 
     public bool HasPartitions => DiskPartitions.Count > 0;
@@ -149,12 +151,12 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
                 var parts = summary.Categories
                     .Select(row => (CategoryChars[row.Category!.Value], (double)row.Bytes / total))
                     .Append(('-', (double)summary.Unaccounted.Bytes / total));
-                return Ascii.DriveArt(parts, DriveArtProgress, (MainDrive?.Letter ?? "C:") + "\\");
+                return Ascii.DriveArt(parts, DriveArtProgress, MainDrive?.Summary.RootPath ?? shell.SystemDriveRoot);
             }
 
             long size = Math.Max(DiskDrives.Sum(d => d.Summary.TotalBytes), 1);
-            string letters = DiskDrives.Length > 0 ? string.Join(" ", DiskDrives.Select(d => d.Letter + "\\")) : "C:\\";
-            return Ascii.DriveArt([('#', (double)DiskDrives.Sum(d => d.Summary.UsedBytes) / size)], DriveArtProgress, letters);
+            string roots = DiskDrives.Length > 0 ? string.Join(" ", DiskDrives.Select(d => d.Summary.RootPath)) : shell.SystemDriveRoot;
+            return Ascii.DriveArt([('#', (double)DiskDrives.Sum(d => d.Summary.UsedBytes) / size)], DriveArtProgress, roots);
         }
     }
 
@@ -234,11 +236,14 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
 
     // Power
     public long HibernationBytes => shell.SystemSummary?.Tree?.Root.GetChildren()
-        .Where(n => string.Equals(n.Name, "hiberfil.sys", StringComparison.OrdinalIgnoreCase))
+        .Where(n => string.Equals(n.Name, Localizer.Instance.Text(PlatformText.HibernationFile), StringComparison.OrdinalIgnoreCase))
         .Select(n => n.SizeOnDisk)
         .FirstOrDefault() ?? 0;
 
     public bool HasHibernation => HibernationBytes > 0;
+
+    /// <summary>The file the power panel names: the hibernation file on Windows, the swap file on Linux.</summary>
+    public string HibernationFileName => Localizer.Instance.Text(PlatformText.HibernationFile);
 
     public string HibernationText => ByteSize.Format(HibernationBytes);
 
@@ -250,7 +255,7 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
         "  | > ON   > SLEEP |--+\n" +
         "  | > HIBERNATE    |  | RAM -> DISK\n" +
         "  +----------------+  v\n" +
-        $"       hiberfil.sys  [{HibernationBar}]";
+        $"       {Localizer.Instance.Text(PlatformText.HibernationFile)}  [{HibernationBar}]";
 
     // Trash
     public string CleanupTotalText => ByteSize.Format(shell.Cleanup.TotalBytes);
@@ -349,7 +354,7 @@ public sealed partial class PcViewModel(MainWindowViewModel shell) : ObservableO
     private void OpenSpecs() => shell.GoSpecsCommand.Execute(null);
 
     private static string Label(PcPart part) =>
-        (Strings.ResourceManager.GetString($"PartLabel_{part}", Strings.Culture) ?? part.ToString()).ToUpper(CultureInfo.CurrentCulture);
+        Localizer.Instance[$"PartLabel_{part}"].ToUpper(CultureInfo.CurrentCulture);
 }
 
 /// <summary>A disk inside the PC, as the 3D view draws it.</summary>
