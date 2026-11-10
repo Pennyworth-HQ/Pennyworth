@@ -9,6 +9,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pennyworth.Platform.Linux\Pennyworth.Platform.Linux.csproj" />
+    <!-- Built with the tests, never referenced: HelperProcessTests runs the real pennyworth-helper binary over a pipe. -->
+    <ProjectReference Include="..\..\src\Pennyworth.Helper\Pennyworth.Helper.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Shared\LinuxOnly.cs" Link="LinuxOnly.cs" />

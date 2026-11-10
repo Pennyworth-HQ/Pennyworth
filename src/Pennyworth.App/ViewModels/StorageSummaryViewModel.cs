@@ -3,6 +3,7 @@ using Pennyworth.App.Localization;
 using Pennyworth.App.Resources;
 using Pennyworth.App.Services;
 using Pennyworth.Core.Formatting;
+using Pennyworth.Core.Privilege;
 using Pennyworth.Core.Storage;
 using Pennyworth.Core.Wording;
 using Pennyworth.Platform;
@@ -23,19 +24,51 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
     private readonly ILocationInfo _locations;
     private readonly Action<StorageNode> _openFolder;
     private readonly Action _requestUnlock;
+    private readonly IPrivilegedOperations? _privileged;
+    private readonly AdminAccessViewModel? _access;
+    private readonly Action _requestAdminSpace;
+    private readonly Action<StorageSummaryViewModel> _requestLockedMeasure;
+    private readonly Action<StorageSummaryViewModel> _requestMeasureUnassigned;
+    private readonly Action<StorageNode> _requestMeasureSingleLocked;
+    private IReadOnlyList<StorageNode> _lockedFolders = [];
+    private IReadOnlyList<StorageNode> _measuredByAdmin = [];
+    private bool _adminTriedLocked;
+    private bool _adminFailed;
     private StorageTree? _tree;
     private long[] _categoryBytes = new long[StorageCategories.Count];
     private HiddenSpaceReport? _hidden;
 
-    public StorageSummaryViewModel(DriveSummary drive, ILocationInfo locations, Action<StorageNode> openFolder, Action? requestUnlock = null, bool isSystemDrive = false)
+    /// <param name="privileged">Null where nothing can be done with an administrator's rights (Windows): then no banner below ever shows.</param>
+    /// <param name="access">The one administrator session: while it is on, nothing below is offered because it has already been done.</param>
+    /// <param name="requestAdminSpace">Opens the dialog for what only an administrator can measure of the system drive.</param>
+    /// <param name="requestLockedMeasure">Opens the dialog for the folders the scan could not list.</param>
+    /// <param name="requestMeasureUnassigned">Runs the administrator-access flow for the "not assigned" bucket: turn it on, or set it up, or (while on) measure it now.</param>
+    public StorageSummaryViewModel(
+        DriveSummary drive,
+        ILocationInfo locations,
+        Action<StorageNode> openFolder,
+        Action? requestUnlock = null,
+        bool isSystemDrive = false,
+        IPrivilegedOperations? privileged = null,
+        Action? requestAdminSpace = null,
+        Action<StorageSummaryViewModel>? requestLockedMeasure = null,
+        AdminAccessViewModel? access = null,
+        Action<StorageSummaryViewModel>? requestMeasureUnassigned = null,
+        Action<StorageNode>? requestMeasureSingleLocked = null)
     {
         Drive = drive;
         IsSystemDrive = isSystemDrive;
         _locations = locations;
         _openFolder = openFolder;
         _requestUnlock = requestUnlock ?? (() => { });
+        _privileged = privileged;
+        _access = access;
+        _requestAdminSpace = requestAdminSpace ?? (() => { });
+        _requestLockedMeasure = requestLockedMeasure ?? (_ => { });
+        _requestMeasureUnassigned = requestMeasureUnassigned ?? (_ => { });
+        _requestMeasureSingleLocked = requestMeasureSingleLocked ?? (_ => { });
         Categories = StorageCategories.All.Select(category => new CategoryRowViewModel(category)).ToArray();
-        Unaccounted = new CategoryRowViewModel(null);
+        Unaccounted = new CategoryRowViewModel(null) { AdminAttribution = privileged is not null };
         Legend = [.. Categories, Unaccounted];
         Update();
     }
@@ -84,6 +117,129 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
 
     public bool ShowUnlockBanner => IsSystemDrive && !IsUnlocked;
 
+    /// <summary>True once what only an administrator can measure (snapshots, file system bookkeeping) is part of the totals.</summary>
+    public bool IncludesAdminSpace { get; private set; }
+
+    /// <summary>The second step of the system space is offered: only after the first, on the system drive, while it is not done yet.</summary>
+    private PrivilegedCapability? AdminSpaceCapability =>
+        IsSystemDrive && IsUnlocked && !IncludesAdminSpace && _privileged is { } privileged
+            ? privileged.Capability(PrivilegedOperation.SystemSpace)
+            : null;
+
+    /// <summary>"Include what needs administrator access": offered when it can be asked for.</summary>
+    public bool ShowAdminSpaceBanner => AdminSpaceCapability is { Available: true };
+
+    /// <summary>The one line that says why the second step cannot be offered, instead of its button.</summary>
+    public bool ShowAdminSpaceReason => AdminSpaceCapability is { Available: false };
+
+    public string? AdminSpaceReasonText => AdminSpaceCapability is { Available: false } missing
+        ? string.Format(Strings.AdminSpaceUnavailable, PrivilegedText.Reason(missing.Reason))
+        : null;
+
+    /// <summary>Folders the scan could not list and nobody has measured yet.</summary>
+    public int LockedCount => _lockedFolders.Count;
+
+    private bool AccessActive => _access is { IsActive: true };
+
+    /// <summary>
+    /// What measuring the locked folders needs right now. While administrator access is on there is nothing to offer: they were
+    /// measured when it turned on (or when this scan finished).
+    /// </summary>
+    private PrivilegedCapability? LockedCapability =>
+        IsComplete && LockedCount > 0 && !AccessActive && _privileged is { } privileged
+            ? privileged.Capability(PrivilegedOperation.Folders)
+            : null;
+
+    /// <summary>The folders can be measured once the helper is set up: its button is the setup's.</summary>
+    private bool LockedNeedsSetup => LockedCapability is
+    {
+        Available: false,
+        Reason: PrivilegedUnavailableReason.HelperNotInstalled or PrivilegedUnavailableReason.HelperNotTrusted or PrivilegedUnavailableReason.HelperOutdated,
+    };
+
+    /// <summary>Administrator access is on, and measuring this drive's locked folders in its session did not work: the banner says so and offers another try.</summary>
+    public bool ShowLockedRetry => AccessActive && _adminFailed && LockedCount > 0;
+
+    /// <summary>"Measure 3 folders I couldn't read": offered when they can be measured now, or after the one-time setup (the dialog says which), or again after a failure.</summary>
+    public bool ShowLockedBanner => LockedCapability is { Available: true } || LockedNeedsSetup || ShowLockedRetry;
+
+    /// <summary>Why they cannot be measured at all on this system (no way to ask), in place of the button.</summary>
+    public bool ShowLockedReason => LockedCapability is { Available: false } && !LockedNeedsSetup;
+
+    public string LockedBannerText => ShowLockedRetry
+        ? string.Format(LockedCount == 1 ? Strings.LockedRetryOne : Strings.LockedRetryMany, LockedCount)
+        : LockedNeedsSetup
+            ? string.Format(LockedCount == 1 ? Strings.LockedSetupOne : Strings.LockedSetupMany, LockedCount)
+            : string.Format(LockedCount == 1 ? Strings.LockedBannerOne : Strings.LockedBannerMany, LockedCount);
+
+    /// <summary>The banner's button: measure now, or start with the setup, or try again.</summary>
+    public string LockedCta => ShowLockedRetry ? Strings.PrivTryAgain : LockedNeedsSetup ? Strings.AdminSetupCta : Strings.LockedMeasureCta;
+
+    public string? LockedReasonText => LockedCapability is { Available: false } missing && !LockedNeedsSetup
+        ? string.Format(Strings.LockedUnavailable, PrivilegedText.Reason(missing.Reason))
+        : null;
+
+    /// <summary>Administrator access is on and some folders stayed closed even to it (the helper had no size for them).</summary>
+    public bool ShowLockedLeft => AccessActive && _adminTriedLocked && LockedCount > 0;
+
+    public string LockedLeftText => string.Format(LockedCount == 1 ? Strings.LockedLeftOne : Strings.LockedLeftMany, LockedCount);
+
+    public bool HasPrivileged => _privileged is not null;
+
+    /// <summary>
+    /// The "not assigned" bucket holds bytes only an administrator can attribute (folders the scan could not open, and on the
+    /// system drive the snapshots and file system bookkeeping): activating its row, or its button, runs the administrator-access flow.
+    /// </summary>
+    public bool OffersAdminAttribution =>
+        _privileged is not null && IsComplete && (LockedCount > 0 || (IsSystemDrive && IsUnlocked && !IncludesAdminSpace));
+
+    public string UnassignedCta => _access is { NeedsSetup: true } ? Strings.AdminSetupCta : Strings.LockedRowAction;
+
+    /// <summary>What the bucket is, in the current language: with administrator access available, where its bytes come from and that measuring attributes them.</summary>
+    public string UnaccountedExplanation => _privileged is null
+        ? (!IsUnlocked ? Localizer.Instance.Resolve(Strings.UnaccountedHint) : Unaccounted.Hint)
+        : OffersAdminAttribution
+            ? Strings.UnassignedExplain
+            : ShowUnlockBanner
+                ? Localizer.Instance.Resolve(Strings.UnaccountedHint)
+                : Strings.UnassignedNothingLeft;
+
+    public bool ShowAttributedByAdmin => _privileged is not null && (HasMeasuredByAdmin || IncludesAdminSpace);
+
+    /// <summary>"Attributed with administrator access: 10 GB": what the administrator's measurement already moved out of the bucket.</summary>
+    public string AttributedByAdminText
+    {
+        get
+        {
+            long bytes = _measuredByAdmin.Sum(node => node.SizeOnDisk) + (IncludesAdminSpace ? (_hidden?.Total ?? 0) : 0);
+            return string.Format(CultureInfo.CurrentCulture, Strings.UnassignedAttributed, ByteSize.Format(bytes));
+        }
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLockedFolderRows))]
+    public partial IReadOnlyList<LockedFolderRowViewModel> LockedFolderRows { get; private set; } = [];
+
+    public bool HasLockedFolderRows => _privileged is not null && LockedFolderRows.Count > 0;
+    /// <summary>Folders in this drive's tree whose size came from an administrator's measurement.</summary>
+    public bool HasMeasuredByAdmin => _measuredByAdmin.Count > 0;
+
+    /// <summary>"Measured with administrator access: /root, /lost+found".</summary>
+    public string MeasuredByAdminText
+    {
+        get
+        {
+            const int shown = 4;
+            string names = string.Join(", ", _measuredByAdmin.Take(shown).Select(node => node.FullPath));
+            if (_measuredByAdmin.Count > shown)
+            {
+                names += string.Format(CultureInfo.CurrentCulture, Strings.MeasuredByAdminMore, _measuredByAdmin.Count - shown);
+            }
+
+            return string.Format(CultureInfo.CurrentCulture, Strings.MeasuredByAdmin, names);
+        }
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PlacesTitle), nameof(ShowPlaces), nameof(ShowUnaccountedExplanation), nameof(SelectedColorKey))]
     public partial CategoryRowViewModel? SelectedCategory { get; set; }
@@ -114,9 +270,12 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
         }
     }
 
+    /// <summary>Shows a finished tree. Called again with the same drive's tree after folders were measured: the selected category stays.</summary>
     public void ApplyResult(StorageTree tree, DateTimeOffset? completedAt = null)
     {
         _tree = tree;
+        _lockedFolders = tree.GetLockedFolders();
+        _measuredByAdmin = tree.GetMeasuredLockedFolders();
         _categoryBytes = Enumerable.Range(0, StorageCategories.Count)
             .Select(i => tree.GetCategoryBytes((StorageCategory)i))
             .ToArray();
@@ -126,17 +285,24 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
         BuildAreas();
         IsComplete = true;
         SelectedCategory ??= Biggest;
+        RaiseAdminOffers();
     }
 
-    /// <summary>Adds the measured hidden space: restore points and NTFS data on Windows, snapshots and filesystem metadata on Linux.</summary>
-    public void ApplyHiddenSpace(HiddenSpaceReport report)
+    /// <summary>
+    /// Adds the measured hidden space: restore points and NTFS data on Windows, snapshots and filesystem metadata on Linux.
+    /// Applying a report replaces the previous one, never adds to it, so the totals keep adding up to the whole drive.
+    /// </summary>
+    /// <param name="includesAdminSpace">The report includes what an administrator measured; the banner that offers it goes away.</param>
+    public void ApplyHiddenSpace(HiddenSpaceReport report, bool includesAdminSpace = false)
     {
         _hidden = report;
+        IncludesAdminSpace |= includesAdminSpace;
         Unaccounted.IsMeasured = true;
         Update();
         BuildAreas();
         OnPropertyChanged(nameof(IsUnlocked));
         OnPropertyChanged(nameof(ShowUnlockBanner));
+        RaiseAdminOffers();
     }
 
     /// <summary>Selects the category drawn with this colour key (a click on the bar).</summary>
@@ -171,6 +337,98 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
     [RelayCommand]
     private void Unlock() => _requestUnlock();
 
+    [RelayCommand]
+    private void IncludeAdminSpace() => _requestAdminSpace();
+
+    [RelayCommand]
+    private void MeasureLocked() => _requestLockedMeasure(this);
+
+    [RelayCommand]
+    private void MeasureUnassigned() => _requestMeasureUnassigned(this);
+
+    [RelayCommand]
+    private void ActivateLockedFolder(LockedFolderRowViewModel row)
+    {
+        if (row.IsMeasured)
+        {
+            _openFolder(row.Node);
+        }
+        else
+        {
+            _requestMeasureSingleLocked(row.Node);
+        }
+    }
+    /// <summary>
+    /// A click or Enter on a row of the legend. On the "not assigned" row it starts the administrator-access flow when there is something
+    /// to attribute, else (the first, password-free step of the system space not done yet) that step; any other row only selects.
+    /// </summary>
+    public void ActivateCategory(CategoryRowViewModel? row)
+    {
+        if (row != Unaccounted || !IsComplete || _privileged is null)
+        {
+            return;
+        }
+
+        if (OffersAdminAttribution)
+        {
+            MeasureUnassigned();
+        }
+        else if (ShowUnlockBanner)
+        {
+            _requestUnlock();
+        }
+    }
+
+    /// <summary>The access state changed: what is offered (or already done) changes with it.</summary>
+    internal void RefreshAccess() => RaiseAdminOffers();
+
+    /// <summary>Administrator access has measured this drive's locked folders: remember it, so a folder that stayed closed is said to have.</summary>
+    internal void MarkAdminMeasured()
+    {
+        _adminTriedLocked = true;
+        _adminFailed = false;
+        if (!IsSystemDrive && !Unaccounted.IsMeasured)
+        {
+            Unaccounted.IsMeasured = true;
+            Unaccounted.RefreshTexts();
+        }
+
+        RaiseAdminOffers();
+    }
+
+    /// <summary>Measuring this drive's locked folders in the running session failed; see <see cref="ShowLockedRetry"/>.</summary>
+    internal void MarkAdminFailed()
+    {
+        _adminFailed = true;
+        RaiseAdminOffers();
+    }
+
+    private void RaiseAdminOffers()
+    {
+        OnPropertyChanged(nameof(IncludesAdminSpace));
+        OnPropertyChanged(nameof(ShowAdminSpaceBanner));
+        OnPropertyChanged(nameof(ShowAdminSpaceReason));
+        OnPropertyChanged(nameof(AdminSpaceReasonText));
+        OnPropertyChanged(nameof(LockedCount));
+        OnPropertyChanged(nameof(ShowLockedBanner));
+        OnPropertyChanged(nameof(ShowLockedReason));
+        OnPropertyChanged(nameof(LockedBannerText));
+        OnPropertyChanged(nameof(LockedReasonText));
+        OnPropertyChanged(nameof(LockedCta));
+        OnPropertyChanged(nameof(ShowLockedRetry));
+        OnPropertyChanged(nameof(ShowLockedLeft));
+        OnPropertyChanged(nameof(LockedLeftText));
+        OnPropertyChanged(nameof(HasMeasuredByAdmin));
+        OnPropertyChanged(nameof(MeasuredByAdminText));
+        OnPropertyChanged(nameof(OffersAdminAttribution));
+        OnPropertyChanged(nameof(UnassignedCta));
+        OnPropertyChanged(nameof(UnaccountedExplanation));
+        OnPropertyChanged(nameof(ShowAttributedByAdmin));
+        OnPropertyChanged(nameof(AttributedByAdminText));
+        OnPropertyChanged(nameof(HasLockedFolderRows));
+        Unaccounted.OffersAction = OffersAdminAttribution;
+    }
+
     private void BuildAreas()
     {
         if (_tree is not { } tree)
@@ -204,6 +462,12 @@ public sealed partial class StorageSummaryViewModel : ObservableObject
 
             row.Areas = areas;
         }
+
+        LockedFolderRows =
+        [
+            .. _lockedFolders.OrderBy(n => n.FullPath, StringComparer.Ordinal).Select(n => new LockedFolderRowViewModel(n, n.FullPath, n.Name, IsMeasured: false, "—")),
+            .. _measuredByAdmin.OrderByDescending(n => n.SizeOnDisk).Select(n => new LockedFolderRowViewModel(n, n.FullPath, n.Name, IsMeasured: true, ByteSize.Format(n.SizeOnDisk))),
+        ];
     }
 
     private CategoryAreaViewModel CreateArea(CategoryArea area, long categoryBytes)
@@ -300,7 +564,28 @@ public sealed partial class CategoryRowViewModel : ObservableObject
         : IsMeasured ? Strings.Category_UnaccountedMeasured : Strings.Category_Unaccounted;
 
     public string Hint => Category is { } c ? CategoryText.Hint(c)
-        : IsMeasured ? Strings.CategoryHint_UnaccountedMeasured : Strings.CategoryHint_Unaccounted;
+        : IsMeasured ? (OffersAction ? Strings.CategoryHint_UnaccountedAdmin : Strings.CategoryHint_UnaccountedMeasured) : Strings.CategoryHint_Unaccounted;
+
+    /// <summary>For the "not assigned" row where administrator access exists: its meaning is "not attributed to a folder yet", not "small gaps".</summary>
+    internal bool AdminAttribution { get; init; }
+
+    /// <summary>For the "not assigned" row: administrator access could attribute some of it, so the row says it can be pressed.</summary>
+    internal bool OffersAction
+    {
+        get;
+        set
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged(nameof(ActionText));
+                OnPropertyChanged(nameof(Hint));
+            }
+        }
+    }
+
+    /// <summary>"Press to measure it with administrator access." on a row that can be pressed to do so; null otherwise.</summary>
+    public string? ActionText => OffersAction ? Strings.UnassignedAction : null;
 
     public string ColorKey { get; }
 
@@ -340,4 +625,12 @@ public sealed record CategoryAreaViewModel(StorageNode? Node, string Path, long 
     public bool CanOpen => Node is not null;
 
     public string SizeText => ByteSize.Format(Bytes);
+}
+
+/// <summary>A folder the scan could not open, listed under the unassigned category so the person can measure or inspect it directly.</summary>
+public sealed record LockedFolderRowViewModel(StorageNode Node, string Path, string Name, bool IsMeasured, string SizeText)
+{
+    public bool ShowMeasureAffordance => !IsMeasured;
+
+    public string RowTip => IsMeasured ? Strings.MeasuredBadgeHint : Strings.LockedRowTip;
 }

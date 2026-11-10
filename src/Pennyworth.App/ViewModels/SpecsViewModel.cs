@@ -5,6 +5,7 @@ using Pennyworth.App.Resources;
 using Pennyworth.App.Services;
 using Pennyworth.Assistant;
 using Pennyworth.Core.Formatting;
+using Pennyworth.Core.Privilege;
 using Pennyworth.Core.Wording;
 using Pennyworth.Monitoring.Hardware;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -13,12 +14,14 @@ using CommunityToolkit.Mvvm.Input;
 namespace Pennyworth.App.ViewModels;
 
 /// <summary>Full specs of the PC, in numbered sections of plain-language rows.</summary>
-public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host, IClipboardService? clipboard, IMemoryModuleReader? moduleReader = null) : ObservableObject
+public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host, IClipboardService? clipboard, IMemoryModuleReader? moduleReader = null, AdminAccessViewModel? access = null) : ObservableObject
 {
     private const string Unknown = "—";
 
     private MemoryModulesOutcome? _modulesFailure;
+    private PrivilegedUnavailableReason? _modulesReason;
     private CancellationTokenSource? _modulesCancellation;
+    private bool _modulesReadOnce;
 
     [ObservableProperty]
     public partial bool IsLoading { get; private set; }
@@ -37,12 +40,16 @@ public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host
     [NotifyCanExecuteChangedFor(nameof(ReadModulesCommand))]
     public partial bool IsReadingModules { get; private set; }
 
-    /// <summary>The one line under the memory modules button: waiting for the password, or why nothing was read.</summary>
+    /// <summary>
+    /// The one line under the memory modules button: waiting for the password, or why nothing was read. When the platform
+    /// says why it could not even ask, that sentence replaces the generic one: it is what the person can act on.
+    /// </summary>
     public string? ModulesMessage => IsReadingModules
         ? Strings.SpecsModulesReading
         : _modulesFailure switch
         {
             MemoryModulesOutcome.Cancelled => Strings.SpecsModulesCancelled,
+            MemoryModulesOutcome.Unavailable when _modulesReason is { } reason => PrivilegedText.Reason(reason),
             MemoryModulesOutcome.Unavailable => Strings.SpecsModulesUnavailable,
             _ => null,
         };
@@ -52,12 +59,44 @@ public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host
 
     private bool OffersModules(PcSpecs specs) => moduleReader is not null && specs.Memory.Modules.Count == 0;
 
+    /// <summary>The administrator session this screen's button runs in; null where there is none.</summary>
+    public AdminAccessViewModel? Access => access;
+
+    /// <summary>The line next to the button: what pressing it does in the state administrator access is in.</summary>
+    public string ModulesAsksText => access switch
+    {
+        { IsActive: true } => Strings.SpecsModulesAsksActive,
+        { IsOff: true } => Strings.SpecsModulesAsksOff,
+        { NeedsSetup: true } => Strings.SpecsModulesAsksNeedsSetup,
+        _ => Strings.SpecsModulesAsks,
+    };
+
+    /// <summary>The modules were read once, with access that is not on: the next read asks again. Says so and offers the setup.</summary>
+    public bool ShowModulesOneOff => _modulesReadOnce && access is { IsActive: false, IsSupported: true } && Specs is { } specs && specs.Memory.Modules.Count > 0;
+
+    /// <summary>The setup is what would make the button stop asking: offered while the modules are unknown and the helper is missing.</summary>
+    public bool ShowModulesSetup => access is { NeedsSetup: true } && (CanReadModules || ShowModulesOneOff);
+
+    /// <summary>The access state changed: the words around the button change with it.</summary>
+    internal void RefreshAccess()
+    {
+        OnPropertyChanged(nameof(ModulesAsksText));
+        OnPropertyChanged(nameof(ShowModulesOneOff));
+        OnPropertyChanged(nameof(ShowModulesSetup));
+        OnPropertyChanged(nameof(ModulesMessage));
+    }
+
     /// <summary>
-    /// Asks for the administrator's password, once, to read the memory modules from the firmware tables.
-    /// Nothing is changed and nothing is kept.
+    /// Reads the memory modules from the firmware tables: one password prompt if administrator access is off (it then turns on), none
+    /// if it is on, and a prompt for this read alone while the helper is not installed. Nothing is changed and nothing is kept.
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanReadModules))]
-    private async Task ReadModules()
+    private Task ReadModules() => ReadModulesCoreAsync(promptIfNeeded: true);
+
+    /// <summary>The modules that were waiting for administrator access to turn on, read in its session without any prompt.</summary>
+    internal Task ReadModulesQuietlyAsync() => CanReadModules ? ReadModulesCoreAsync(promptIfNeeded: false) : Task.CompletedTask;
+
+    private async Task ReadModulesCoreAsync(bool promptIfNeeded)
     {
         if (moduleReader is null || Specs is null)
         {
@@ -67,11 +106,11 @@ public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host
         using var cancellation = new CancellationTokenSource();
         _modulesCancellation = cancellation;
         _modulesFailure = null;
-        IsReadingModules = true;
+        IsReadingModules = promptIfNeeded; // A read nobody asked for shows no waiting line.
         MemoryModulesResult result;
         try
         {
-            result = await Task.Run(() => moduleReader.ReadAsync(cancellation.Token), CancellationToken.None);
+            result = await Task.Run(() => moduleReader.ReadAsync(cancellation.Token, promptIfNeeded), CancellationToken.None);
         }
         catch (OperationCanceledException)
         {
@@ -91,16 +130,23 @@ public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host
         {
             PcSpecs merged = specs with { Memory = specs.Memory with { Slots = result.Slots ?? specs.Memory.Slots, Modules = result.Modules } };
             Specs = merged;
+            _modulesReadOnce = true;
             Sections = Build(merged, OffersModules(merged));
             OnPropertyChanged(nameof(CanReadModules));
             ReadModulesCommand.NotifyCanExecuteChanged();
+            RefreshAccess();
         }
         else
         {
             _modulesFailure = result.Outcome;
+            _modulesReason = result.Reason;
             OnPropertyChanged(nameof(ModulesMessage));
         }
     }
+
+    /// <summary>Opens the one-time setup of administrator access.</summary>
+    [RelayCommand]
+    private void SetUp() => access?.SetUpCommand.Execute(null);
 
     /// <summary>Withdraws a password request still waiting for the person (the screen was left, or the app closes).</summary>
     public void CancelModulesRead() => _modulesCancellation?.Cancel();
@@ -180,10 +226,16 @@ public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host
             OnPropertyChanged(nameof(IsLoaded));
             OnPropertyChanged(nameof(CanReadModules));
             ReadModulesCommand.NotifyCanExecuteChanged();
+            RefreshAccess();
         }
         finally
         {
             IsLoading = false;
+        }
+
+        if (access is { IsActive: true })
+        {
+            await ReadModulesQuietlyAsync(); // Administrator access is on already: the modules come with the rest, without a prompt.
         }
     }
 
@@ -243,7 +295,7 @@ public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host
             rows.Add(new(module.Slot, Join(" · ", Bytes(module.Size), module.Type, speed, module.FormFactor, Parts(" ", module.Manufacturer, module.PartNumber))));
         }
 
-        return new SpecSection("03", Strings.Spec_Memory, $"{Math.Round(memory.Total / (1024d * 1024 * 1024)):0} GB", rows, offersModules);
+        return new SpecSection("03", Strings.Spec_Memory, $"{Math.Round(memory.Total / (1024d * 1024 * 1024)):0} GB", rows, offersModules, IsMemory: true);
     }
 
     private static SpecSection GraphicsSection(PcSpecs specs)
@@ -343,6 +395,7 @@ public sealed partial class SpecsViewModel(ISpecsReader reader, IDialogHost host
 /// <param name="Index">"01".</param>
 /// <param name="Headline">The one thing to know about this part ("AMD Ryzen 5 5600").</param>
 /// <param name="OffersModules">The memory section, when the modules are unknown and the person can ask to read them.</param>
-public sealed record SpecSection(string Index, string Title, string Headline, IReadOnlyList<SpecRow> Rows, bool OffersModules = false);
+/// <param name="IsMemory">The memory section: where the words about administrator access (a one-off read, the setup) go.</param>
+public sealed record SpecSection(string Index, string Title, string Headline, IReadOnlyList<SpecRow> Rows, bool OffersModules = false, bool IsMemory = false);
 
 public sealed record SpecRow(string Label, string Value);

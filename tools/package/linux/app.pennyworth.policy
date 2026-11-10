@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD polkit Policy Configuration 1.0//EN" "http://www.freedesktop.org/software/polkit/policyconfig-1.dtd">
+<!--
+  Pennyworth's optional administrator helper: one polkit action per helper subcommand.
+
+  pkexec picks an action by the program path and, because of exec.argv1, by the first argument too. So each action
+  authorises exactly one subcommand of one program, and each one carries its own wording: what the person is shown
+  at the prompt is what that button does, not a generic "run a program as root".
+
+  The app uses only "serve": ONE prompt starts a long-lived helper that answers every privileged request of the app until
+  the person locks it, 15 minutes pass without a request (HelperProtocol.IdleTimeout) or Pennyworth closes. That session is
+  what avoids asking again, not the polkit authorisation cache; auth_admin_keep is only a convenience for starting a session
+  again soon after. The app's own "Turn on administrator access?" dialog, shown before the prompt, says everything it can
+  do, the idle time and Lock; the prompt itself is therefore one short sentence, like every message below. The four
+  one-shot actions remain for running a single operation by hand with pkexec (see tools/package/linux/README.txt); the app
+  does not use them.
+
+  allow_any and allow_inactive are "no": nothing runs for a remote or a background session. allow_active asks the
+  person for their administrator password. The read-only actions and "serve" use auth_admin_keep (the same prompt is not
+  repeated for a few minutes); the one-shot action that deletes files uses auth_admin, so every manual cleanup asks again.
+
+  Installed by install-helper.sh (or by the app's "Set up administrator access") to /usr/share/polkit-1/actions/. The path
+  below is the only place the app runs the helper from (HelperProtocol.InstalledPath); a test keeps this file and that
+  constant in step.
+-->
+<policyconfig>
+  <vendor>Pennyworth</vendor>
+  <vendor_url>https://github.com/snootic/Pennyworth</vendor_url>
+
+  <action id="app.pennyworth.serve">
+    <description>Turn on administrator access for Pennyworth</description>
+    <description xml:lang="pt_BR">Ativar o acesso de administrador do Pennyworth</description>
+    <message>Pennyworth needs administrator access to read protected hardware and folder information.</message>
+    <message xml:lang="pt_BR">O Pennyworth precisa de acesso de administrador para ler dados protegidos do sistema.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/pennyworth/pennyworth-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">serve</annotate>
+  </action>
+
+  <action id="app.pennyworth.read-firmware-tables">
+    <description>Read the computer's memory module information</description>
+    <description xml:lang="pt_BR">Ler as informações dos módulos de memória do computador</description>
+    <message>Pennyworth needs administrator access to read the memory module information.</message>
+    <message xml:lang="pt_BR">O Pennyworth precisa de acesso de administrador para ler os módulos de memória.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/pennyworth/pennyworth-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">read-firmware-tables</annotate>
+  </action>
+
+  <action id="app.pennyworth.measure-system-space">
+    <description>Measure snapshots and file system metadata</description>
+    <description xml:lang="pt_BR">Medir snapshots e metadados do sistema de arquivos</description>
+    <message>Pennyworth needs administrator access to measure snapshots and file system metadata.</message>
+    <message xml:lang="pt_BR">O Pennyworth precisa de acesso de administrador para medir snapshots e metadados.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/pennyworth/pennyworth-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">measure-system-space</annotate>
+  </action>
+
+  <action id="app.pennyworth.measure-folders">
+    <description>Measure folders you cannot open</description>
+    <description xml:lang="pt_BR">Medir pastas que você não consegue abrir</description>
+    <message>Pennyworth needs administrator access to measure the size of protected folders.</message>
+    <message xml:lang="pt_BR">O Pennyworth precisa de acesso de administrador para medir pastas protegidas.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/pennyworth/pennyworth-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">measure-folders</annotate>
+  </action>
+
+  <action id="app.pennyworth.clean-system">
+    <description>Delete system package caches and crash reports</description>
+    <description xml:lang="pt_BR">Apagar caches de pacotes e relatórios de falhas do sistema</description>
+    <message>Pennyworth needs administrator access to delete the system files you confirmed.</message>
+    <message xml:lang="pt_BR">O Pennyworth precisa de acesso de administrador para apagar os arquivos confirmados.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/pennyworth/pennyworth-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.argv1">clean-system</annotate>
+  </action>
+</policyconfig>

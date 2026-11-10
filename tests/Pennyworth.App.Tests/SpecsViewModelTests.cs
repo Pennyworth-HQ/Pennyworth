@@ -334,8 +334,11 @@ public class SpecsViewModelTests
     {
         public int Reads { get; private set; }
 
-        public Task<MemoryModulesResult> ReadAsync(CancellationToken cancellationToken)
+        public List<bool> PromptFlags { get; } = [];
+
+        public Task<MemoryModulesResult> ReadAsync(CancellationToken cancellationToken, bool promptIfNeeded = true)
         {
+            PromptFlags.Add(promptIfNeeded);
             Reads++;
             return read(cancellationToken);
         }
