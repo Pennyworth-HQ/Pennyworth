@@ -496,4 +496,9 @@
   <data name="StressHelpErrors" xml:space="preserve"><value>Erros: um cálculo, uma palavra de memória, um bloco de disco ou uma resposta da placa de vídeo errados. Num PC saudável fica em zero, por mais longo que seja o teste.</value></data>
   <data name="StressSensorNote" xml:space="preserve"><value>A temperatura vem do sensor ACPI da placa-mãe e o consumo do processador, quando o sistema os informa; muitos desktops não informam nenhum. Sem leitura, o consumo é estimado pela carga e pela potência nominal do processador, marcado com ~: o consumo real pode passar disso sob carga pesada. O Pennyworth não instala drivers para ler mais.</value></data>
   <data name="StressStatus" xml:space="preserve"><value>ESTRESSE {0}</value></data>
+  <data name="StartupProblemTitle" xml:space="preserve"><value>O Pennyworth não consegue iniciar</value></data>
+  <data name="StartupProblemStorage" xml:space="preserve"><value>Ler os seus discos exige {0}, que este sistema não oferece.</value></data>
+  <data name="StartupProblemMonitoring" xml:space="preserve"><value>O monitoramento ao vivo exige {0}, que este sistema não oferece.</value></data>
+  <data name="StartupProblemHint" xml:space="preserve"><value>Instale ou repare a parte que falta e abra o Pennyworth de novo. Nada foi alterado.</value></data>
+  <data name="StartupProblemClose" xml:space="preserve"><value>Fechar</value></data>
 </root>
