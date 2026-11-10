@@ -4,6 +4,7 @@ using Pennyworth.Assistant.Local;
 using Pennyworth.Assistant.Providers;
 using Pennyworth.Cleanup;
 using Pennyworth.Core.Storage;
+using Pennyworth.Core.Wording;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
 using Pennyworth.Monitoring.Hardware;
@@ -18,6 +19,10 @@ namespace Pennyworth.App.Services.Windows;
 [SupportedOSPlatform("windows")]
 public sealed class WindowsPlatform : IPlatform
 {
+    public string Name => KnowledgeBaseLoader.Windows;
+
+    public bool ExtendsIntoTitleBar => true;
+
     public IDriveService Drives { get; } = new WindowsDriveService();
 
     public IStorageScanner Scanner { get; } = new DirectoryScanner();
@@ -27,6 +32,8 @@ public sealed class WindowsPlatform : IPlatform
     public IHiddenSpaceService HiddenSpace { get; } = new ElevatedHiddenSpaceService();
 
     public IProcessCloser Closer { get; } = new ProcessCloser();
+
+    public IAppNames AppNames => NoAppNames.Instance;
 
     public ISpecsReader Specs { get; } = new WindowsSpecsReader();
 
@@ -40,6 +47,8 @@ public sealed class WindowsPlatform : IPlatform
 
     public string? ResolveVariable(string name) => Environment.GetEnvironmentVariable(name);
 
+    public string Text(PlatformText text, bool portuguese) => WindowsText.Instance.Text(text, portuguese);
+
     public ICleanupService CreateCleanup(IReadOnlyList<CleanupRule> rules) =>
         new CleanupService(rules, environment: CleanupEnvironment.Windows(ResolveVariable, new WindowsRecycleBin()));
 
@@ -51,5 +60,6 @@ public sealed class WindowsPlatform : IPlatform
         UsageMeter.DefaultPath,
         LocalModelStore.DefaultRoot,
         availableMemory,
-        folder => new DriveInfo(Path.GetPathRoot(Path.GetFullPath(folder))!).AvailableFreeSpace);
+        folder => new DriveInfo(Path.GetPathRoot(Path.GetFullPath(folder))!).AvailableFreeSpace,
+        platformName: Name);
 }

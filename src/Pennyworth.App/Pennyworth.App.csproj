@@ -24,8 +24,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
     <ProjectReference Include="..\Pennyworth.Platform\Pennyworth.Platform.csproj" />
+    <ProjectReference Include="..\Pennyworth.Platform.Linux\Pennyworth.Platform.Linux.csproj" />
     <ProjectReference Include="..\Pennyworth.Insights\Pennyworth.Insights.csproj" />
     <ProjectReference Include="..\Pennyworth.Scanning\Pennyworth.Scanning.csproj" />
+    <ProjectReference Include="..\Pennyworth.Stress\Pennyworth.Stress.csproj" />
     <ProjectReference Include="..\Pennyworth.Monitoring\Pennyworth.Monitoring.csproj" />
     <ProjectReference Include="..\Pennyworth.Cleanup\Pennyworth.Cleanup.csproj" />
     <ProjectReference Include="..\Pennyworth.Assistant\Pennyworth.Assistant.csproj" />

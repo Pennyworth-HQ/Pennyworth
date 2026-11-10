@@ -20,7 +20,7 @@
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel Spacing="8">
           <TextBlock Classes="label">
-            <Run Text="08 / " />
+            <Run Text="09 / " />
             <Run Text="{l:Tr NavHistory, Upper=True}" />
           </TextBlock>
           <TextBlock Classes="title" Text="{l:Tr HistoryTitle}" />

@@ -10,7 +10,7 @@ public class HistoryTests
 
     private static MonitorSample Sample(double cpu, double memoryPercent, double? disk = null, string topApp = "chrome") =>
         new(new MemoryStatus(16 * Gb, (long)(16 * Gb * (1 - (memoryPercent / 100))), 0, 0), cpu, null,
-            [new AppGroup(topApp, null, null, null, null, 2 * Gb, cpu, [])], disk);
+            [new AppGroup(topApp, null, null, null, null, 2 * Gb, cpu, [])], DiskPercent: disk);
 
     private static TelemetryPoint Point(int minute, double cpuPeak, double cpuAverage = 10, string? app = "chrome") =>
         new(T0.AddMinutes(minute), new Reading(cpuAverage, cpuPeak), new Reading(50, 55), new Reading(5, 8), null, app, app);

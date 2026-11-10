@@ -1,3 +1,4 @@
+using Pennyworth.Core.Wording;
 using Pennyworth.Monitoring.History;
 using Pennyworth.Monitoring.Logs;
 using static Pennyworth.Assistant.Tests.Samples;
@@ -21,7 +22,7 @@ public class HistoryContextTests
     {
         PcSnapshot snapshot = Snapshot() with { History = report };
         var facts = FactCollector.Collect(snapshot, culture);
-        return ContextBuilder.Build(topic, facts, Engine.Evaluate(facts, culture), snapshot, culture);
+        return ContextBuilder.Build(topic, facts, Engine.Evaluate(facts, culture), snapshot, culture, WindowsText.Instance);
     }
 
     [Fact]

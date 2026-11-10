@@ -16,7 +16,8 @@ want — a discreet butler who answers questions about your own PC.
 | 05 Folders | A folder browser sorted by size |
 | 06 Specs | Every part of the PC in plain words, with "Copy all" |
 | 07 Ask | The assistant: answers from what Pennyworth measured, never changes anything by itself |
-| 08 History | CPU, memory, disk and GPU over the last 24 hours or 7 days (average and busiest second per minute), the spikes out of the ordinary, and the Windows Event Log, which the assistant can decipher |
+| 08 Stress test | Loads processor, memory and disk like OCCT, Prime95 and HeavyLoad, checks every result, and shows a load radar, dials, stress level, power and temperature |
+| 09 History | CPU, memory, disk and GPU over the last 24 hours or 7 days (average and busiest second per minute), the spikes out of the ordinary, and the Windows Event Log, which the assistant can decipher |
 | 3D | An ASCII PC you can rotate, with live status per part |
 
 ## The assistant (07 Ask)
@@ -62,11 +63,12 @@ dotnet publish src/Pennyworth.App -c Release -r win-x64 -p:PublishAot=true -o pu
 | Project | Responsibility |
 |---|---|
 | `Pennyworth.Core` | Storage tree, categories, formatting |
-| `Pennyworth.KnowledgeBase` | Bilingual data: known locations, processes, cleanup rules, diagnosis rules, blocked advice |
+| `Pennyworth.KnowledgeBase` | Bilingual data, one set per operating system (`Data/` for Windows, `Data/linux/` for Linux, picked by `IPlatform.Name`): known locations, processes, cleanup rules, diagnosis rules, blocked advice |
 | `Pennyworth.Insights` | Path classification |
 | `Pennyworth.Scanning` | Drive scanning |
 | `Pennyworth.Cleanup` | Measuring and cleaning, Recycle Bin |
-| `Pennyworth.Monitoring` | Live memory/CPU/GPU and hardware specs |
+| `Pennyworth.Monitoring` | Live memory/CPU/GPU, power and temperature (when Windows reports them) and hardware specs |
+| `Pennyworth.Stress` | Stress test workloads (processor, memory, disk) with result verification |
 | `Pennyworth.Assistant` | Facts, diagnosis, context, persona prompt, action links, advice filter, anonymiser, session, history, usage |
 | `Pennyworth.Assistant.Providers` | Cloud chat clients, API keys in the Credential Manager, test connection |
 | `Pennyworth.Assistant.Local` | Model catalogue, hardware check, verified download, on-PC ONNX model |
