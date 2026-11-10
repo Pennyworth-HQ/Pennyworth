@@ -12,6 +12,7 @@
     <Project Path="src/Pennyworth.Platform/Pennyworth.Platform.csproj" />
     <Project Path="src/Pennyworth.Platform.Linux/Pennyworth.Platform.Linux.csproj" />
     <Project Path="src/Pennyworth.Scanning/Pennyworth.Scanning.csproj" />
+    <Project Path="src/Pennyworth.Stress/Pennyworth.Stress.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Pennyworth.App.Tests/Pennyworth.App.Tests.csproj" />
@@ -25,5 +26,6 @@
     <Project Path="tests/Pennyworth.Monitoring.Tests/Pennyworth.Monitoring.Tests.csproj" />
     <Project Path="tests/Pennyworth.Platform.Linux.Tests/Pennyworth.Platform.Linux.Tests.csproj" />
     <Project Path="tests/Pennyworth.Scanning.Tests/Pennyworth.Scanning.Tests.csproj" />
+    <Project Path="tests/Pennyworth.Stress.Tests/Pennyworth.Stress.Tests.csproj" />
   </Folder>
 </Solution>

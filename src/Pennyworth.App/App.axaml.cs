@@ -51,6 +51,7 @@ public sealed partial class App : Application
             desktop.MainWindow = new MainWindow { DataContext = viewModel };
             desktop.Exit += (_, _) =>
             {
+                viewModel.Stress.Shutdown();
                 viewModel.Specs.CancelModulesRead(); // Withdraws a pending password request.
                 (monitor as IDisposable)?.Dispose();
             };
