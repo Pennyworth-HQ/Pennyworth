@@ -136,7 +136,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     public string SystemDriveToken => SystemDrive?.Token ?? DriveViewModel.TokenOf(SystemDriveRoot);
 
-    public StorageSummaryViewModel? SystemSummary => SystemDrive is { } drive ? _summaries.GetValueOrDefault(drive.Summary.RootPath) : null;
+    public StorageSummaryViewModel? SystemSummary => SystemDrive is { } drive ? SummaryOf(drive) : null;
+
+    /// <summary>A drive's storage summary, once it has been opened (scanned or scanning).</summary>
+    public StorageSummaryViewModel? SummaryOf(DriveViewModel drive) => _summaries.GetValueOrDefault(drive.Summary.RootPath);
 
     /// <summary>
     /// The drive shown. Clearing it is ignored: a drive list clears its selection when its
@@ -630,6 +633,23 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         }
 
         Is3d = true;
+        Pc.Refresh();
+        _ = ShowDisksIn3dAsync();
+    }
+
+    /// <summary>The 3D PC draws the real disks once the specs have been read.</summary>
+    private async Task ShowDisksIn3dAsync()
+    {
+        try
+        {
+            await Specs.EnsureLoaded();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            // Without the specs the 3D PC keeps its one generic drive.
+            return;
+        }
+
         Pc.Refresh();
     }
 
