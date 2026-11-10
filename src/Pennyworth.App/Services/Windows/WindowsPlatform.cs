@@ -8,6 +8,8 @@ using Pennyworth.Core.Wording;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
 using Pennyworth.Monitoring.Hardware;
+using Pennyworth.Monitoring.History;
+using Pennyworth.Monitoring.Logs;
 using Pennyworth.Platform;
 using Pennyworth.Scanning;
 
@@ -35,9 +37,13 @@ public sealed class WindowsPlatform : IPlatform
 
     public ISpecsReader Specs { get; } = new WindowsSpecsReader();
 
+    public ISystemLogReader? Logs { get; } = new WindowsEventLogReader();
+
     public string SettingsPath => FileSettingsStore.DefaultPath;
 
     public string CleanupHistoryPath => CleanupHistory.DefaultPath;
+
+    public string TelemetryFolder => TelemetryStore.DefaultFolder;
 
     public string? ResolveVariable(string name) => Environment.GetEnvironmentVariable(name);
 

@@ -9,6 +9,7 @@ namespace Pennyworth.Monitoring;
 /// <param name="CpuPercent">Whole-machine load, 0 to 100.</param>
 /// <param name="GpuPercent">Busiest GPU engine, 0 to 100, or null when unavailable.</param>
 /// <param name="Apps">Processes grouped by app, largest memory first.</param>
+/// <param name="DiskPercent">Disk active time, 0 to 100, or null when unavailable.</param>
 /// <param name="PowerWatts">
 /// Processor package (or whole system) power; estimated from the load when the PC doesn't report
 /// it (see <paramref name="PowerIsEstimate"/>); null when it can't be estimated either.
@@ -22,7 +23,8 @@ public sealed record MonitorSample(
     IReadOnlyList<AppGroup> Apps,
     double? PowerWatts = null,
     double? TemperatureCelsius = null,
-    bool PowerIsEstimate = false);
+    bool PowerIsEstimate = false,
+    double? DiskPercent = null);
 
 public interface ISystemMonitor
 {
@@ -37,6 +39,7 @@ public sealed class SystemMonitor : ISystemMonitor, IDisposable
     private readonly CpuTracker _cpu = new();
     private readonly AppGrouper _grouper;
     private readonly GpuMeter _gpu = new();
+    private readonly DiskMeter _disk = new();
     private readonly MemoryCounters _memory = new();
     private readonly SensorCounters _sensors = new();
     private readonly Stopwatch _clock = Stopwatch.StartNew();
@@ -71,7 +74,7 @@ public sealed class SystemMonitor : ISystemMonitor, IDisposable
             watts = PowerEstimate.Watts(_tdpWatts!.Value, total);
         }
 
-        return new MonitorSample(ProcessReader.ReadMemory(compressed, _memory.ReadFree()), total, _gpu.Sample(), _grouper.Group(processes, cpuByPid), watts, celsius, estimate);
+        return new MonitorSample(ProcessReader.ReadMemory(compressed, _memory.ReadFree()), total, _gpu.Sample(), _grouper.Group(processes, cpuByPid), watts, celsius, estimate, _disk.Sample());
     }
 
     private static string ProcessorName()
@@ -83,6 +86,7 @@ public sealed class SystemMonitor : ISystemMonitor, IDisposable
     public void Dispose()
     {
         _gpu.Dispose();
+        _disk.Dispose();
         _memory.Dispose();
         _sensors.Dispose();
     }

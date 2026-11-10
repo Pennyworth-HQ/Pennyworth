@@ -42,6 +42,8 @@ public sealed class XdgPaths
 
     public string CleanupHistoryPath => Path.Combine(DataFolder, "cleanup-history.jsonl");
 
+    public string TelemetryFolder => Path.Combine(DataFolder, "telemetry");
+
     public string ConversationFolder => Path.Combine(DataFolder, "conversations");
 
     public string UsagePath => Path.Combine(DataFolder, "usage.json");

@@ -50,6 +50,8 @@ public sealed class LinuxPlatform : IPlatform
 
     public string CleanupHistoryPath => _paths.CleanupHistoryPath;
 
+    public string TelemetryFolder => _paths.TelemetryFolder;
+
     public string? ResolveVariable(string name) => _scope.Resolve(name);
 
     /// <summary>

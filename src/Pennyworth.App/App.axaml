@@ -32,6 +32,9 @@
     <DataTemplate DataType="vm:CleanupViewModel">
       <views:CleanupView />
     </DataTemplate>
+    <DataTemplate DataType="vm:HistoryViewModel">
+      <views:HistoryView />
+    </DataTemplate>
     <DataTemplate DataType="vm:MemoryViewModel">
       <views:MemoryView />
     </DataTemplate>

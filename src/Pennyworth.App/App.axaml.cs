@@ -11,6 +11,7 @@ using Pennyworth.Cleanup;
 using Pennyworth.Insights.Classification;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
+using Pennyworth.Monitoring.History;
 using Pennyworth.Platform;
 using Pennyworth.Platform.Linux;
 
@@ -45,6 +46,8 @@ public sealed partial class App : Application
                 new CleanupHistory(platform.CleanupHistoryPath),
                 Clipboard: new AvaloniaClipboardService(() => desktop.MainWindow),
                 Assistant: platform.CreateAssistant(() => monitor?.Sample().Memory.Available ?? 0),
+                Telemetry: new TelemetryStore(platform.TelemetryFolder),
+                Logs: platform.Logs,
                 ExtendsIntoTitleBar: platform.ExtendsIntoTitleBar,
                 MemoryModules: platform.MemoryModules));
 

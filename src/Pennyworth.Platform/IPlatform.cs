@@ -4,6 +4,7 @@ using Pennyworth.Core.Wording;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
 using Pennyworth.Monitoring.Hardware;
+using Pennyworth.Monitoring.Logs;
 
 namespace Pennyworth.Platform;
 
@@ -48,11 +49,17 @@ public interface IPlatform : IPlatformText
     /// </summary>
     IMemoryModuleReader? MemoryModules => null;
 
+    /// <summary>Warnings and errors from the OS's own log; null when this OS has no reader yet.</summary>
+    ISystemLogReader? Logs => null;
+
     /// <summary>Where the settings file lives.</summary>
     string SettingsPath { get; }
 
     /// <summary>Where the log of cleanup runs lives.</summary>
     string CleanupHistoryPath { get; }
+
+    /// <summary>Where the per-minute usage history lives.</summary>
+    string TelemetryFolder { get; }
 
     /// <summary>
     /// Resolves the <c>%NAME%</c> variables the knowledge base writes its paths with, for this OS.
