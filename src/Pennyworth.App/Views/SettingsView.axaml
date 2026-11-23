@@ -9,7 +9,7 @@
     <StackPanel Margin="36,28,36,28" Spacing="20" MaxWidth="760" HorizontalAlignment="Left">
       <StackPanel Spacing="8">
         <TextBlock Classes="label">
-          <Run Text="09 / " />
+          <Run Text="11 / " />
           <Run Text="{l:Tr NavSettings, Upper=True}" />
         </TextBlock>
         <TextBlock Classes="title" TextWrapping="Wrap" Text="{l:Tr SettingsTitle}" />

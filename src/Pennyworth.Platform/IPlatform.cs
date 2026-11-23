@@ -1,17 +1,33 @@
 using Pennyworth.Cleanup;
 using Pennyworth.Core.Storage;
+using Pennyworth.Core.Wording;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
 using Pennyworth.Monitoring.Hardware;
+using Pennyworth.Monitoring.Logs;
 
 namespace Pennyworth.Platform;
 
 /// <summary>
 /// The only place the app learns which operating system it runs on. The composition root picks one
-/// implementation; no screen, view model or domain project asks the OS anything itself.
+/// implementation; no screen, view model or domain project asks the OS anything itself. It also speaks
+/// for the OS in words ("Explorer" or a file manager, "Recycle Bin" or "Trash"): <see cref="IPlatformText"/>,
+/// a smaller interface so that the language switch and the assistant need not depend on the services here.
 /// </summary>
-public interface IPlatform
+public interface IPlatform : IPlatformText
 {
+    /// <summary>
+    /// Which data set this OS uses: <see cref="KnowledgeBaseLoader.Windows"/> or <see cref="KnowledgeBaseLoader.Linux"/>.
+    /// The composition root passes it to every <see cref="KnowledgeBaseLoader"/> call.
+    /// </summary>
+    string Name { get; }
+
+    /// <summary>
+    /// Whether the window extends into the title bar, so the system's caption buttons are drawn over its
+    /// toolbar row (Windows), or sits under the title bar the system draws (Linux). The toolbar row stays either way.
+    /// </summary>
+    bool ExtendsIntoTitleBar { get; }
+
     IDriveService Drives { get; }
 
     IStorageScanner Scanner { get; }
@@ -22,13 +38,28 @@ public interface IPlatform
 
     IProcessCloser Closer { get; }
 
+    /// <summary>Names of the installed apps behind folders, for the storage page.</summary>
+    IAppNames AppNames { get; }
+
     ISpecsReader Specs { get; }
+
+    /// <summary>
+    /// Reads the memory modules where reading them needs an administrator and the person must ask for it;
+    /// null when <see cref="Specs"/> already has them, or this OS has no way to ask.
+    /// </summary>
+    IMemoryModuleReader? MemoryModules => null;
+
+    /// <summary>Warnings and errors from the OS's own log; null when this OS has no reader yet.</summary>
+    ISystemLogReader? Logs => null;
 
     /// <summary>Where the settings file lives.</summary>
     string SettingsPath { get; }
 
     /// <summary>Where the log of cleanup runs lives.</summary>
     string CleanupHistoryPath { get; }
+
+    /// <summary>Where the per-minute usage history lives.</summary>
+    string TelemetryFolder { get; }
 
     /// <summary>
     /// Resolves the <c>%NAME%</c> variables the knowledge base writes its paths with, for this OS.
@@ -46,8 +77,8 @@ public interface IPlatform
     AssistantServices CreateAssistant(Func<long> availableMemory);
 
     /// <summary>A tray icon with notifications; null when this OS has none. Create it on the UI thread.</summary>
-    ITray? CreateTray();
+    ITray? CreateTray() => null;
 
     /// <summary>Starting with the session; null when this OS cannot.</summary>
-    IStartupRegistration? Startup { get; }
+    IStartupRegistration? Startup => null;
 }

@@ -7,11 +7,15 @@ using Pennyworth.Assistant;
 using Pennyworth.Cleanup;
 using Pennyworth.Core.Formatting;
 using Pennyworth.Core.Storage;
+using Pennyworth.Core.Wording;
 using Pennyworth.Monitoring;
 using Pennyworth.Monitoring.Alerts;
 using Pennyworth.Monitoring.Hardware;
+using Pennyworth.Monitoring.History;
+using Pennyworth.Monitoring.Logs;
 using Pennyworth.Platform;
 using Pennyworth.Scanning;
+using Pennyworth.Stress;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -34,6 +38,11 @@ public sealed record AppServices(
     Func<DateTimeOffset>? Clock = null,
     IClipboardService? Clipboard = null,
     AssistantServices? Assistant = null,
+    TelemetryStore? Telemetry = null,
+    ISystemLogReader? Logs = null,
+    Func<StressOptions, IStressRunner>? StressRunner = null,
+    bool ExtendsIntoTitleBar = true,
+    IMemoryModuleReader? MemoryModules = null,
     INotifier? Notifier = null,
     IStartupRegistration? Startup = null,
     PetLibrary? Pets = null,
@@ -49,6 +58,8 @@ public enum Page
     Folders,
     Specs,
     Ask,
+    Stress,
+    History,
     Alerts,
     Settings,
 }
@@ -69,6 +80,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     private CancellationTokenSource? _scanCancellation;
     private int _toastVersion;
     private readonly Queue<MonitorSample> _recentSamples = new();
+    private readonly TelemetryRecorder _recorder = new();
 
     public MainWindowViewModel(AppServices services)
     {
@@ -92,7 +104,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Memory = new MemoryViewModel(Live, this, services.Closer ?? new ProcessCloser());
         Folders = new FolderBrowserViewModel(this);
         Pc = new PcViewModel(this);
-        Specs = new SpecsViewModel(services.Specs, this, services.Clipboard);
+        Specs = new SpecsViewModel(services.Specs, this, services.Clipboard, services.MemoryModules);
+        Stress = new StressViewModel(Live, this, services.StressRunner, _clock);
+        Stress.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(StressViewModel.State) or nameof(StressViewModel.ElapsedText))
+            {
+                OnPropertyChanged(nameof(StressStatus));
+            }
+        };
+        History = new HistoryViewModel(services.Telemetry, services.Logs, _clock);
         Pet = new PetViewModel(services.Pets, services.Files, this, _clock, _settings.PetId);
         Alerts = new AlertsViewModel(this, services.Notifier, services.Drives, Pet, _clock);
         Settings = new SettingsViewModel(this, Pet, services.Startup);
@@ -102,10 +123,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             Memory.AskAbout = AskAbout;
             Cleanup.AskAbout = AskAbout;
             Specs.AskAbout = AskAbout;
+            History.AskAbout = AskAbout;
         }
         Page = _settings.WelcomeSeen ? Page.Home : Page.Welcome;
         Localizer.Instance.LanguageChanged += (_, _) => RefreshTexts();
     }
+
+    /// <summary>True when the window draws into the title bar and the system's caption buttons sit over it.</summary>
+    public bool ExtendsIntoTitleBar => _services.ExtendsIntoTitleBar;
 
     public LiveViewModel Live { get; }
 
@@ -122,6 +147,11 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     public PcViewModel Pc { get; }
 
     public SpecsViewModel Specs { get; }
+
+    public StressViewModel Stress { get; }
+
+    /// <summary>Usage over hours and days, its spikes, and the system log.</summary>
+    public HistoryViewModel History { get; }
 
     public AlertsViewModel Alerts { get; }
 
@@ -151,11 +181,19 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     IReadOnlyList<DriveViewModel> IFolderHost.Drives => Drives;
 
-    /// <summary>The drive Windows runs from.</summary>
+    /// <summary>The drive the operating system runs from.</summary>
     public DriveViewModel? SystemDrive => Drives.FirstOrDefault(d => string.Equals(d.Summary.RootPath, _services.Drives.SystemDriveRoot, StringComparison.OrdinalIgnoreCase))
         ?? Drives.FirstOrDefault();
 
-    public StorageSummaryViewModel? SystemSummary => SystemDrive is { } drive ? _summaries.GetValueOrDefault(drive.Summary.RootPath) : null;
+    /// <summary>The system drive's root, or the one the platform expects while no drive is known.</summary>
+    public string SystemDriveRoot => SystemDrive?.Summary.RootPath ?? Localizer.Instance.Text(PlatformText.SystemDriveRoot);
+
+    public string SystemDriveToken => SystemDrive?.Token ?? DriveViewModel.TokenOf(SystemDriveRoot);
+
+    public StorageSummaryViewModel? SystemSummary => SystemDrive is { } drive ? SummaryOf(drive) : null;
+
+    /// <summary>A drive's storage summary, once it has been opened (scanned or scanning).</summary>
+    public StorageSummaryViewModel? SummaryOf(DriveViewModel drive) => _summaries.GetValueOrDefault(drive.Summary.RootPath);
 
     /// <summary>
     /// The drive shown. Clearing it is ignored: a drive list clears its selection when its
@@ -186,13 +224,30 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentPage), nameof(MainContent), nameof(ShowSidebar),
-        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage), nameof(IsAlertsPage), nameof(IsSettingsPage))]
+        nameof(IsHomePage), nameof(IsStoragePage), nameof(IsCleanupPage), nameof(IsMemoryPage), nameof(IsFoldersPage), nameof(IsSpecsPage), nameof(IsAskPage), nameof(IsStressPage), nameof(IsHistoryPage), nameof(IsAlertsPage), nameof(IsSettingsPage))]
     public partial Page Page { get; private set; }
 
     /// <summary>3D mode replaces the pages with the ASCII PC.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MainContent), nameof(ShowSidebar))]
     public partial bool Is3d { get; private set; }
+
+    // Leaving the Specs screen withdraws a pending password request: nobody is looking at it any more.
+    partial void OnPageChanged(Page value)
+    {
+        if (value != Page.Specs)
+        {
+            Specs.CancelModulesRead();
+        }
+    }
+
+    partial void OnIs3dChanged(bool value)
+    {
+        if (value)
+        {
+            Specs.CancelModulesRead();
+        }
+    }
 
     /// <summary>The page view model for <see cref="Page"/>.</summary>
     public object? CurrentPage => Page switch
@@ -204,6 +259,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Page.Memory => Memory,
         Page.Specs => Specs,
         Page.Ask => Ask,
+        Page.Stress => Stress,
+        Page.History => History,
         Page.Alerts => Alerts,
         Page.Settings => Settings,
         _ => Folders,
@@ -228,6 +285,10 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     public bool IsAskPage => Page == Page.Ask;
 
+    public bool IsStressPage => Page == Page.Stress;
+
+    public bool IsHistoryPage => Page == Page.History;
+
     public bool IsAlertsPage => Page == Page.Alerts;
 
     public bool IsSettingsPage => Page == Page.Settings;
@@ -250,7 +311,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     public bool HasToast => Toast is not null;
 
-    /// <summary>True once the hidden system space of the Windows drive has been measured.</summary>
+    /// <summary>True once the hidden system space of the system drive has been measured.</summary>
     [ObservableProperty]
     public partial bool IsUnlocked { get; private set; }
 
@@ -289,11 +350,14 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     public string StatusShort => IsScanning ? Strings.StatusScanning : Strings.StatusReady;
 
-    public string SystemDriveStatus => SystemDrive is { } d ? $"{d.Letter} {d.UsedPercentText}" : "";
+    public string SystemDriveStatus => SystemDrive is { } d ? $"{d.Token} {d.UsedPercentText}" : "";
 
     public string RamStatus => Live.HasSample ? $"RAM {Live.MemoryUsedText}/{Live.MemoryTotalText}" : "";
 
     public string CpuStatus => Live.HasSample ? $"CPU {Live.CpuText}" : "";
+
+    /// <summary>"STRESS 02:13" while a stress test runs, so it is never forgotten on another page.</summary>
+    public string StressStatus => Stress.IsRunning ? string.Format(Strings.StressStatus, Stress.ElapsedText) : "";
 
     public string BitsLine => Ascii.BitsLine(Live.Bits);
 
@@ -302,7 +366,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     /// <summary>The scan started by the latest drive selection; lets tests await it.</summary>
     public Task CurrentScan { get; private set; } = Task.CompletedTask;
 
-    /// <summary>Loads the drives, starts scanning the Windows drive and measuring what can be cleaned.</summary>
+    /// <summary>Loads the drives, starts scanning the system drive and measuring what can be cleaned.</summary>
     public void Initialize()
     {
         Drives.Clear();
@@ -313,7 +377,53 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
         SelectedDrive = SystemDrive;
         _ = MeasureCleanupAsync();
+        _ = StartHistoryAsync();
         RefreshPages();
+    }
+
+    /// <summary>Forgets the days that fell out of the history, then loads the rest for the charts.</summary>
+    private async Task StartHistoryAsync()
+    {
+        if (_services.Telemetry is { } store)
+        {
+            DateTimeOffset now = _clock();
+            await Task.Run(() =>
+            {
+                try
+                {
+                    store.Prune(now);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    Debug.WriteLine(ex);
+                }
+            });
+        }
+
+        await History.EnsureLoaded();
+    }
+
+    /// <summary>Folds the sample into the current minute; a finished minute is saved and charted.</summary>
+    private void Record(MonitorSample sample)
+    {
+        if (_recorder.Add(sample, _clock()) is not { } minute)
+        {
+            return;
+        }
+
+        History.Add(minute);
+        if (_services.Telemetry is { } store)
+        {
+            try
+            {
+                store.Append(minute);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // A full or locked disk loses one minute of history, nothing more.
+                Debug.WriteLine(ex);
+            }
+        }
     }
 
     private async Task MeasureCleanupAsync()
@@ -337,6 +447,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
                 {
                     _recentSamples.Dequeue();
                 }
+
+                Record(sample);
             }
             catch (Exception ex)
             {
@@ -361,6 +473,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         try
         {
             Memory.Update();
+            Stress.Update();
             Home.RefreshLive();
             Pc.RefreshLive();
         }
@@ -385,7 +498,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Navigate(Page.Storage);
     }
 
-    /// <summary>Storage for the Windows drive, with a category selected (null keeps the current one).</summary>
+    /// <summary>Storage for the system drive, with a category selected (null keeps the current one).</summary>
     public void ShowStorageCategory(StorageCategory? category)
     {
         if (SystemDrive is { } system)
@@ -462,7 +575,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         }
     }
 
-    /// <summary>Asks Windows for permission and measures the hidden system space (called by the dialog).</summary>
+    /// <summary>Measures the hidden system space, after the system's permission where it asks for one (called by the dialog).</summary>
     public async Task UnlockAsync(UnlockDialogViewModel dialog)
     {
         if (SystemDrive is not { } system)
@@ -479,7 +592,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
                 SystemSummary?.ApplyHiddenSpace(report);
                 IsUnlocked = true;
                 CloseDialog();
-                ShowToast(Strings.UnlockedToast);
+                ShowToast(Localizer.Instance.Resolve(Strings.UnlockedToast));
                 ShowStorageCategory(StorageCategory.HiddenSystem);
                 RefreshPages();
                 break;
@@ -488,7 +601,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
                 break;
             default:
                 CloseDialog();
-                ShowToast(Strings.UnlockFailed);
+                ShowToast(Localizer.Instance.Resolve(Strings.UnlockFailed));
                 break;
         }
     }
@@ -501,7 +614,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     void IFolderHost.ShowInExplorer(string path)
     {
         _services.Explorer.ShowInExplorer(path);
-        ShowToast(string.Format(Strings.ExplorerToast, path));
+        ShowToast(string.Format(Localizer.Instance.Resolve(Strings.ExplorerToast), path));
     }
 
     /// <summary>The storage category of the folder an executable lives in.</summary>
@@ -561,6 +674,16 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
     {
         Navigate(Page.Specs);
         _ = Specs.EnsureLoaded();
+    }
+
+    [RelayCommand]
+    private void GoStress() => Navigate(Page.Stress);
+
+    [RelayCommand]
+    private void GoHistory()
+    {
+        Navigate(Page.History);
+        _ = History.EnsureLoaded();
     }
 
     [RelayCommand]
@@ -644,6 +767,7 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             // The specs are optional; the assistant answers from the rest.
         }
 
+        await History.EnsureLoaded();
         StorageTree? tree = SystemSummary is { IsComplete: true, Tree: { } t } ? t : null;
         return new PcSnapshot(
             Specs.Specs,
@@ -651,7 +775,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
             [.. Drives.Select(d => new DriveFact(d.Summary.RootPath, d.Summary.Label, d.Summary.TotalBytes, d.Summary.FreeBytes, d == SystemDrive))],
             tree is null ? null : StorageCategories.All.ToDictionary(c => c, tree.GetCategoryBytes),
             [.. Cleanup.Items.Select(i => i.Estimate)],
-            IsUnlocked);
+            IsUnlocked,
+            History.Report());
     }
 
     /// <summary>The screen or dialog an assistant answer points to.</summary>
@@ -714,6 +839,23 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         }
 
         Is3d = true;
+        Pc.Refresh();
+        _ = ShowDisksIn3dAsync();
+    }
+
+    /// <summary>The 3D PC draws the real disks once the specs have been read.</summary>
+    private async Task ShowDisksIn3dAsync()
+    {
+        try
+        {
+            await Specs.EnsureLoaded();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            // Without the specs the 3D PC keeps its one generic drive.
+            return;
+        }
+
         Pc.Refresh();
     }
 
@@ -862,6 +1004,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
         Cleanup.RefreshTexts();
         Memory.RefreshTexts();
         Specs.RefreshTexts();
+        Stress.RefreshTexts();
+        History.RefreshTexts();
         Alerts.RefreshTexts();
         Settings.Refresh();
         Ask?.RefreshTexts();
@@ -901,13 +1045,19 @@ public sealed partial class DriveViewModel(DriveSummary summary) : ObservableObj
 {
     public DriveSummary Summary { get; } = summary;
 
-    public string Name => $"{Label} ({Letter})";
+    /// <summary>The label with the drive's token, or the label alone when it is the token (a mount point with no volume label).</summary>
+    public string Name => Label == Token ? Label : $"{Label} ({Token})";
 
-    /// <summary>"C:".</summary>
-    public string Letter => Summary.RootPath.TrimEnd('\\');
+    /// <summary>What the drive is called in short: "C:" for <c>C:\</c>, "/home" for <c>/home</c>, "/" for the root.</summary>
+    public string Token => TokenOf(Summary.RootPath);
 
     /// <summary>The volume label, or "Local Disk" when the drive has none.</summary>
-    public string Label => string.IsNullOrWhiteSpace(Summary.Label) ? Strings.LocalDisk : Summary.Label;
+    public string Label => string.IsNullOrWhiteSpace(Summary.Label) ? Localizer.Instance.Resolve(Strings.LocalDisk) : Summary.Label;
+
+    /// <summary>The label to show beside the token: nothing when it would only repeat it.</summary>
+    public string Caption => Label == Token ? "" : Label;
+
+    public static string TokenOf(string root) => root.TrimEnd('\\', '/') is { Length: > 0 } trimmed ? trimmed : root;
 
     public string UsedPercentText => UsedFraction.ToString("P0");
 

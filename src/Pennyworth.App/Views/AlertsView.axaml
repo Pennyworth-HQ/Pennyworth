@@ -32,7 +32,7 @@
 
       <StackPanel Spacing="8">
         <TextBlock Classes="label">
-          <Run Text="08 / " />
+          <Run Text="10 / " />
           <Run Text="{l:Tr NavAlerts, Upper=True}" />
         </TextBlock>
         <TextBlock Classes="title" Text="{l:Tr AlertsTitle}" />

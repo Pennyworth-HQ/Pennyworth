@@ -70,12 +70,12 @@ public sealed partial class SettingsViewModel : ObservableObject
                 {
                     startup.SetEnabled(value);
                     _startWithPc = value;
-                    _host.ShowToast(value ? Strings.StartupOnToast : Strings.StartupOffToast);
+                    _host.ShowToast(Localizer.Instance.Resolve(value ? Strings.StartupOnToast : Strings.StartupOffToast));
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or InvalidOperationException)
                 {
                     Debug.WriteLine(ex);
-                    _host.ShowToast(Strings.StartupFailed);
+                    _host.ShowToast(Localizer.Instance.Resolve(Strings.StartupFailed));
                 }
             }
 

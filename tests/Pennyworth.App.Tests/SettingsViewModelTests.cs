@@ -85,7 +85,7 @@ public class SettingsViewModelTests
         viewModel.Settings.StartWithPc = true;
 
         Assert.False(viewModel.Settings.StartWithPc);
-        Assert.Equal(Resources.Strings.StartupFailed, viewModel.Toast);
+        Assert.Equal(Localization.Localizer.Instance.Resolve(Resources.Strings.StartupFailed), viewModel.Toast);
     }
 
     [Fact]
