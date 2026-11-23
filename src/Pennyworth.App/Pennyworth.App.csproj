@@ -5,6 +5,8 @@
     <AssemblyName>Pennyworth</AssemblyName>
     <RootNamespace>Pennyworth.App</RootNamespace>
     <IsAotCompatible>true</IsAotCompatible>
+    <!-- The tray icon's window procedure is an unmanaged function pointer. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationManifest Condition="'$(OS)' != 'Unix'">app.manifest</ApplicationManifest>
     <ApplicationIcon Condition="'$(OS)' != 'Unix'">Assets\pennyworth.ico</ApplicationIcon>

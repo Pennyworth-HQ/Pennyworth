@@ -62,4 +62,8 @@ public sealed class WindowsPlatform : IPlatform
         availableMemory,
         folder => new DriveInfo(Path.GetPathRoot(Path.GetFullPath(folder))!).AvailableFreeSpace,
         platformName: Name);
+
+    public ITray? CreateTray() => new WindowsTray();
+
+    public IStartupRegistration? Startup { get; } = new WindowsStartupRegistration();
 }
