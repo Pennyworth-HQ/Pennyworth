@@ -137,7 +137,7 @@ public class FolderBrowserViewModelTests
     {
         var host = new Host();
         var browser = new FolderBrowserViewModel(host);
-        browser.OpenCommand.Execute(browser.Items.Single(i => i.Drive?.Letter == "C:"));
+        browser.OpenCommand.Execute(browser.Items.Single(i => i.Drive?.Token == "C:"));
         browser.OpenCommand.Execute(browser.Items.Single(i => i.Name == "Users"));
         var before = browser.Current!.Value.Tree;
 
@@ -160,7 +160,7 @@ public class FolderBrowserViewModelTests
 
         public Task RescanAsync(DriveViewModel drive)
         {
-            Rescanned.Add(drive.Letter);
+            Rescanned.Add(drive.Token);
             _tree = Build();
             return Task.CompletedTask;
         }

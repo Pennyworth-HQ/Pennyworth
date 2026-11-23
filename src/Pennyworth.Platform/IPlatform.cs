@@ -52,6 +52,13 @@ public interface IPlatform : IPlatformText
     /// <summary>Warnings and errors from the OS's own log; null when this OS has no reader yet.</summary>
     ISystemLogReader? Logs => null;
 
+    /// <summary>
+    /// The things this OS can do with an administrator's password when the person asks: full system space,
+    /// cleaning root-owned folders, measuring folders the user cannot list. Null where the OS has its own way
+    /// (Windows elevates the whole app for the full scan) or none.
+    /// </summary>
+    IPrivilegedOperations? Privileged => null;
+
     /// <summary>Where the settings file lives.</summary>
     string SettingsPath { get; }
 

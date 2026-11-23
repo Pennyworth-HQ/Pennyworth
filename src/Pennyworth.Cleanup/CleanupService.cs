@@ -1,3 +1,4 @@
+using Pennyworth.Core.Privilege;
 using Pennyworth.KnowledgeBase;
 
 namespace Pennyworth.Cleanup;
@@ -14,16 +15,45 @@ public sealed record CleanupFolder(string Path, long Bytes, long Files);
 /// <summary>What cleaning a rule would remove, file by file. Cleaning removes exactly these files and nothing else.</summary>
 /// <param name="IsAvailable">False when the rule needs admin rights this app doesn't have yet.</param>
 /// <param name="Items">Files found (Recycle Bin: items in it).</param>
+/// <param name="Admin">
+/// Only for a rule that needs admin rights, on an OS whose cleanup can ask for them (<see cref="IAdminCleaner"/>):
+/// whether that can be done now (then <paramref name="IsAvailable"/> is true and cleaning shows a password prompt) or why not.
+/// Null everywhere else.
+/// </param>
 public sealed record CleanupEstimate(
     CleanupRule Rule,
     long Bytes,
     long Items,
     bool IsAvailable,
     IReadOnlyList<CleanupFolder>? Folders = null,
-    IReadOnlyList<CleanupFile>? Files = null);
+    IReadOnlyList<CleanupFile>? Files = null,
+    PrivilegedCapability? Admin = null);
 
 /// <param name="Skipped">Files left alone: in use, protected, changed since they were listed, or already gone.</param>
-public sealed record CleanupResult(CleanupRule Rule, long BytesFreed, long FilesDeleted, long Skipped);
+/// <param name="Outcome">
+/// <see cref="PrivilegedOutcome.Done"/> for every unprivileged rule. For a rule that needs admin rights it can also say the
+/// person cancelled the password prompt, it could not be asked for (<paramref name="Reason"/>), or it failed; nothing was deleted then.
+/// </param>
+public sealed record CleanupResult(
+    CleanupRule Rule,
+    long BytesFreed,
+    long FilesDeleted,
+    long Skipped,
+    PrivilegedOutcome Outcome = PrivilegedOutcome.Done,
+    PrivilegedUnavailableReason? Reason = null);
+
+/// <summary>
+/// Cleans the rules that need an administrator (<c>requiresAdmin</c>) on an OS that can ask for one. The preview is
+/// still made without privileges; this only deletes, and only the files of that preview.
+/// </summary>
+public interface IAdminCleaner
+{
+    /// <summary>Whether admin rules can be cleaned now; evaluated on every call, never shows a prompt.</summary>
+    PrivilegedCapability Capability { get; }
+
+    /// <summary>Deletes the files of <paramref name="estimate"/>, a rule that needs admin rights. Shows the system's password prompt.</summary>
+    Task<PrivilegedResult<CleanupResult>> CleanAsync(CleanupEstimate estimate, CancellationToken cancellationToken);
+}
 
 public interface ICleanupService
 {
@@ -33,8 +63,9 @@ public interface ICleanupService
     Task<CleanupEstimate> MeasureAsync(CleanupRule rule, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Deletes exactly the files of <paramref name="estimate"/>, nothing found later. Rules needing
-    /// admin rights are refused.
+    /// Deletes exactly the files of <paramref name="estimate"/>, nothing found later. Rules needing admin rights are
+    /// refused (an exception) unless the OS provides an <see cref="IAdminCleaner"/>; then the result's
+    /// <see cref="CleanupResult.Outcome"/> says whether the person confirmed and it worked.
     /// </summary>
     Task<CleanupResult> CleanAsync(CleanupEstimate estimate, IProgress<double>? progress, CancellationToken cancellationToken);
 }
@@ -92,16 +123,87 @@ public sealed class CleanupService(
             folders.Add(new CleanupFolder(folder, bytes, count));
         }
 
+        if (rule.RequiresAdmin && _environment.AdminCleaner is { } adminCleaner)
+        {
+            // The preview is made without privileges; whether it can be cleaned is the admin cleaner's to say. A rule whose
+            // folders the safety rule refuses entirely is never offered.
+            PrivilegedCapability capability = adminCleaner.Capability;
+            return new CleanupEstimate(rule, files.Sum(f => f.Size), files.Count, capability.Available && folders.Count > 0, folders, files, capability);
+        }
+
         return new CleanupEstimate(rule, files.Sum(f => f.Size), files.Count, IsAvailable: !rule.RequiresAdmin, folders, files);
     }, cancellationToken);
 
-    public Task<CleanupResult> CleanAsync(CleanupEstimate estimate, IProgress<double>? progress, CancellationToken cancellationToken) => Task.Run(() =>
+    public Task<CleanupResult> CleanAsync(CleanupEstimate estimate, IProgress<double>? progress, CancellationToken cancellationToken) =>
+        estimate.Rule.RequiresAdmin
+            ? CleanAsAdminAsync(estimate, progress, cancellationToken)
+            : CleanUnprivilegedAsync(estimate, progress, cancellationToken);
+
+    /// <summary>
+    /// Hands the files of an admin rule's preview to the OS's <see cref="IAdminCleaner"/>, which asks for the password and
+    /// deletes only those files. Files outside the rule's folders are never forwarded, and the cleaner is not asked at all
+    /// when nothing is left to delete. Removing emptied folders is the cleaner's job, not done here.
+    /// </summary>
+    private async Task<CleanupResult> CleanAsAdminAsync(CleanupEstimate estimate, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         CleanupRule rule = estimate.Rule;
-        if (rule.RequiresAdmin)
+        IAdminCleaner adminCleaner = _environment.AdminCleaner
+            ?? throw new InvalidOperationException($"Cleanup rule '{rule.Id}' needs admin rights.");
+
+        IReadOnlyList<CleanupFile> files = estimate.Files ?? [];
+        PrivilegedCapability capability = adminCleaner.Capability;
+        if (!capability.Available)
         {
-            throw new InvalidOperationException($"Cleanup rule '{rule.Id}' needs admin rights.");
+            progress?.Report(1);
+            return new CleanupResult(rule, 0, 0, files.Count, PrivilegedOutcome.NotAvailable, capability.Reason);
         }
+
+        IReadOnlyList<string> roots = await Task.Run(() => FoldersOf(rule), cancellationToken).ConfigureAwait(false);
+        var allowed = new List<CleanupFile>(files.Count);
+        var folders = roots.Select(root => (Root: root, Bytes: 0L, Files: 0L)).ToArray();
+        foreach (CleanupFile file in files)
+        {
+            string full = Path.GetFullPath(file.Path);
+            int root = Array.FindIndex(folders, folder => IsBelow(full, folder.Root));
+            if (root < 0)
+            {
+                continue;
+            }
+
+            allowed.Add(file);
+            folders[root].Bytes += file.Size;
+            folders[root].Files++;
+        }
+
+        long outside = files.Count - allowed.Count;
+        if (allowed.Count == 0)
+        {
+            progress?.Report(1);
+            return new CleanupResult(rule, 0, 0, outside);
+        }
+
+        CleanupEstimate forwarded = estimate with
+        {
+            Bytes = allowed.Sum(file => file.Size),
+            Items = allowed.Count,
+            Folders = [.. folders.Select(folder => new CleanupFolder(folder.Root, folder.Bytes, folder.Files))],
+            Files = allowed,
+        };
+
+        PrivilegedResult<CleanupResult> outcome = await adminCleaner.CleanAsync(forwarded, cancellationToken).ConfigureAwait(false);
+        progress?.Report(1);
+        if (outcome is { Outcome: PrivilegedOutcome.Done, Value: { } done })
+        {
+            return outside == 0 ? done : done with { Skipped = done.Skipped + outside };
+        }
+
+        PrivilegedOutcome failure = outcome.Outcome == PrivilegedOutcome.Done ? PrivilegedOutcome.Failed : outcome.Outcome;
+        return new CleanupResult(rule, 0, 0, files.Count, failure, outcome.Reason);
+    }
+
+    private Task<CleanupResult> CleanUnprivilegedAsync(CleanupEstimate estimate, IProgress<double>? progress, CancellationToken cancellationToken) => Task.Run(() =>
+    {
+        CleanupRule rule = estimate.Rule;
 
         IReadOnlyList<CleanupFile> files = estimate.Files ?? [];
         Func<CleanupFile, bool> delete = rule.Kind == CleanupKind.RecycleBin
