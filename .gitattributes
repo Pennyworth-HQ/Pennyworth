@@ -1,0 +1,2 @@
+# Fixtures in raw string literals mimic Linux tool output and must keep LF endings on every checkout.
+tests/Pennyworth.Platform.Linux.Tests/**/*.cs text eol=lf

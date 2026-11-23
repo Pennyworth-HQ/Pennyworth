@@ -63,7 +63,7 @@ internal static class SystemSpace
         if (mount.FileSystemType != Btrfs)
         {
             // A btrfs mount has an anonymous device number with no entry in sysfs; every other file system reports its own device.
-            string? sectors = inputs.ReadText(Path.Combine(BlockDevices, mount.MajorMinor, "size"));
+            string? sectors = inputs.ReadText($"{BlockDevices}/{mount.MajorMinor}/size");
             long? metadata = BtrfsSpace.AddSaturating(reserved, SystemSpaceParsers.DeviceOverheadBytes(sectors, counters));
             return new SystemSpaceResponse(HelperProtocol.Version, mount.FileSystemType, SnapshotBytes: null, metadata);
         }
