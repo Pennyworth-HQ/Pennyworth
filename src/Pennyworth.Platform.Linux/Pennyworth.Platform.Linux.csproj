@@ -6,8 +6,14 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Pennyworth.Platform.Linux.Tests" />
   </ItemGroup>
+  <!-- The installer the app runs as root (through pkexec) for its one-time, explicitly approved setup: the very script the tarball
+       ships, compiled in, so root never executes a script file from a folder the user can write. See HelperSetup. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\tools\package\linux\install-helper.sh" LogicalName="install-helper.sh" />
+  </ItemGroup>
   <!-- Every Linux implementation lives here and nowhere else; it never references a Win32 symbol. -->
   <ItemGroup>
     <ProjectReference Include="..\Pennyworth.Platform\Pennyworth.Platform.csproj" />
+    <ProjectReference Include="..\Pennyworth.Platform.Linux.Helper\Pennyworth.Platform.Linux.Helper.csproj" />
   </ItemGroup>
 </Project>

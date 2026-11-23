@@ -63,6 +63,7 @@ public sealed partial class App : Application
                 Logs: platform.Logs,
                 ExtendsIntoTitleBar: platform.ExtendsIntoTitleBar,
                 MemoryModules: platform.MemoryModules,
+                Privileged: platform.Privileged,
                 Notifier: tray,
                 Startup: platform.Startup,
                 Pets: new PetLibrary(Path.Combine(Path.GetDirectoryName(platform.SettingsPath)!, "pets")),
@@ -74,6 +75,7 @@ public sealed partial class App : Application
                 tray?.Dispose();
                 viewModel.Stress.Shutdown();
                 viewModel.Specs.CancelModulesRead(); // Withdraws a pending password request.
+                platform.Privileged?.Access.Lock(); // Ends the administrator session; the helper would also stop when the pipe closes.
                 (monitor as IDisposable)?.Dispose();
             };
             viewModel.Initialize();

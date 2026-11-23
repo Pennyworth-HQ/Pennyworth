@@ -22,6 +22,7 @@
 
     <!-- The name opens folders and drives; for files it is plain text. -->
     <Style Selector="Button.name">
+      <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="0" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -37,6 +38,9 @@
     </Style>
     <Style Selector="Button.name:disabled">
       <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="Button.name.locked">
+      <Setter Property="Grid.ColumnSpan" Value="2" />
     </Style>
 
     <Style Selector="Button.crumb">
@@ -121,7 +125,7 @@
     </Grid>
 
     <Panel Grid.Row="2" Margin="36,0,36,24">
-      <ListBox Classes="folders" ItemsSource="{Binding Items}" IsVisible="{Binding HasItems}"
+      <ListBox Name="FolderList" Classes="folders" ItemsSource="{Binding Items}" IsVisible="{Binding HasItems}"
                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="vm:FolderItemViewModel">
@@ -146,25 +150,36 @@
                 <Border Width="2" Height="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,2,0" Background="{DynamicResource Brush.TextPrimary}" />
               </Border>
 
-              <Button Grid.Column="1" Classes="name"
+              <Button Grid.Column="1" Classes="name" Classes.locked="{Binding ShowLockedBadge}"
                       Command="{Binding $parent[UserControl].((vm:FolderBrowserViewModel)DataContext).OpenCommand}"
                       CommandParameter="{Binding}"
                       IsEnabled="{Binding CanOpen}"
-                      ToolTip.Tip="{Binding Name}">
-                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="10">
+                      ToolTip.Tip="{Binding RowTip}">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="10">
                   <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                  <Border Grid.Column="1" Classes="badge" VerticalAlignment="Center" IsVisible="{Binding IsLocked}"
+                  <Border Grid.Column="1" Classes="badge" VerticalAlignment="Center" IsVisible="{Binding ShowLockedBadge}"
                           ToolTip.Tip="{l:Tr LockedHint}">
                     <TextBlock>
                       <Run Text="■ " />
                       <Run Text="{l:Tr Locked, Upper=True}" />
                     </TextBlock>
                   </Border>
-                  <TextBlock Grid.Column="2" Classes="mono secondary" Text="›" VerticalAlignment="Center" IsVisible="{Binding CanOpen}" />
+                  <Border Grid.Column="1" Classes="badge" VerticalAlignment="Center" IsVisible="{Binding IsMeasured}"
+                          ToolTip.Tip="{l:Tr MeasuredBadgeHint}">
+                    <TextBlock>
+                      <Run Text="■ " />
+                      <Run Text="{l:Tr MeasuredBadge}" />
+                    </TextBlock>
+                  </Border>
+                  <TextBlock Grid.Column="2" Classes="caption" Foreground="{DynamicResource Brush.Accent}"
+                             VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                             Text="{l:Tr LockedRowAction}" IsVisible="{Binding ShowMeasureAffordance}" />
+                  <TextBlock Grid.Column="3" Classes="mono secondary" Text="›" VerticalAlignment="Center" IsVisible="{Binding CanOpen}" />
                 </Grid>
               </Button>
 
-              <ProgressBar Grid.Column="2" MinHeight="6" Height="6" Minimum="0" Maximum="1" Value="{Binding Fraction}" VerticalAlignment="Center" />
+              <ProgressBar Grid.Column="2" MinHeight="6" Height="6" Minimum="0" Maximum="1" Value="{Binding Fraction}"
+                           VerticalAlignment="Center" IsVisible="{Binding !ShowLockedBadge}" />
               <TextBlock Grid.Column="3" FontSize="13.5" Text="{Binding SizeText}" TextAlignment="Right" VerticalAlignment="Center" />
               <Button Grid.Column="4" Classes="small" HorizontalAlignment="Right" VerticalAlignment="Center"
                       Content="{l:Tr ShowInExplorer, Upper=True}"
@@ -197,13 +212,36 @@
             </TextBlock>
           </Border>
           <TextBlock FontSize="17" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Text="{l:Tr LockedTitle}" />
-          <TextBlock Classes="secondary" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Text="{l:Tr LockedBody}" />
-          <Button HorizontalAlignment="Center" Margin="0,6,0,0" FontSize="10.5" Command="{Binding UnlockCommand}">
+          <TextBlock Classes="secondary" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                     Text="{l:Tr LockedBody}" IsVisible="{Binding !OffersAdminMeasure}" />
+          <TextBlock Classes="secondary" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                     Text="{l:Tr LockedMeasureWhy}" IsVisible="{Binding OffersAdminMeasure}" />
+          <Button HorizontalAlignment="Center" Margin="0,6,0,0" FontSize="10.5" Command="{Binding UnlockCommand}" IsVisible="{Binding !OffersAdminMeasure}">
             <TextBlock>
               <Run Text="{l:Tr UnlockCta, Upper=True}" />
               <Run Text=" →" />
             </TextBlock>
           </Button>
+          <Button HorizontalAlignment="Center" Margin="0,6,0,0" FontSize="10.5" Command="{Binding MeasureLockedCommand}" IsVisible="{Binding OffersAdminMeasure}">
+            <TextBlock>
+              <Run Text="{l:Tr LockedRowAction, Upper=True}" />
+              <Run Text=" →" />
+            </TextBlock>
+          </Button>
+        </StackPanel>
+      </Border>
+
+      <!-- Locked folder whose size was measured with a password -->
+      <Border Classes="rule" Padding="0,56" IsVisible="{Binding IsMeasuredLockedFolder}" VerticalAlignment="Top">
+        <StackPanel Spacing="12" HorizontalAlignment="Center" MaxWidth="460">
+          <Border Classes="badge" HorizontalAlignment="Center" Padding="10,6">
+            <TextBlock FontSize="13">
+              <Run Text="■ " />
+              <Run Text="{l:Tr MeasuredBadge}" />
+            </TextBlock>
+          </Border>
+          <TextBlock FontSize="17" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Text="{l:Tr LockedMeasuredTitle}" />
+          <TextBlock Classes="secondary" FontSize="13" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Text="{Binding LockedMeasuredBody}" />
         </StackPanel>
       </Border>
     </Panel>
