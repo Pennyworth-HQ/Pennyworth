@@ -64,6 +64,9 @@ public class PlatformWordingTests
         ["KeyNote"] = ("Kept in the Windows Credential Manager, never in a file.", "Guardada no Gerenciador de Credenciais do Windows, nunca em arquivo."),
         ["ActionUnlock"] = ("Unlock full scan", "Liberar verificação completa"),
         ["BlockedNote"] = ("I held back a suggestion that could harm Windows.", "Segurei uma sugestão que poderia prejudicar o Windows."),
+        ["SettingsStartWithPc"] = ("Start with Windows, hidden in the tray", "Iniciar com o Windows, escondido na bandeja"),
+        ["StartupOnToast"] = ("Pennyworth will start with Windows.", "O Pennyworth vai iniciar com o Windows."),
+        ["StartupFailed"] = ("Windows didn't let me change the startup apps.", "O Windows não me deixou mudar os aplicativos de inicialização."),
     };
 
     /// <summary>What no Linux screen may say, in either language.</summary>

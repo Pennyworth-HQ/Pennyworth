@@ -75,4 +75,10 @@ public interface IPlatform : IPlatformText
 
     /// <summary>Keys, conversations, usage and downloads for the Ask screen, in this OS's locations.</summary>
     AssistantServices CreateAssistant(Func<long> availableMemory);
+
+    /// <summary>A tray icon with notifications; null when this OS has none. Create it on the UI thread.</summary>
+    ITray? CreateTray() => null;
+
+    /// <summary>Starting with the session; null when this OS cannot.</summary>
+    IStartupRegistration? Startup => null;
 }
