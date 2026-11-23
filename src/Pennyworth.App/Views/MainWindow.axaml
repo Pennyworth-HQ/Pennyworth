@@ -9,7 +9,9 @@
         Icon="/Assets/pennyworth.ico"
         Width="1100" Height="760" MinWidth="720" MinHeight="520"
         WindowStartupLocation="CenterScreen"
-        ExtendClientAreaToDecorationsHint="True">
+        ExtendClientAreaToDecorationsHint="{Binding ExtendsIntoTitleBar}"
+        Classes.extended="{Binding ExtendsIntoTitleBar}"
+        DragDrop.AllowDrop="True">
   <Window.Styles>
     <!-- Sidebar entries: index, label and a one-line hint. -->
     <Style Selector="Button.nav">
@@ -50,6 +52,11 @@
       <Setter Property="LetterSpacing" Value="0.6" />
       <Setter Property="Foreground" Value="{DynamicResource Brush.TextSecondary}" />
       <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Windows draws its caption buttons over the right 148 px of the title bar row. -->
+    <Style Selector="Window.extended Grid#TitleBarContent">
+      <Setter Property="Margin" Value="0,0,148,0" />
     </Style>
 
     <!-- At narrow widths the content gets the whole window. -->
@@ -177,10 +184,10 @@
     <!--
       Title bar. Only the left part (logo and empty space) is the drag area: buttons inside a
       TitleBar element don't reliably get clicks on Windows, so they sit beside it, not in it.
-      Windows' caption buttons are drawn over the right 148 px.
+      Where the window draws into the title bar, the system's caption buttons are drawn over the right 148 px.
     -->
     <Border Classes="rule" BorderThickness="0,0,0,1" Background="{DynamicResource Brush.Background}">
-      <Grid ColumnDefinitions="*,Auto" Margin="0,0,148,0">
+      <Grid x:Name="TitleBarContent" ColumnDefinitions="*,Auto">
         <Border Background="Transparent" WindowDecorationProperties.ElementRole="TitleBar">
           <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="16,0,0,0">
             <Image Source="/Assets/logo.png" Width="26" Height="26" RenderOptions.BitmapInterpolationMode="HighQuality" />
@@ -202,11 +209,12 @@
               <Button Classes="segment" Padding="10,0" Classes.selected="{Binding IsEnglish}" Content="EN" Command="{Binding SetEnglishCommand}" />
             </StackPanel>
           </Border>
+          <!-- Theme, language, the pet and starting with the PC live on the Settings page. -->
           <Button BorderBrush="{DynamicResource Brush.BorderStrong}" MinHeight="28" Padding="12,0"
-                  Foreground="{DynamicResource Brush.TextSecondary}" Command="{Binding ToggleThemeCommand}">
+                  Foreground="{DynamicResource Brush.TextSecondary}" Command="{Binding GoSettingsCommand}" ToolTip.Tip="{l:Tr NavSettingsHint}">
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <TextBlock Text="◐" />
-              <TextBlock Text="{Binding ThemeLabel, Converter={x:Static controls:TextCase.Upper}}" />
+              <TextBlock Text="⚙" />
+              <TextBlock Text="{l:Tr NavSettings, Upper=True}" />
             </StackPanel>
           </Button>
         </StackPanel>
@@ -287,6 +295,33 @@
                   <StackPanel Grid.Column="1" Spacing="2">
                     <TextBlock Text="{l:Tr NavStress}" />
                     <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavStressHint}" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.selected="{Binding IsHistoryPage}" Command="{Binding GoHistoryCommand}">
+                <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                  <TextBlock Classes="label index" Text="09" Margin="0,3,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{l:Tr NavHistory}" />
+                    <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavHistoryHint}" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.selected="{Binding IsAlertsPage}" Command="{Binding GoAlertsCommand}">
+                <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                  <TextBlock Classes="label index" Text="10" Margin="0,3,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{l:Tr NavAlerts}" />
+                    <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavAlertsHint}" />
+                  </StackPanel>
+                </Grid>
+              </Button>
+              <Button Classes="nav" Classes.selected="{Binding IsSettingsPage}" Command="{Binding GoSettingsCommand}">
+                <Grid ColumnDefinitions="26,*" ColumnSpacing="6">
+                  <TextBlock Classes="label index" Text="11" Margin="0,3,0,0" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Text="{l:Tr NavSettings}" />
+                    <TextBlock Classes="secondary" FontSize="11.5" TextWrapping="Wrap" Text="{l:Tr NavSettingsHint}" />
                   </StackPanel>
                 </Grid>
               </Button>

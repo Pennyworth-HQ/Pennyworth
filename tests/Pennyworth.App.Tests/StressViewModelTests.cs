@@ -182,7 +182,7 @@ public sealed class StressViewModelTests
         stress.Update();
 
         Assert.Equal("42", stress.Power.ValueText);
-        Assert.Equal("Processor power, as Windows reports it", stress.Power.Detail);
+        Assert.Equal("Processor power, as the system reports it", stress.Power.Detail);
     }
 
     [Fact]

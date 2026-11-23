@@ -63,7 +63,7 @@ public class StorageSummaryViewModelTests
     [Fact]
     public void Selects_the_biggest_category_and_lists_its_areas_with_friendly_titles()
     {
-        var locations = new FakeLocations(new() { [@"C:\Games"] = ("My games", "Where games live") });
+        var locations = new FakeLocations(new() { [P(@"C:\", "Games")] = ("My games", "Where games live") });
         var summary = Create(locations: locations);
 
         summary.ApplyResult(Build());
@@ -72,7 +72,7 @@ public class StorageSummaryViewModelTests
         var area = Assert.Single(summary.SelectedCategory!.Areas);
         Assert.Equal("My games", area.Title);
         Assert.Equal("Where games live", area.Description);
-        Assert.Equal(@"C:\Games", area.Path);
+        Assert.Equal(P(@"C:\", "Games"), area.Path);
     }
 
     [Fact]
@@ -136,6 +136,6 @@ public class StorageSummaryViewModelTests
 
         summary.OpenAreaCommand.Execute(summary.SelectedCategory!.Areas[0]);
 
-        Assert.Equal(@"C:\Games", opened?.FullPath);
+        Assert.Equal(P(@"C:\", "Games"), opened?.FullPath);
     }
 }

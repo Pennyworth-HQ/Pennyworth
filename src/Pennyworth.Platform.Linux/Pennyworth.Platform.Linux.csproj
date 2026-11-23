@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsAotCompatible>true</IsAotCompatible>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pennyworth.Platform.Linux.Tests" />
+  </ItemGroup>
+  <!-- Every Linux implementation lives here and nowhere else; it never references a Win32 symbol. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Pennyworth.Platform\Pennyworth.Platform.csproj" />
+  </ItemGroup>
+</Project>

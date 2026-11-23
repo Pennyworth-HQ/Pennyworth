@@ -17,6 +17,7 @@ want — a discreet butler who answers questions about your own PC.
 | 06 Specs | Every part of the PC in plain words, with "Copy all" |
 | 07 Ask | The assistant: answers from what Pennyworth measured, never changes anything by itself |
 | 08 Stress test | Loads processor, memory and disk like OCCT, Prime95 and HeavyLoad, checks every result, and shows a load radar, dials, stress level, power and temperature |
+| 09 History | CPU, memory, disk and GPU over the last 24 hours or 7 days (average and busiest second per minute), the spikes out of the ordinary, and the Windows Event Log, which the assistant can decipher |
 | 3D | An ASCII PC you can rotate, with live status per part |
 
 ## The assistant (07 Ask)
@@ -32,6 +33,9 @@ want — a discreet butler who answers questions about your own PC.
   in the Windows Credential Manager. Conversations stay on the PC and can be deleted.
 - **Safe:** advice such as editing the registry or disabling Windows Security is replaced
   before you see it.
+- **Reads the system log with you:** on 08 History, Pennyworth reads the warnings and errors
+  of the Windows Event Log (System and Application) for the chosen range, groups repeats, hides
+  account IDs, and lets the assistant line them up with the usage spikes.
 - Nothing about the assistant runs, downloads or connects until you set it up.
 
 Design and decisions: `docs/superpowers/specs/2026-10-25-ai-assistant-design.md`.
@@ -59,7 +63,7 @@ dotnet publish src/Pennyworth.App -c Release -r win-x64 -p:PublishAot=true -o pu
 | Project | Responsibility |
 |---|---|
 | `Pennyworth.Core` | Storage tree, categories, formatting |
-| `Pennyworth.KnowledgeBase` | Bilingual data: known locations, processes, cleanup rules, diagnosis rules, blocked advice |
+| `Pennyworth.KnowledgeBase` | Bilingual data, one set per operating system (`Data/` for Windows, `Data/linux/` for Linux, picked by `IPlatform.Name`): known locations, processes, cleanup rules, diagnosis rules, blocked advice |
 | `Pennyworth.Insights` | Path classification |
 | `Pennyworth.Scanning` | Drive scanning |
 | `Pennyworth.Cleanup` | Measuring and cleaning, Recycle Bin |

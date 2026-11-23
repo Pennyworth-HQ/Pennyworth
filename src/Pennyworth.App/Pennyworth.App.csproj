@@ -5,6 +5,8 @@
     <AssemblyName>Pennyworth</AssemblyName>
     <RootNamespace>Pennyworth.App</RootNamespace>
     <IsAotCompatible>true</IsAotCompatible>
+    <!-- The tray icon's window procedure is an unmanaged function pointer. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationManifest Condition="'$(OS)' != 'Unix'">app.manifest</ApplicationManifest>
     <ApplicationIcon Condition="'$(OS)' != 'Unix'">Assets\pennyworth.ico</ApplicationIcon>
@@ -24,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Pennyworth.Core\Pennyworth.Core.csproj" />
     <ProjectReference Include="..\Pennyworth.Platform\Pennyworth.Platform.csproj" />
+    <ProjectReference Include="..\Pennyworth.Platform.Linux\Pennyworth.Platform.Linux.csproj" />
     <ProjectReference Include="..\Pennyworth.Insights\Pennyworth.Insights.csproj" />
     <ProjectReference Include="..\Pennyworth.Scanning\Pennyworth.Scanning.csproj" />
     <ProjectReference Include="..\Pennyworth.Stress\Pennyworth.Stress.csproj" />

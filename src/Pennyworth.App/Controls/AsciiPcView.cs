@@ -18,11 +18,17 @@ public sealed class AsciiPcView : Control
     public static readonly StyledProperty<PcPart> SelectedPartProperty =
         AvaloniaProperty.Register<AsciiPcView, PcPart>(nameof(SelectedPart), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
+    public static readonly StyledProperty<int> SelectedDiskProperty =
+        AvaloniaProperty.Register<AsciiPcView, int>(nameof(SelectedDisk), defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
+
     public static readonly StyledProperty<double> ZoomProperty =
         AvaloniaProperty.Register<AsciiPcView, double>(nameof(Zoom), 1, defaultBindingMode: Avalonia.Data.BindingMode.TwoWay);
 
     public static readonly StyledProperty<IReadOnlyList<string>?> LabelsProperty =
         AvaloniaProperty.Register<AsciiPcView, IReadOnlyList<string>?>(nameof(Labels));
+
+    public static readonly StyledProperty<IReadOnlyList<PcDisk>?> DisksProperty =
+        AvaloniaProperty.Register<AsciiPcView, IReadOnlyList<PcDisk>?>(nameof(Disks));
 
     public static readonly StyledProperty<bool> ShowRainProperty =
         AvaloniaProperty.Register<AsciiPcView, bool>(nameof(ShowRain), true);
@@ -33,7 +39,7 @@ public sealed class AsciiPcView : Control
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private double _lastTick;
-    private PcPart? _hovered;
+    private PcPick? _hovered;
     private Point? _pressedAt;
     private bool _dragged;
 
@@ -59,6 +65,13 @@ public sealed class AsciiPcView : Control
         set => SetValue(SelectedPartProperty, value);
     }
 
+    /// <summary>Which of <see cref="Disks"/> is selected when the drive is.</summary>
+    public int SelectedDisk
+    {
+        get => GetValue(SelectedDiskProperty);
+        set => SetValue(SelectedDiskProperty, value);
+    }
+
     /// <summary>Target zoom, 0.5 to 2.6; the drawing eases toward it.</summary>
     public double Zoom
     {
@@ -71,6 +84,13 @@ public sealed class AsciiPcView : Control
     {
         get => GetValue(LabelsProperty);
         set => SetValue(LabelsProperty, value);
+    }
+
+    /// <summary>The disks stacked in the drive bay, each with its name on the front.</summary>
+    public IReadOnlyList<PcDisk>? Disks
+    {
+        get => GetValue(DisksProperty);
+        set => SetValue(DisksProperty, value);
     }
 
     public bool ShowRain
@@ -100,6 +120,10 @@ public sealed class AsciiPcView : Control
         if (change.Property == ZoomProperty)
         {
             _renderer.ZoomTarget = Math.Clamp(Zoom, PcViewModel.MinZoom, PcViewModel.MaxZoom);
+        }
+        else if (change.Property == DisksProperty)
+        {
+            _renderer.Disks = Disks ?? [];
         }
     }
 
@@ -139,9 +163,14 @@ public sealed class AsciiPcView : Control
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-        if (!_dragged && HitTest(e.GetPosition(this)) is { } part)
+        if (!_dragged && HitTest(e.GetPosition(this)) is { } pick)
         {
-            SelectedPart = part;
+            if (pick.Part == PcPart.Drive)
+            {
+                SelectedDisk = pick.Disk;
+            }
+
+            SelectedPart = pick.Part;
         }
 
         _pressedAt = null;
@@ -170,7 +199,7 @@ public sealed class AsciiPcView : Control
             return;
         }
 
-        AsciiFrame frame = _renderer.Render(_clock.Elapsed.TotalSeconds, SelectedPart, _hovered, ShowRain);
+        AsciiFrame frame = _renderer.Render(_clock.Elapsed.TotalSeconds, new PcPick(SelectedPart, SelectedDisk), _hovered, ShowRain);
         double fontSize = grid.CellWidth / 0.6;
         double ascent = Math.Abs(typeface.Metrics.Ascent) / typeface.Metrics.DesignEmHeight * fontSize;
 
@@ -193,7 +222,7 @@ public sealed class AsciiPcView : Control
         return (cellWidth, cellHeight, left, top);
     }
 
-    private PcPart? HitTest(Point position)
+    private PcPick? HitTest(Point position)
     {
         var grid = Grid();
         return grid.CellWidth <= 0 ? null
@@ -256,17 +285,24 @@ public sealed class AsciiPcView : Control
         double size = Math.Max(grid.CellHeight * AsciiPcRenderer.Density * 2.6, 8);
         foreach (AsciiLabel label in labels)
         {
-            string text = Labels is { } names && (int)label.Part < names.Count ? names[(int)label.Part] : label.Part.ToString();
-            var formatted = new FormattedText(text, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, typeface, size,
-                label.IsHighlighted ? Brush("Brush.OnAccent") : Brush("Brush.TextSecondary"));
+            string text = label.Text
+                ?? (Labels is { } names && (int)label.Part < names.Count ? names[(int)label.Part] : label.Part.ToString());
+            double labelSize = label.OnFront ? size * 0.8 : size;
+            var formatted = new FormattedText(text, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, typeface, labelSize,
+                label.IsHighlighted ? Brush("Brush.OnAccent") : Brush(label.OnFront ? "Brush.TextPrimary" : "Brush.TextSecondary"));
 
-            double padX = size * 0.5, padY = size * 0.2;
+            double padX = labelSize * 0.5, padY = labelSize * 0.2;
             double width = formatted.Width + (padX * 2), height = formatted.Height + (padY * 2);
             double x = grid.Left + (label.Column * grid.CellWidth) - (width / 2);
-            double y = grid.Top + (label.Row * grid.CellHeight) - height;
+            double y = grid.Top + (label.Row * grid.CellHeight) - (label.OnFront ? height / 2 : height);
             if (label.IsHighlighted)
             {
                 context.DrawRectangle(Brush("Brush.Accent"), null, new Rect(x, y, width, height));
+            }
+            else if (label.OnFront)
+            {
+                // A plate over the disk's edges so the name stays readable.
+                context.DrawRectangle(Brush("Brush.Background", 0.85), new Pen(Brush("Brush.Border"), 1), new Rect(x, y, width, height));
             }
 
             context.DrawText(formatted, new Point(x + padX, y + padY));
