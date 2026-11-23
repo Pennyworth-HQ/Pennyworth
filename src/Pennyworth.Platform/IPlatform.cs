@@ -4,6 +4,7 @@ using Pennyworth.Core.Wording;
 using Pennyworth.KnowledgeBase;
 using Pennyworth.Monitoring;
 using Pennyworth.Monitoring.Hardware;
+using Pennyworth.Monitoring.Logs;
 
 namespace Pennyworth.Platform;
 
@@ -48,6 +49,9 @@ public interface IPlatform : IPlatformText
     /// </summary>
     IMemoryModuleReader? MemoryModules => null;
 
+    /// <summary>Warnings and errors from the OS's own log; null when this OS has no reader yet.</summary>
+    ISystemLogReader? Logs => null;
+
     /// <summary>
     /// The things this OS can do with an administrator's password when the person asks: full system space,
     /// cleaning root-owned folders, measuring folders the user cannot list. Null where the OS has its own way
@@ -60,6 +64,9 @@ public interface IPlatform : IPlatformText
 
     /// <summary>Where the log of cleanup runs lives.</summary>
     string CleanupHistoryPath { get; }
+
+    /// <summary>Where the per-minute usage history lives.</summary>
+    string TelemetryFolder { get; }
 
     /// <summary>
     /// Resolves the <c>%NAME%</c> variables the knowledge base writes its paths with, for this OS.
@@ -75,4 +82,10 @@ public interface IPlatform : IPlatformText
 
     /// <summary>Keys, conversations, usage and downloads for the Ask screen, in this OS's locations.</summary>
     AssistantServices CreateAssistant(Func<long> availableMemory);
+
+    /// <summary>A tray icon with notifications; null when this OS has none. Create it on the UI thread.</summary>
+    ITray? CreateTray() => null;
+
+    /// <summary>Starting with the session; null when this OS cannot.</summary>
+    IStartupRegistration? Startup => null;
 }

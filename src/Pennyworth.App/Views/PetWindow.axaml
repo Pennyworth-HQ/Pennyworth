@@ -1,0 +1,58 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Pennyworth.App.ViewModels"
+        xmlns:l="using:Pennyworth.App.Localization"
+        xmlns:controls="using:Pennyworth.App.Controls"
+        x:Class="Pennyworth.App.Views.PetWindow"
+        x:DataType="vm:PetViewModel"
+        Title="Pennyworth"
+        WindowDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        CanResize="False"
+        SizeToContent="WidthAndHeight">
+  <Window.Styles>
+    <Style Selector="Button.close">
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextTertiary}" />
+      <Setter Property="FontFamily" Value="{StaticResource FontFamily.Mono}" />
+    </Style>
+    <Style Selector="Button.close:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
+    </Style>
+  </Window.Styles>
+
+  <!-- The window hugs the pet and its bubble; everything around them is see-through. -->
+  <StackPanel x:Name="Root" Margin="8" Spacing="0" HorizontalAlignment="Right">
+    <StackPanel IsVisible="{Binding IsSpeaking}" HorizontalAlignment="Right">
+      <Border Background="{DynamicResource Brush.Surface}" BorderBrush="{DynamicResource Brush.BorderStrong}" BorderThickness="1"
+              CornerRadius="{StaticResource Radius.Control}" Padding="14,10,8,12" Width="270"
+              Cursor="Hand" PointerPressed="OnBubblePressed">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+          <TextBlock FontSize="13.5" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource Brush.TextPrimary}"
+                     Text="{Binding Speech.Title, FallbackValue=''}" />
+          <Button Grid.Column="1" Classes="close" Content="×" VerticalAlignment="Top"
+                  ToolTip.Tip="{l:Tr PetDismiss}" Command="{Binding DismissCommand}" />
+          <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,6,0" FontSize="12.5" LineHeight="18" TextWrapping="Wrap"
+                     Foreground="{DynamicResource Brush.TextSecondary}" Text="{Binding Speech.Message, FallbackValue=''}" />
+        </Grid>
+      </Border>
+      <!-- The bubble's tail, pointing down at the pet. -->
+      <Path HorizontalAlignment="Right" Margin="0,-1,34,0" Data="M0,0 L14,0 L4,10 Z"
+            Fill="{DynamicResource Brush.Surface}" Stroke="{DynamicResource Brush.BorderStrong}" StrokeThickness="1" />
+    </StackPanel>
+    <!-- Drag the pet to move it; a double click opens Pennyworth. -->
+    <Border x:Name="Pet" HorizontalAlignment="Right" Background="Transparent" Padding="6,2" Cursor="SizeAll"
+            ToolTip.Tip="{l:Tr PetTip}" PointerPressed="OnPetPressed">
+      <controls:PetSprite Width="96" Height="104" Source="{Binding Pet.SpritesheetPath, FallbackValue={x:Null}}"
+                          Rows="{Binding Pet.Rows, FallbackValue=9}" Animation="{Binding Animation}" IsAnimated="{Binding !ReduceMotion}" />
+    </Border>
+  </StackPanel>
+</Window>

@@ -496,6 +496,114 @@
   <data name="StressHelpErrors" xml:space="preserve"><value>Erros: um cálculo, uma palavra de memória, um bloco de disco ou uma resposta da placa de vídeo errados. Num PC saudável fica em zero, por mais longo que seja o teste.</value></data>
   <data name="StressSensorNote" xml:space="preserve"><value>A temperatura vem do sensor ACPI da placa-mãe e o consumo do processador, quando o sistema os informa; muitos desktops não informam nenhum. Sem leitura, o consumo é estimado pela carga e pela potência nominal do processador, marcado com ~: o consumo real pode passar disso sob carga pesada. O Pennyworth não instala drivers para ler mais.</value></data>
   <data name="StressStatus" xml:space="preserve"><value>ESTRESSE {0}</value></data>
+  <data name="NavHistory" xml:space="preserve"><value>Histórico</value></data>
+  <data name="NavHistoryHint" xml:space="preserve"><value>Picos ao longo de horas e dias</value></data>
+  <data name="HistoryTitle" xml:space="preserve"><value>Histórico de uso</value></data>
+  <data name="HistorySub" xml:space="preserve"><value>A cada minuto o Pennyworth anota a média e o segundo mais pesado de CPU, memória, disco e GPU, para que picos curtos não passem despercebidos. Fica só neste PC, por 7 dias.</value></data>
+  <data name="Range24h" xml:space="preserve"><value>24 horas</value></data>
+  <data name="Range7d" xml:space="preserve"><value>7 dias</value></data>
+  <data name="HistoryRecorded" xml:space="preserve"><value>Gravado: {0} das últimas {1:N0} horas. O Pennyworth só grava enquanto está aberto.</value></data>
+  <data name="HistoryEmpty" xml:space="preserve"><value>Nada gravado ainda. O primeiro ponto aparece em até um minuto; deixe o Pennyworth aberto para pegar os picos ao longo do dia.</value></data>
+  <data name="MetricDisk" xml:space="preserve"><value>Disco (tempo ativo)</value></data>
+  <data name="Average" xml:space="preserve"><value>média</value></data>
+  <data name="Peak" xml:space="preserve"><value>pico</value></data>
+  <data name="NotRecorded" xml:space="preserve"><value>não gravado</value></data>
+  <data name="MinutesAtLimit" xml:space="preserve"><value>{0} min no limite</value></data>
+  <data name="Days" xml:space="preserve"><value>{0} dias</value></data>
+  <data name="ChartLegend" xml:space="preserve"><value>Barras: segundo mais pesado · linha: média · tracejado: limite</value></data>
+  <data name="SpikesTitle" xml:space="preserve"><value>Picos fora do normal</value></data>
+  <data name="SpikesNone" xml:space="preserve"><value>Nenhum pico fora do normal neste período.</value></data>
+  <data name="SpikeUsual" xml:space="preserve"><value>normal {0}</value></data>
+  <data name="SpikeAppCpu" xml:space="preserve"><value>Mais CPU: {0}</value></data>
+  <data name="SpikeAppMemory" xml:space="preserve"><value>Mais memória: {0}</value></data>
+  <data name="AskSpikes" xml:space="preserve"><value>Perguntar sobre os picos</value></data>
+  <data name="AskSpikesDay" xml:space="preserve"><value>O que pode estar causando os picos de uso nas últimas 24 horas?</value></data>
+  <data name="AskSpikesWeek" xml:space="preserve"><value>O que pode estar causando os picos de uso nos últimos 7 dias?</value></data>
+  <data name="LogsTitle" xml:space="preserve"><value>Log do sistema</value></data>
+  <data name="LogsSub" xml:space="preserve"><value>Avisos e erros do {0} neste período. Leia aqui e depois deixe o assistente decifrá-los.</value></data>
+  <data name="ReadLogs" xml:space="preserve"><value>Ler log do sistema</value></data>
+  <data name="ReadingLogs" xml:space="preserve"><value>Lendo o log do sistema…</value></data>
+  <data name="LogsFailed" xml:space="preserve"><value>Não foi possível ler o log do sistema.</value></data>
+  <data name="LogsNone" xml:space="preserve"><value>Nenhum aviso ou erro neste período.</value></data>
+  <data name="LogsCount" xml:space="preserve"><value>{0:N0} registros, agrupados em {1:N0} problemas.</value></data>
+  <data name="LogTimes" xml:space="preserve"><value>{1:N0}× · último {0}</value></data>
+  <data name="AskLogs" xml:space="preserve"><value>Decifrar com o assistente</value></data>
+  <data name="AskLogsDay" xml:space="preserve"><value>Leia o log do sistema das últimas 24 horas junto com os picos de uso e me ajude a entender o que há de errado com meu PC.</value></data>
+  <data name="AskLogsWeek" xml:space="preserve"><value>Leia o log do sistema dos últimos 7 dias junto com os picos de uso e me ajude a entender o que há de errado com meu PC.</value></data>
+  <data name="LogsPrivacy" xml:space="preserve"><value>Antes de qualquer envio a um assistente na nuvem você vê exatamente o que vai, com nomes, pastas e IDs de conta escondidos.</value></data>
+  <data name="SeverityCritical" xml:space="preserve"><value>Crítico</value></data>
+  <data name="SeverityError" xml:space="preserve"><value>Erro</value></data>
+  <data name="SeverityWarning" xml:space="preserve"><value>Aviso</value></data>
+  <data name="AxisNow" xml:space="preserve"><value>agora</value></data>
+  <data name="NavAlerts" xml:space="preserve"><value>Alertas</value></data>
+  <data name="NavAlertsHint" xml:space="preserve"><value>Vigie o PC pela bandeja</value></data>
+  <data name="AlertsTitle" xml:space="preserve"><value>Me avise quando o PC estiver no limite</value></data>
+  <data name="AlertsSub" xml:space="preserve"><value>O Pennyworth pode ficar ao lado do relógio depois que você fecha a janela e avisar quando uma peça passa do limite por 10 segundos. Cada alerta dispara uma vez e espera a peça se acalmar antes de poder disparar de novo.</value></data>
+  <data name="AlertsEnabled" xml:space="preserve"><value>Enviar notificações</value></data>
+  <data name="AlertsBackground" xml:space="preserve"><value>Continuar rodando na bandeja ao fechar a janela</value></data>
+  <data name="AlertsNoTray" xml:space="preserve"><value>Este sistema não tem ícone na bandeja, então os alertas só aparecem com a janela aberta.</value></data>
+  <data name="AlertsRules" xml:space="preserve"><value>Regras</value></data>
+  <data name="AlertsRulesHint" xml:space="preserve"><value>Adicione suas próprias regras para vigiar outros limites ou ser avisado com suas palavras.</value></data>
+  <data name="AlertsAbove" xml:space="preserve"><value>Acima de</value></data>
+  <data name="AlertsMessage" xml:space="preserve"><value>Sua própria mensagem (opcional)</value></data>
+  <data name="AlertsAdd" xml:space="preserve"><value>Adicionar alerta</value></data>
+  <data name="AlertsRemove" xml:space="preserve"><value>Remover</value></data>
+  <data name="AlertsTest" xml:space="preserve"><value>Enviar um teste</value></data>
+  <data name="AlertsRecent" xml:space="preserve"><value>Alertas recentes</value></data>
+  <data name="AlertsNoRecent" xml:space="preserve"><value>Nada ainda. Boa notícia.</value></data>
+  <data name="AlertShortCpu" xml:space="preserve"><value>CPU</value></data>
+  <data name="AlertShortMemory" xml:space="preserve"><value>RAM</value></data>
+  <data name="AlertShortGpu" xml:space="preserve"><value>GPU</value></data>
+  <data name="AlertShortDisk" xml:space="preserve"><value>Disco</value></data>
+  <data name="AlertDiskName" xml:space="preserve"><value>Disco {0}</value></data>
+  <data name="AlertTitle" xml:space="preserve"><value>{0} em {1:N0}%</value></data>
+  <data name="AlertBodyCpu" xml:space="preserve"><value>Algo está ocupando o processador. Clique para ver quais aplicativos.</value></data>
+  <data name="AlertBodyMemory" xml:space="preserve"><value>A memória está quase cheia e o PC pode ficar lento. Clique para ver quais aplicativos a usam.</value></data>
+  <data name="AlertBodyGpu" xml:space="preserve"><value>A placa de vídeo está trabalhando a toda carga. Clique para ver quais aplicativos.</value></data>
+  <data name="AlertBodyDisk" xml:space="preserve"><value>O disco {0} está quase cheio. Clique para ver o que ocupa o espaço.</value></data>
+  <data name="AlertTestTitle" xml:space="preserve"><value>Os alertas do Pennyworth estão ligados</value></data>
+  <data name="AlertTestBody" xml:space="preserve"><value>É assim que um aviso vai aparecer.</value></data>
+  <data name="TrayOpen" xml:space="preserve"><value>Abrir o Pennyworth</value></data>
+  <data name="TrayPause" xml:space="preserve"><value>Pausar alertas</value></data>
+  <data name="TrayExit" xml:space="preserve"><value>Sair</value></data>
+  <data name="BackgroundHintTitle" xml:space="preserve"><value>O Pennyworth continua rodando</value></data>
+  <data name="BackgroundHintBody" xml:space="preserve"><value>Vou ficar de olho no PC pela bandeja. Clique com o botão direito no ícone para sair.</value></data>
+  <data name="AlertNameCpu" xml:space="preserve"><value>Processador</value></data>
+  <data name="AlertNameMemory" xml:space="preserve"><value>Memória</value></data>
+  <data name="AlertNameGpu" xml:space="preserve"><value>Placa de vídeo</value></data>
+  <data name="PetHelloTitle" xml:space="preserve"><value>Oi! {0} a postos.</value></data>
+  <data name="PetHelloBody" xml:space="preserve"><value>Vou ficar de olho no PC e te avisar por aqui quando algo esquentar.</value></data>
+  <data name="PetDismiss" xml:space="preserve"><value>Dispensar</value></data>
+  <data name="PetTip" xml:space="preserve"><value>Arraste para mover · clique duas vezes para abrir o Pennyworth</value></data>
+  <data name="PetPickerTitle" xml:space="preserve"><value>Escolha um pet baixado do Petdex</value></data>
+  <data name="PetPickerFilter" xml:space="preserve"><value>Pets do Codex</value></data>
+  <data name="PetRemoved" xml:space="preserve"><value>{0} foi para casa.</value></data>
+  <data name="PetNotAPet" xml:space="preserve"><value>Esse arquivo não é um pet do Codex: falta o pet.json e a spritesheet.</value></data>
+  <data name="PetBadSpritesheet" xml:space="preserve"><value>Essa spritesheet não é uma grade de pet do Codex com 8 × 9 ou 8 × 11 quadros.</value></data>
+  <data name="PetUnreadable" xml:space="preserve"><value>Não foi possível ler o arquivo do pet.</value></data>
+  <data name="PetAdd" xml:space="preserve"><value>Adicionar pet…</value></data>
+  <data name="PetChange" xml:space="preserve"><value>Trocar pet…</value></data>
+  <data name="PetRemove" xml:space="preserve"><value>Remover pet</value></data>
+  <data name="NavSettings" xml:space="preserve"><value>Configurações</value></data>
+  <data name="NavSettingsHint" xml:space="preserve"><value>Tema, pet e inicialização</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Deixe o Pennyworth do seu jeito</value></data>
+  <data name="SettingsSub" xml:space="preserve"><value>A aparência, quem te faz companhia e se ele abre junto com o PC. As mudanças valem na hora.</value></data>
+  <data name="SettingsAppearance" xml:space="preserve"><value>Aparência</value></data>
+  <data name="SettingsTheme" xml:space="preserve"><value>Tema</value></data>
+  <data name="SettingsThemeHint" xml:space="preserve"><value>Sistema segue o sistema operacional, claro ou escuro.</value></data>
+  <data name="SettingsLanguage" xml:space="preserve"><value>Idioma</value></data>
+  <data name="SettingsLanguageHint" xml:space="preserve"><value>Sistema usa o idioma do sistema operacional.</value></data>
+  <data name="SettingsSystem" xml:space="preserve"><value>Sistema</value></data>
+  <data name="SettingsPet" xml:space="preserve"><value>Pet</value></data>
+  <data name="SettingsNoPet" xml:space="preserve"><value>Nenhum pet ainda</value></data>
+  <data name="SettingsPetHint" xml:space="preserve"><value>Um pet do Codex fica no canto da tela e fala os alertas num balão, em vez de uma notificação do sistema. Baixe um no Petdex ou em outro site de pets e adicione o arquivo aqui, ou solte-o na janela. Arraste o pet para onde quiser; clique duas vezes nele para abrir o Pennyworth.</value></data>
+  <data name="SettingsStartup" xml:space="preserve"><value>Inicialização</value></data>
+  <data name="SettingsStartWithPc" xml:space="preserve"><value>Iniciar com {@System}, escondido na bandeja</value></data>
+  <data name="SettingsStartWithPcHint" xml:space="preserve"><value>O Pennyworth inicia depois que você entra na sua conta e continua de olho no PC pela bandeja. Também dá para desligar no Gerenciador de Tarefas, em Aplicativos de inicialização.</value></data>
+  <data name="SettingsStartupUnavailable" xml:space="preserve"><value>Iniciar junto com o PC não está disponível neste sistema.</value></data>
+  <data name="StartupOnToast" xml:space="preserve"><value>O Pennyworth vai iniciar com {@System}.</value></data>
+  <data name="StartupOffToast" xml:space="preserve"><value>O Pennyworth não vai mais iniciar sozinho.</value></data>
+  <data name="StartupFailed" xml:space="preserve"><value>{@SystemInitial} não me deixou mudar os aplicativos de inicialização.</value></data>
   <data name="StartupProblemTitle" xml:space="preserve"><value>O Pennyworth não consegue iniciar</value></data>
   <data name="StartupProblemStorage" xml:space="preserve"><value>Ler os seus discos exige {0}, que este sistema não oferece.</value></data>
   <data name="StartupProblemMonitoring" xml:space="preserve"><value>O monitoramento ao vivo exige {0}, que este sistema não oferece.</value></data>

@@ -32,6 +32,9 @@
     <DataTemplate DataType="vm:CleanupViewModel">
       <views:CleanupView />
     </DataTemplate>
+    <DataTemplate DataType="vm:HistoryViewModel">
+      <views:HistoryView />
+    </DataTemplate>
     <DataTemplate DataType="vm:MemoryViewModel">
       <views:MemoryView />
     </DataTemplate>
@@ -49,6 +52,12 @@
     </DataTemplate>
     <DataTemplate DataType="vm:StressViewModel">
       <views:StressView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:AlertsViewModel">
+      <views:AlertsView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:SettingsViewModel">
+      <views:SettingsView />
     </DataTemplate>
   </Application.DataTemplates>
 </Application>
