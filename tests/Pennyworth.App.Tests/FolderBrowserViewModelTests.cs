@@ -145,7 +145,7 @@ public class FolderBrowserViewModelTests
 
         Assert.Equal(["C:"], host.Rescanned);
         Assert.NotSame(before, browser.Current!.Value.Tree);
-        Assert.Equal(@"C:\Users", browser.Current?.FullPath);
+        Assert.Equal(P(@"C:\", "Users"), browser.Current?.FullPath);
     }
 
     private sealed class Host : IFolderHost

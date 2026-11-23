@@ -62,11 +62,17 @@ public sealed class LocalizationTests : IDisposable
     }
 }
 
+// Loading Portuguese settings into the shell switches the shared Localizer: must not run beside English assertions.
+[Collection(nameof(LanguageSwitching))]
 public sealed class SettingsStoreTests : IDisposable
 {
     private readonly string _dir = Directory.CreateTempSubdirectory("pw-settings-").FullName;
 
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
+    public void Dispose()
+    {
+        Localizer.Instance.SetLanguage(LanguagePreference.English);
+        Directory.Delete(_dir, recursive: true);
+    }
 
     [Fact]
     public void Round_trips_settings()
