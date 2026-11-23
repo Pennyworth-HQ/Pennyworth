@@ -132,11 +132,38 @@ public class FolderBrowserViewModelTests
         Assert.Equal([@"C:\Games"], host.Shown);
     }
 
+    [Fact]
+    public async Task Rescan_reopens_the_same_folder_in_the_new_scan()
+    {
+        var host = new Host();
+        var browser = new FolderBrowserViewModel(host);
+        browser.OpenCommand.Execute(browser.Items.Single(i => i.Drive?.Letter == "C:"));
+        browser.OpenCommand.Execute(browser.Items.Single(i => i.Name == "Users"));
+        var before = browser.Current!.Value.Tree;
+
+        await browser.RescanCommand.ExecuteAsync(null);
+
+        Assert.Equal(["C:"], host.Rescanned);
+        Assert.NotSame(before, browser.Current!.Value.Tree);
+        Assert.Equal(@"C:\Users", browser.Current?.FullPath);
+    }
+
     private sealed class Host : IFolderHost
     {
-        private readonly StorageTree _tree = Build();
+        private StorageTree _tree = Build();
 
         public IReadOnlyList<DriveViewModel> Drives { get; } = [new(TestApp.DriveD), new(TestApp.DriveC)];
+
+        public DriveViewModel? SelectedDrive => Drives[1];
+
+        public List<string> Rescanned { get; } = [];
+
+        public Task RescanAsync(DriveViewModel drive)
+        {
+            Rescanned.Add(drive.Letter);
+            _tree = Build();
+            return Task.CompletedTask;
+        }
 
         public List<string> Scanned { get; } = [];
 

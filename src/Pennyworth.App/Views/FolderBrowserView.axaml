@@ -46,6 +46,23 @@
       <Setter Property="Foreground" Value="{DynamicResource Brush.TextPrimary}" />
     </Style>
 
+    <!-- Rescan: a circular arrow that keeps turning while the drive is scanned again. -->
+    <Style Selector="Button.rescan:disabled">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="Path.spinning">
+      <Style.Animations>
+        <Animation Duration="0:0:0.9" IterationCount="Infinite">
+          <KeyFrame Cue="0%">
+            <Setter Property="RotateTransform.Angle" Value="0" />
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="RotateTransform.Angle" Value="360" />
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+
     <Style Selector="TextBlock.column">
       <Setter Property="FontFamily" Value="{StaticResource FontFamily.Mono}" />
       <Setter Property="FontSize" Value="10" />
@@ -66,9 +83,9 @@
       </Grid>
       <TextBlock Classes="secondary" FontSize="13" Text="{l:Tr FoldersHelp}" />
 
-      <!-- Toolbar: Back, Up and breadcrumbs. -->
+      <!-- Toolbar: Back, Up, breadcrumbs and rescan. -->
       <Border Classes="group" Padding="4">
-        <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+        <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
           <Button Classes="ghost" Command="{Binding BackCommand}">
             <TextBlock>
               <Run Text="← " />
@@ -101,6 +118,17 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+          <Button Grid.Column="4" Classes="ghost rescan" Command="{Binding RescanCommand}"
+                  ToolTip.Tip="{l:Tr Rescan}">
+            <Path Classes.spinning="{Binding RescanCommand.IsRunning}"
+                  Width="14" Height="14" Stretch="Uniform" RenderTransformOrigin="50%,50%"
+                  Fill="{DynamicResource Brush.TextSecondary}"
+                  Data="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z">
+              <Path.RenderTransform>
+                <RotateTransform />
+              </Path.RenderTransform>
+            </Path>
+          </Button>
         </Grid>
       </Border>
     </StackPanel>
