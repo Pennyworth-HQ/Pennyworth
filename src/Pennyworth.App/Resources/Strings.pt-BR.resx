@@ -604,4 +604,9 @@
   <data name="StartupOnToast" xml:space="preserve"><value>O Pennyworth vai iniciar com {@System}.</value></data>
   <data name="StartupOffToast" xml:space="preserve"><value>O Pennyworth não vai mais iniciar sozinho.</value></data>
   <data name="StartupFailed" xml:space="preserve"><value>{@SystemInitial} não me deixou mudar os aplicativos de inicialização.</value></data>
+  <data name="StartupProblemTitle" xml:space="preserve"><value>O Pennyworth não consegue iniciar</value></data>
+  <data name="StartupProblemStorage" xml:space="preserve"><value>Ler os seus discos exige {0}, que este sistema não oferece.</value></data>
+  <data name="StartupProblemMonitoring" xml:space="preserve"><value>O monitoramento ao vivo exige {0}, que este sistema não oferece.</value></data>
+  <data name="StartupProblemHint" xml:space="preserve"><value>Instale ou repare a parte que falta e abra o Pennyworth de novo. Nada foi alterado.</value></data>
+  <data name="StartupProblemClose" xml:space="preserve"><value>Fechar</value></data>
 </root>
