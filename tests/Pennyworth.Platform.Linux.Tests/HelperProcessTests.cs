@@ -86,13 +86,26 @@ public sealed class HelperProcessTests : IDisposable
         return JsonSerializer.Deserialize(payload, HelperJson.Default.ServeResponse)!;
     }
 
-    private static string Du(string path)
+    /// <summary>
+    /// What <c>du -s -x</c> says less the directories' own blocks, which <c>du</c> counts and the helper does not
+    /// (a directory takes a block on ext4 and none on tmpfs, so without this the test depends on where /tmp lives).
+    /// </summary>
+    private static long DuOfFiles(string path)
     {
-        var start = new ProcessStartInfo("/usr/bin/du", ["-s", "-x", "--block-size=1", path]) { RedirectStandardOutput = true, UseShellExecute = false };
-        using Process process = Process.Start(start)!;
-        string output = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-        return output.Split('\t')[0];
+        long total = long.Parse(Run("/usr/bin/du", "-s", "-x", "--block-size=1", path).Split('\t')[0], System.Globalization.CultureInfo.InvariantCulture);
+        long directories = Run("/usr/bin/find", path, "-xdev", "-type", "d", "-printf", "%b\n")
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Sum(blocks => long.Parse(blocks, System.Globalization.CultureInfo.InvariantCulture) * 512);
+        return total - directories;
+
+        static string Run(string file, params string[] arguments)
+        {
+            var start = new ProcessStartInfo(file, arguments) { RedirectStandardOutput = true, UseShellExecute = false };
+            using Process process = Process.Start(start)!;
+            string output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            return output;
+        }
     }
 
     [LinuxFact]
@@ -122,7 +135,7 @@ public sealed class HelperProcessTests : IDisposable
         Assert.Equal(HelperExit.Ok, response.Exit);
         FolderSize measured = Assert.Single(response.Folders!.Folders);
         Assert.Equal(folder, measured.Path);
-        Assert.Equal(long.Parse(Du(folder), System.Globalization.CultureInfo.InvariantCulture), measured.SizeOnDisk);
+        Assert.Equal(DuOfFiles(folder), measured.SizeOnDisk);
         Assert.Equal(80_001, measured.LogicalSize);
         Assert.Equal(3, measured.Files);
         Assert.True(measured.Complete);

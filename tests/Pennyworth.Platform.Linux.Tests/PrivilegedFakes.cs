@@ -169,7 +169,7 @@ internal sealed class FakeChannel : ISessionChannel
             toHelper.Dispose();
             helperOut.Dispose();
         });
-        _ = Task.Run(() =>
+        OnOwnThread(() =>
         {
             int code = HelperServe.Run(helperIn, helperOut, new MemoryStream(), seams, CancellationToken.None);
             helperOut.Dispose();
@@ -205,7 +205,7 @@ internal sealed class FakeChannel : ISessionChannel
             toHelper.Dispose();
             helperOut.Dispose();
         });
-        _ = Task.Run(() =>
+        OnOwnThread(() =>
         {
             while (ServeFrames.Read(helperIn, HelperProtocol.MaxRequestBytes, out byte[] body) == FrameStatus.Frame)
             {
@@ -223,6 +223,13 @@ internal sealed class FakeChannel : ISessionChannel
         });
         return channel;
     }
+
+    /// <summary>
+    /// Runs a fake helper loop on a thread of its own. Its reads block, and on the thread pool many parallel tests
+    /// starve it until the broker's one-second exchange timeout fires and the test fails at random.
+    /// </summary>
+    private static void OnOwnThread(Action loop) =>
+        _ = Task.Factory.StartNew(loop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 }
 
 /// <summary>Plays <c>Process.Start</c> of pkexec for the session: each start takes the next prepared channel; a start nobody prepared throws.</summary>

@@ -483,16 +483,28 @@ public class LinuxMonitorTests
             () => { long x = 0; while (!stop.IsCancellationRequested) { x++; } return x; }, TaskCreationOptions.LongRunning))];
         try
         {
+            // The reference is the CPU time this process really got over the same window, not burners / cores: other
+            // tests of this assembly add to it, and other test processes running at the same time take cores from it.
+            using Process self = Process.GetCurrentProcess();
+            TimeSpan cpuBefore = self.TotalProcessorTime;
+            var wall = Stopwatch.StartNew();
             using var monitor = new LinuxMonitor([]);
             // top -bn2 -d2 prints twice, two seconds apart; the second line is the load over that window.
             Task<string?> top = Task.Run(() => ProcessProbe.Run("top", ["-bn2", "-d2"], TimeSpan.FromSeconds(30)));
             Thread.Sleep(TimeSpan.FromSeconds(2.05));
 
             MonitorSample sample = monitor.Sample();
+            wall.Stop();
+            self.Refresh();
+            // A share of the whole machine, as the monitor reports it: every CPU in /proc/stat, which is more than
+            // ProcessorCount when this process is confined to some of them (taskset, a container's cpuset).
+            int machineCores = File.ReadLines("/proc/stat").Count(l => l.Length > 3 && l.StartsWith("cpu", StringComparison.Ordinal) && char.IsAsciiDigit(l[3]));
+            double expected = 100.0 * (self.TotalProcessorTime - cpuBefore) / wall.Elapsed / machineCores;
 
             AppProcess me = sample.Apps.SelectMany(a => a.Processes).Single(p => p.Pid == Environment.ProcessId);
-            double expected = 100.0 * burners / cores;
-            Assert.InRange(me.Cpu, expected - 3, expected + 4);
+            TestContext.Current.SendDiagnosticMessage($"this process {me.Cpu:F1}%, its own CPU time says {expected:F1}%, {burners} of {cores} cores spinning");
+            Assert.True(expected > 1, $"the burners got only {expected:F1}% of the machine");
+            Assert.InRange(me.Cpu, expected - 3, expected + 3);
             Assert.True(sample.CpuPercent >= me.Cpu - 1, $"machine {sample.CpuPercent:F1}% < this process {me.Cpu:F1}%");
 
             double? topLoad = TopBusyPercent(top.Result);
