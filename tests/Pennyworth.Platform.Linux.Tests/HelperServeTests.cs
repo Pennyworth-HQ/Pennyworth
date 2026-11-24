@@ -389,7 +389,8 @@ public sealed class HelperServeTests : IDisposable
         session.Send(new ServeRequest(HelperProtocol.Version, 1, HelperProtocol.MeasureFolders, Paths: ["/x"]));
         Assert.True(started.Wait(TimeSpan.FromSeconds(10)));
         session.CloseInput();
-        SpinWait.SpinUntil(() => time.Armed >= 2, TimeSpan.FromSeconds(10)); // the grace timer is armed once the helper noticed
+        // The grace timer is armed once the helper's reader noticed the closed input; moving time before that would fire nothing.
+        Assert.True(SpinWait.SpinUntil(() => time.IsArmedFor(HelperServe.HardStopGrace), TimeSpan.FromSeconds(10)), "the grace timer was never armed");
         time.Advance(HelperServe.HardStopGrace + TimeSpan.FromSeconds(1));
 
         Assert.Equal(HelperExit.TimedOut, terminated.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult());

@@ -32,10 +32,13 @@ internal static class Program
 #if WAYLAND
         // Inside a Wayland session talk to the compositor itself (decision D6) instead of going through XWayland.
         // UsePlatformDetect never picks that backend; the fallback keeps X11 when no compositor answers.
+        // Without an X server there is nothing to fall back to: then the Wayland backend's own error is the one worth
+        // showing (Avalonia needs xdg_wm_base 3 or later, which sway 1.9 does not offer), not "XOpenDisplay failed".
         // The app id is the desktop file's name, which is how compositors find the launcher icon.
         if (OperatingSystem.IsLinux() && !KeepX11())
         {
-            builder = builder.With(new WaylandPlatformOptions { AppId = "pennyworth" }).UseWaylandWithFallback();
+            builder = builder.With(new WaylandPlatformOptions { AppId = "pennyworth" });
+            builder = HasX11() ? builder.UseWaylandWithFallback() : builder.UseWayland();
         }
 #endif
         return builder;
@@ -48,5 +51,8 @@ internal static class Program
     /// </summary>
     private static bool KeepX11() =>
         string.Equals(Environment.GetEnvironmentVariable("PENNYWORTH_DISPLAY"), "x11", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Whether an X server (or XWayland) was named, so falling back to X11 can work at all.</summary>
+    private static bool HasX11() => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY"));
 #endif
 }

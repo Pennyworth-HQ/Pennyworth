@@ -111,15 +111,26 @@ internal static class ElevatedRunner
             }
 
             // The program is gone, but a child can hold a pipe open: never wait on one forever.
-            Task pipes = Task.WhenAll(read, keep, write);
-            if (await Task.WhenAny(pipes, Task.Delay(PipeDrain, CancellationToken.None)) != pipes)
+            Task drain = Task.Delay(PipeDrain, CancellationToken.None);
+            if (await Task.WhenAny(read, drain) != read)
             {
                 return ElevatedRun.Failed(ElevatedStatus.TimedOut);
             }
 
-            return read.Result
-                ? new ElevatedRun(ElevatedStatus.Exited, process.ExitCode, output.ToArray(), Encoding.UTF8.GetString(error.GetBuffer(), 0, (int)error.Length))
-                : ElevatedRun.Failed(ElevatedStatus.TooLarge);
+            if (!read.Result)
+            {
+                // Killed for its output. Only the program itself was killed: a child of it (dash runs the command of
+                // sh -c as one) can still hold standard error open, so the verdict cannot wait for that pipe.
+                return ElevatedRun.Failed(ElevatedStatus.TooLarge);
+            }
+
+            Task rest = Task.WhenAll(keep, write);
+            if (await Task.WhenAny(rest, drain) != rest)
+            {
+                return ElevatedRun.Failed(ElevatedStatus.TimedOut);
+            }
+
+            return new ElevatedRun(ElevatedStatus.Exited, process.ExitCode, output.ToArray(), Encoding.UTF8.GetString(error.GetBuffer(), 0, (int)error.Length));
         }
     }
 

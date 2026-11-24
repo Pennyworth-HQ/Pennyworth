@@ -65,19 +65,29 @@ jobs:
     name: Launch under a Wayland compositor
     needs: package
     runs-on: ubuntu-24.04
+    # Avalonia's Wayland backend needs xdg_wm_base 3 or later. Ubuntu 24.04's sway 1.9 offers only 2, so the app cannot
+    # open there without an X server; Debian 13's sway 1.10 offers 5.
+    container: debian:trixie
     # Not run before this workflow was written: sway's headless backend with the pixman renderer is the assumption.
     # Remove this line once the job has been green.
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      - name: Install a headless Wayland compositor and screenshot tools
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends sway grim imagemagick libfontconfig1 libsecret-1-0
+      - name: Install a headless Wayland compositor, screenshot tools and the app's libraries
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends sway grim imagemagick python3 libfontconfig1 libsecret-1-0 libicu76 ca-certificates
+          # The app and the compositor run as an ordinary user, as on a desktop.
+          useradd --create-home smoke
       - uses: actions/download-artifact@v4
         with:
           name: pennyworth-linux-x64
           path: artifacts
       - name: Launch the tarball with no X server at all
-        run: tools/package/smoke-linux.sh --tarball artifacts/pennyworth-*-linux-x64.tar.gz --display wayland --shot artifacts/screenshots/wayland-tarball.png
+        run: |
+          mkdir -p artifacts/screenshots
+          chown -R smoke "$GITHUB_WORKSPACE"
+          runuser -u smoke -- tools/package/smoke-linux.sh --tarball artifacts/pennyworth-*-linux-x64.tar.gz --display wayland --shot artifacts/screenshots/wayland-tarball.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:

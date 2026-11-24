@@ -45,15 +45,16 @@ internal sealed class ManualTime : TimeProvider
         }
     }
 
-    /// <summary>How many timers are armed right now.</summary>
-    public int Armed
+    /// <summary>
+    /// Whether a one-shot timer is armed to fire exactly <paramref name="dueIn"/> from now: a particular timer, where a count
+    /// of armed timers would also count the idle and request timers that come and go around it.
+    /// </summary>
+    public bool IsArmedFor(TimeSpan dueIn)
     {
-        get
+        lock (_gate)
         {
-            lock (_gate)
-            {
-                return _timers.Count(t => t.Due is not null);
-            }
+            long due = GetTimestamp() + (long)dueIn.TotalMilliseconds;
+            return _timers.Any(t => t.Due == due && !t.Periodic);
         }
     }
 
@@ -62,6 +63,8 @@ internal sealed class ManualTime : TimeProvider
         private long _period = -1;
 
         public long? Due { get; private set; }
+
+        public bool Periodic => _period > 0;
 
         public bool Change(TimeSpan dueTime, TimeSpan period)
         {
@@ -115,17 +118,22 @@ internal sealed class ServeHarness : IDisposable
     {
         _helperIn = new AnonymousPipeClientStream(PipeDirection.In, _toHelper.ClientSafePipeHandle);
         _helperOut = new AnonymousPipeClientStream(PipeDirection.Out, _fromHelper.ClientSafePipeHandle);
-        Exit = Task.Run(() =>
-        {
-            try
+        // On a thread of its own: the loop blocks for the whole test, and on the thread pool it would starve the other tests' timers.
+        Exit = Task.Factory.StartNew(
+            () =>
             {
-                return HelperServe.Run(_helperIn, _helperOut, _stderr, seams, CancellationToken.None);
-            }
-            finally
-            {
-                _helperOut.Dispose(); // What the end of the process does: the app's end of the pipe reads end of stream.
-            }
-        });
+                try
+                {
+                    return HelperServe.Run(_helperIn, _helperOut, _stderr, seams, CancellationToken.None);
+                }
+                finally
+                {
+                    _helperOut.Dispose(); // What the end of the process does: the app's end of the pipe reads end of stream.
+                }
+            },
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
     }
 
     /// <summary>The helper's exit code once its loop ends.</summary>
