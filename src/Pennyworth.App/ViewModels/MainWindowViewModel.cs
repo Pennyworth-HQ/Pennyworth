@@ -1370,6 +1370,8 @@ public sealed partial class MainWindowViewModel : ObservableObject, IFolderHost,
 
     void IFolderHost.ScanDrive(DriveViewModel drive) => ShowDrive(drive);
 
+    Task IFolderHost.RescanAsync(DriveViewModel drive) => CurrentScan = ShowDriveAsync(drive, forceRescan: true);
+
     void IFolderHost.ShowInExplorer(string path)
     {
         _services.Explorer.ShowInExplorer(path);

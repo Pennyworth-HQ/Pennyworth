@@ -3,4 +3,6 @@ obj/
 .vs/
 *.user
 TestResults/
+publish/
+build-exe.log
 artifacts/

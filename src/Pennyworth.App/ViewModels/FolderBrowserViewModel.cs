@@ -11,11 +11,17 @@ public interface IFolderHost
 {
     IReadOnlyList<DriveViewModel> Drives { get; }
 
+    /// <summary>The drive the Storage page shows; "This PC" rescans it.</summary>
+    DriveViewModel? SelectedDrive { get; }
+
     /// <summary>The finished scan of a drive, or null when it hasn't been scanned yet.</summary>
     StorageTree? TreeFor(DriveViewModel drive);
 
     /// <summary>Opening a drive that hasn't been scanned starts its scan.</summary>
     void ScanDrive(DriveViewModel drive);
+
+    /// <summary>Scans a drive again, finishing when the scan ends, fails or is cancelled.</summary>
+    Task RescanAsync(DriveViewModel drive);
 
     void ShowInExplorer(string path);
 
@@ -216,11 +222,63 @@ public sealed partial class FolderBrowserViewModel : ObservableObject
         }
     }
 
-    private string DriveLabel(StorageNode root)
+    /// <summary>
+    /// Scans the open folder's drive again (on "This PC", the selected drive), then reopens the
+    /// same folder in the new scan, or its closest parent that still exists.
+    /// </summary>
+    [RelayCommand]
+    private async Task RescanAsync()
     {
-        var drive = _host.Drives.FirstOrDefault(d => string.Equals(d.Summary.RootPath, root.Tree.RootPath, StringComparison.OrdinalIgnoreCase));
-        return drive?.Name ?? root.Name;
+        DriveViewModel? drive = Current is { } folder ? DriveOf(folder.Tree) : _host.SelectedDrive;
+        if (drive is null)
+        {
+            return;
+        }
+
+        await _host.RescanAsync(drive);
+
+        if (Current is { } open && _host.TreeFor(drive) is { } tree && !ReferenceEquals(open.Tree, tree)
+            && string.Equals(open.Tree.RootPath, tree.RootPath, StringComparison.OrdinalIgnoreCase))
+        {
+            Show(Relocate(open, tree), resetHistory: true);
+        }
+        else
+        {
+            Refresh();
+        }
     }
+
+    /// <summary>The folder in <paramref name="tree"/> at the same path as <paramref name="node"/>, or its deepest existing parent.</summary>
+    private static StorageNode Relocate(StorageNode node, StorageTree tree)
+    {
+        var names = new Stack<string>();
+        for (StorageNode? current = node; current is { Parent: not null } child; current = child.Parent)
+        {
+            names.Push(child.Name);
+        }
+
+        StorageNode found = tree.Root;
+        foreach (string name in names)
+        {
+            StorageNode? next = found.GetChildren()
+                .Where(child => child.IsDirectory && string.Equals(child.Name, name, StringComparison.OrdinalIgnoreCase))
+                .Select(child => (StorageNode?)child)
+                .FirstOrDefault();
+            if (next is not { } match)
+            {
+                break;
+            }
+
+            found = match;
+        }
+
+        return found;
+    }
+
+    private DriveViewModel? DriveOf(StorageTree tree) =>
+        _host.Drives.FirstOrDefault(d => string.Equals(d.Summary.RootPath, tree.RootPath, StringComparison.OrdinalIgnoreCase));
+
+    private string DriveLabel(StorageNode root) => DriveOf(root.Tree)?.Name ?? root.Name;
 }
 
 public enum FolderItemKind
